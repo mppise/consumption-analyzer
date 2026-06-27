@@ -1,0 +1,16 @@
+specs/.current-session
+specs/.ideation-turn.md
+specs/.story-spec-turn.md
+specs/.investigate-turn.md
+specs/.ideation-scratchpad.yaml
+specs/.agent-stamp-*.json
+
+# Node.js
+node_modules/
+.env
+
+# Build output
+dist/
+
+# Data files (keep sample fixtures, ignore generated output)
+data/*.csv

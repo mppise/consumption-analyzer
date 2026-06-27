@@ -1,0 +1,23 @@
+story_id: STORY-003
+runtime:
+  language: node
+  language_version: "25.8.1"
+  package_manager: npm
+  build_command: "node src/cli.js"
+  build_output_dir: "src/"
+  has_dockerfile: false
+  has_migrations: false
+  exposed_ports: []
+files_modified:
+  - src/ai/analyze-sa.md
+  - src/ai/analyze.md
+  - src/tools/analyze.js
+gap_specs:
+  - gap.md
+warnings:
+  - "3-level pipeline rewrite 2026-06-27: L1 uses MODELS.haiku (max_tokens=2000) per sub-SA in parallel via Promise.allSettled; L2 distributes L1 product fields (insight, recommendation, ea_action) into portfolio objects; L3 uses MODELS.opus for portfolio narrative. No separate API call for L2."
+  - "AIClient constructor requires non-empty baseURL; when AI_BASE_URL is unset, analyze.js falls back to direct Anthropic SDK instantiation. Gap documented in @gap annotation in analyze.js."
+  - "action_for_csm removed from both prompt templates and AI response shapes (analyze.md and analyze-sa.md). architectural_signals no longer includes action_for_csm field."
+  - "Graceful degradation: L1 failure for a sub-SA warns to stderr and continues; product insight/recommendation/ea_action remain null for that sub-SA."
+  - "buildLPRContext function from previous implementation refactored into two functions: buildCatalogContextForProducts (used by L1 per-sub-SA) and buildPortfolioCatalogContext (used by L3 full portfolio)."
+overall_status: pass

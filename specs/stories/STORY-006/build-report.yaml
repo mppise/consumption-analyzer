@@ -1,0 +1,18 @@
+story_id: STORY-006
+runtime:
+  language: node
+  language_version: "20"
+  package_manager: npm
+  build_command: "node src/cli.js"
+  build_output_dir: "src/"
+  has_dockerfile: false
+  has_migrations: false
+  exposed_ports: []
+files_modified:
+  - src/lib/industry.js
+commits: []
+gap_specs:
+  - gap.md
+warnings:
+  - "STORY-004 build had implemented industry.js with only 6 of 8 spec rules — rules 6 (Watchlist-only → Manufacturing) and 7 (Ariba+Concur → Manufacturing) were missing. STORY-006 corrected the implementation. All 4 spec unit test assertions plus all 8 rules now verified."
+overall_status: pass

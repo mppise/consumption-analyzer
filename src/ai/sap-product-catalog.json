@@ -1,0 +1,3968 @@
+{
+  "SAP 3D Visual Enterprise": {
+    "name": "SAP 3D Visual Enterprise",
+    "url": "https://www.sap.com/products/scm/product-visualization.html",
+    "category": "Supply chain management",
+    "tagline": "Be the first to hear about the latest AI innovations in Autonomous Supply Chain Management and connect with peers across every line of business — October 5–7, 2026.",
+    "capabilities": [],
+    "description": "Be the first to hear about the latest AI innovations in Autonomous Supply Chain Management and connect with peers across every line of business — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "ABAP environments for SAP S/4HANA Cloud and SAP BTP": {
+    "name": "ABAP environments for SAP S/4HANA Cloud and SAP BTP",
+    "url": "https://www.sap.com/products/technology-platform/abap/environment.html",
+    "category": "ABAP environments",
+    "tagline": "SAP BTP ABAP environment is the Platform-as-a-Service for ABAP developers. A cloud-optimized ABAP platform based on SAP HANA serves as a development and runtime environment for cloud apps utilizing the service framework of SAP Business Technology Pla",
+    "capabilities": [
+      "Boost developer productivity with Joule",
+      "Easily extend SAP S/4HANA",
+      "Foster collaboration between developers",
+      "Joule capabilities for ABAP developers",
+      "Modernize ERP extensions with ABAP",
+      "Enhanced developer experience through collaboration"
+    ],
+    "description": "SAP BTP ABAP environment is the Platform-as-a-Service for ABAP developers. A cloud-optimized ABAP platform based on SAP HANA serves as a development and runtime environment for cloud apps utilizing the service framework of SAP Business Technology Platform.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP BTP ABAP environment": {
+    "name": "SAP BTP ABAP environment",
+    "url": "https://www.sap.com/products/technology-platform/abap.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "SAP BTP ABAP environment is the Platform-as-a-Service for ABAP developers. A cloud-optimized ABAP platform based on SAP HANA serves as a development and runtime environment for cloud apps utilizing the service framework of SAP Business Technology Pla",
+    "capabilities": [
+      "Extend SAP applications",
+      "Accelerate cloud transformation",
+      "Keep the core clean",
+      "Development",
+      "Administration and Integration",
+      "ABAP AI capabilities"
+    ],
+    "description": "SAP BTP ABAP environment is the Platform-as-a-Service for ABAP developers. A cloud-optimized ABAP platform based on SAP HANA serves as a development and runtime environment for cloud apps utilizing the service framework of SAP Business Technology Platform.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Access Control": {
+    "name": "SAP Access Control",
+    "url": "https://www.sap.com/products/financial-management/access-control.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Streamline the management and validation of user access",
+      "Detecting and remediating risk",
+      "Enforcing compliance",
+      "Empowering users",
+      "Analysis of access risk",
+      "User access management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Absence and Leave Management by WorkForce Software": {
+    "name": "SAP Absence and Leave Management by WorkForce Software",
+    "url": "https://www.sap.com/products/hcm/leave-absence-management.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplify leave requests",
+      "Ease absence management administration",
+      "Mitigate compliance risks",
+      "Leave case management",
+      "Document management",
+      "Compliance management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Adaptive Server Enterprise (SAP ASE)": {
+    "name": "SAP Adaptive Server Enterprise (SAP ASE)",
+    "url": "https://www.sap.com/products/data-cloud/sybase-ase.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Drive faster, more reliable online transaction processing (OLTP) for less with SAP Adaptive Server Enterprise. The high-performance SQL database server uses a relational model to power transaction-based application on premise or in the cloud.",
+    "capabilities": [
+      "Improved performance for transaction processing",
+      "Business continuity and data security",
+      "Multiple deployment options",
+      "Encryption",
+      "Administration and Management Console",
+      "Partitions"
+    ],
+    "description": "Drive faster, more reliable online transaction processing (OLTP) for less with SAP Adaptive Server Enterprise. The high-performance SQL database server uses a relational model to power transaction-based application on premise or in the cloud.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Account Substantiation and Automation by BlackLine": {
+    "name": "SAP Account Substantiation and Automation by BlackLine",
+    "url": "https://www.sap.com/products/financial-management/account-substantiation-automation-blackline.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Standardize and streamline your financial close",
+      "Optimizing account reconciliation",
+      "Maximizing efficiency of your financial close",
+      "Gaining new insights in real time",
+      "Account reconciliation and tasks",
+      "Journal entry"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Advanced Data Migration and Management by Syniti": {
+    "name": "SAP Advanced Data Migration and Management by Syniti",
+    "url": "https://www.sap.com/products/data-cloud/advanced-data-migration-software.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Available for SAP Advanced Data Migration and Management by Syniti",
+    "capabilities": [
+      "Minimize costs",
+      "Increase visibility",
+      "Accelerate migration",
+      "Keep stakeholders informed",
+      "Reduce risk",
+      "Add-ons to enhance your plan"
+    ],
+    "description": "Available for SAP Advanced Data Migration and Management by Syniti",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Integration Suite, advanced event mesh": {
+    "name": "SAP Integration Suite, advanced event mesh",
+    "url": "https://www.sap.com/products/technology-platform/integration-suite/advanced-event-mesh.html",
+    "category": "SAP Integration Suite",
+    "tagline": "Available for some editionsThis add-on is available for:SAP Integration Suite, advanced event mesh, 100SAP Integration Suite, advanced event mesh, 250SAP Integration Suite, advanced event mesh, 1KSAP Integration Suite, advanced event mesh, 5KSAP Inte",
+    "capabilities": [
+      "Native SAP connectivity",
+      "Advanced distribution, filtering, and tracing of events",
+      "Event management and insights",
+      "All plans include",
+      "Add-ons to enhance your plan"
+    ],
+    "description": "Available for some editionsThis add-on is available for:SAP Integration Suite, advanced event mesh, 100SAP Integration Suite, advanced event mesh, 250SAP Integration Suite, advanced event mesh, 1KSAP Integration Suite, advanced event mesh, 5KSAP Integration Suite, advanced event mesh, 10KSAP Integra",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Access Violation Management by Pathlock": {
+    "name": "SAP Access Violation Management by Pathlock",
+    "url": "https://www.sap.com/products/financial-management/access-violation-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain insights into the financial impacts of access risk",
+      "Understanding the cost of access violations",
+      "Automating control to remove false positives",
+      "Centralizing investigation and resolution",
+      "Exposure assessment of access risk on the business",
+      "Summary of the bottom-line impact of access risk"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Advanced Planning and Optimization": {
+    "name": "SAP Advanced Planning and Optimization",
+    "url": "https://www.sap.com/products/scm/advanced-planning-optimization.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase forecast accuracy and minimize inventory buffers",
+      "Create optimized production plans for all of your factories",
+      "Provide reliable sales order confirmation dates",
+      "Demand planning (DP)",
+      "Supply network planning (SNP)",
+      "Production planning and detailed scheduling (PP/DS)"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Advanced Financial Closing": {
+    "name": "SAP Advanced Financial Closing",
+    "url": "https://www.sap.com/products/financial-management/advanced-financial-closing.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improving transparency and insight",
+      "Boosting efficiency and speed",
+      "Safeguarding your close",
+      "Closing templates",
+      "Closing automation",
+      "Monitoring and insights"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Advanced Track and Trace for Pharmaceuticals on SAP S/4HANA": {
+    "name": "SAP Advanced Track and Trace for Pharmaceuticals on SAP S/4HANA",
+    "url": "https://www.sap.com/products/scm/track-trace-pharmaceuticals.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Lower costs",
+      "Increase efficiency",
+      "Scale for large volumes",
+      "Data integration",
+      "Serial number management",
+      "Object and event repository"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Agricultural Contract Management": {
+    "name": "SAP Agricultural Contract Management",
+    "url": "https://www.sap.com/products/financial-management/agricultural-contract.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Consolidation of complex settlements",
+      "Expense control and tracking",
+      "Comprehensive contract support",
+      "Contract capture and maintenance",
+      "Commodity pricing engine",
+      "Load data capture"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Agent Lifecycle Management": {
+    "name": "SAP Agent Lifecycle Management",
+    "url": "https://www.sap.com/products/crm/agent-lifecycle-mgmt.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain real-time visibility",
+      "Unify onboarding data",
+      "Simplify compliance",
+      "Streamlined agent lifecycle management",
+      "Comprehensive onboarding",
+      "Strong compliance"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Agent Performance Management": {
+    "name": "SAP Agent Performance Management",
+    "url": "https://www.sap.com/products/crm/agent-performance-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Optimize agent compensation",
+      "Maximize agent performance",
+      "Enhance operational efficiency",
+      "Effective agent management",
+      "Comprehensive onboarding",
+      "Advanced incentive management processes"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP AI Agent Hub": {
+    "name": "SAP AI Agent Hub",
+    "url": "https://www.sap.com/products/artificial-intelligence/ai-agent-hub.html",
+    "category": "All products",
+    "tagline": "The SAP AI Agent Hub is a command center for enterprise AI agent management. It provides governance across the lifecycle of agents, from discovery through to decommissioning.",
+    "capabilities": [
+      "Manage agents with architecture and business context",
+      "Observe every agent",
+      "Enforce agent and MCP governance and compliance",
+      "AI registry",
+      "Evaluation and verification",
+      "Identity and access control"
+    ],
+    "description": "The SAP AI Agent Hub is a command center for enterprise AI agent management. It provides governance across the lifecycle of agents, from discovery through to decommissioning.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Analytics Cloud in Business Data Cloud": {
+    "name": "SAP Analytics Cloud in Business Data Cloud",
+    "url": "https://www.sap.com/products/data-cloud/cloud-analytics.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Learn how cloud analytics technology enables data visualization and improved business intelligence with SAP Analytics Cloud.",
+    "capabilities": [
+      "Unlock unified analytics and planning capabilities to:",
+      "Make faster decisions with trusted AI",
+      "Deliver analytics with full business context",
+      "Unify financial and operational planning",
+      "Analytics and planning with Joule",
+      "Natural language insights"
+    ],
+    "description": "Learn how cloud analytics technology enables data visualization and improved business intelligence with SAP Analytics Cloud.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Application Interface Framework": {
+    "name": "SAP Application Interface Framework",
+    "url": "https://www.sap.com/products/technology-platform/application-interface-mgmt.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Build, deploy, monitor, analyze, and manage your application interfaces from a single, centralized location with the SAP Application Interface Framework tool.",
+    "capabilities": [
+      "Simplify interface landscape and architecture",
+      "Reduce time needed for error handling",
+      "Improve governance across your system landscape",
+      "Guided deployment of application interface logic",
+      "Component reuse across multiple interfaces",
+      "Standardized support for integration technologies"
+    ],
+    "description": "Build, deploy, monitor, analyze, and manage your application interfaces from a single, centralized location with the SAP Application Interface Framework tool.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Archiving and Document Access by OpenText": {
+    "name": "SAP Archiving and Document Access by OpenText",
+    "url": "https://www.sap.com/products/technology-platform/documents-access-archiving.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Available for SAP Archiving and Document Access by OpenText",
+    "capabilities": [
+      "Reduce your risk by improving compliance processes",
+      "Permanently decommission legacy systems with confidence",
+      "Speed consolidations, upgrades, and migrations",
+      "Access archived, integrated content from anywhere",
+      "Rest easy with secure document storage",
+      "Assure long-term transaction-level access to financials"
+    ],
+    "description": "Available for SAP Archiving and Document Access by OpenText",
+    "scraped_at": "2026-06-27"
+  },
+  "Procure-to-pay applications": {
+    "name": "Procure-to-pay applications",
+    "url": "https://www.sap.com/products/spend-management/procure-to-pay.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Achieve sustainable savings",
+      "Increase spend coverage",
+      "Improve procurement efficiency",
+      "Guided buying capability",
+      "Network-based collaboration",
+      "Catalog content"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Catalog": {
+    "name": "SAP Ariba Catalog",
+    "url": "https://www.sap.com/products/spend-management/ariba-catalog.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain greater compliance and control",
+      "Reduce costs",
+      "Enable integration for lower risk",
+      "Faster and comprehensive procurement catalog enablement",
+      "Improved experience for users",
+      "Support for multiple procurement catalog types"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Category Management": {
+    "name": "SAP Ariba Category Management",
+    "url": "https://www.sap.com/products/spend-management/category-management-software.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Make better decisions and increase cost savings",
+      "Focus more on strategy and value creation",
+      "Create consistent category management frameworks",
+      "Manage category strategy execution",
+      "Simplified creation of category spend profiles",
+      "Guided process for strategy and plan development"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Central Procurement": {
+    "name": "SAP Ariba Central Procurement",
+    "url": "https://www.sap.com/products/spend-management/centralized-procurement.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Achieve companywide visibility",
+      "Gain a clear view of spending",
+      "Improve productivity",
+      "Reduce procurement costs",
+      "Guard against market fluctuations",
+      "Enforce policies and best practices"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Direct procurement software": {
+    "name": "Direct procurement software",
+    "url": "https://www.sap.com/products/spend-management/direct-procurement-software.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Accelerate time to market",
+      "Prevent value leakage from negotiated contracts",
+      "Reduce cost and better manage price volatility",
+      "Procurement project planning for product launches",
+      "Seamless digital thread unifies process end-to-end",
+      "Advanced collaboration"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Contract management software": {
+    "name": "Contract management software",
+    "url": "https://www.sap.com/products/spend-management/contract-management-software.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase visibility and control",
+      "Boost speed and efficiency",
+      "Increase savings and compliance",
+      "Centralized contract management",
+      "AI-enabled workflows",
+      "Built-in analytics and collaboration"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Invoice Management": {
+    "name": "SAP Ariba Invoice Management",
+    "url": "https://www.sap.com/products/spend-management/ariba-invoice-management.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Automate invoicing and realize new savings",
+      "Solve compliance problems around the globe",
+      "Improve user experiences for maximum impact",
+      "Automated reconciliation and approval",
+      "Customizable workflows and user configuration",
+      "Confidence-boosting compliance tools"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Snap": {
+    "name": "SAP Ariba Snap",
+    "url": "https://www.sap.com/products/spend-management/ariba-snap.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Achieve greater savings faster",
+      "Enable stronger compliance",
+      "Strengthen supplier relationships",
+      "Process automation for procurement",
+      "Centralized supplier marketplace",
+      "Quick deployment and rapid ROI"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Invoicing": {
+    "name": "SAP Ariba Invoicing",
+    "url": "https://www.sap.com/products/spend-management/ariba-invoicing.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Best-in-class user experience",
+      "Invoice processing virtually from almost any source",
+      "AI-native insights and automation",
+      "Procurement and business suite synergies",
+      "Powerful multi-model AI OCR data extraction",
+      "Global reach through SAP Business Network"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Sourcing software": {
+    "name": "SAP Ariba Sourcing software",
+    "url": "https://www.sap.com/products/spend-management/ariba-sourcing.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Boost savings and continuity",
+      "Simplify the entire sourcing process",
+      "Create a connected procurement ecosystem",
+      "Streamlined sourcing processes",
+      "Accelerated sourcing with Joule",
+      "Supplier discovery and onboarding"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Asset Performance Management": {
+    "name": "SAP Asset Performance Management",
+    "url": "https://www.sap.com/products/scm/apm.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Balance risk, cost, and performance",
+      "Reduce maintenance spend",
+      "Increase asset availability",
+      "Risk estimation and evaluation",
+      "Proven reliability methodologies",
+      "AI-based predictive maintenance"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Supplier Lifecycle and Performance": {
+    "name": "SAP Ariba Supplier Lifecycle and Performance",
+    "url": "https://www.sap.com/products/spend-management/supplier-lifecycle.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Drive spend to preferred suppliers",
+      "Simplify the supplier management process",
+      "Scale compliance across your supply base",
+      "Accelerate supplier lifecycle activities",
+      "Incorporate supplier performance data in decision-making",
+      "Surface insights with AI-assisted data"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Supplier Risk": {
+    "name": "SAP Ariba Supplier Risk",
+    "url": "https://www.sap.com/products/spend-management/supplier-risk.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain deeper insight into risk",
+      "Drive compliance with embedded risk management",
+      "Deliver business, environmental, and social impact",
+      "Assessment",
+      "Mitigation",
+      "Monitoring"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Billing and Revenue Innovation Management": {
+    "name": "SAP Billing and Revenue Innovation Management",
+    "url": "https://www.sap.com/products/financial-management/billing-revenue-innovation-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Grow recurring revenues faster",
+      "Maximize customer lifetime value",
+      "Scale your business as it grows",
+      "Subscription management with maximum flexibility",
+      "Customer loyalty with personalization",
+      "Accurate and clear customer bills"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Batch Release Hub for Life Sciences": {
+    "name": "SAP Batch Release Hub for Life Sciences",
+    "url": "https://www.sap.com/products/scm/batch-release-hub.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Automate batch releases and maintain quality",
+      "Reduce compliance and risk management cost",
+      "Reduce order fulfillment lead time",
+      "Reduce inventory carrying costs",
+      "Release decision dashboard",
+      "Automatic data evaluation"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Audit Management": {
+    "name": "SAP Audit Management",
+    "url": "https://www.sap.com/products/financial-management/audit-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Streamline internal auditing with mobile capabilities",
+      "Adoption of a more strategic, advisory role",
+      "Risk assessment with greater speed and ease",
+      "Automated and accelerated audit process",
+      "Audit planning, management, and performance",
+      "Communication and monitoring of audit results"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Build apps quickly with low-code": {
+    "name": "Build apps quickly with low-code",
+    "url": "https://www.sap.com/products/technology-platform/low-code-app-builder.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "SAP Build for SAP S/4HANA Cloud",
+    "capabilities": [
+      "What is the path forward for SAP Build Apps?",
+      "What is SAP Build Apps?​",
+      "Why do you need SAP Build Apps?​",
+      "What type of applications can be created?​",
+      "How do I integrate SAP Build Apps with other SAP solutions?​",
+      "Where can I deploy SAP Build Apps?​"
+    ],
+    "description": "SAP Build for SAP S/4HANA Cloud",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Broker Reconciliation for Commodity Derivatives": {
+    "name": "SAP Broker Reconciliation for Commodity Derivatives",
+    "url": "https://www.sap.com/products/financial-management/broker-reconciliation-commodity-derivatives.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Reducing financial commodity risk exposure",
+      "Closing trading books in less time",
+      "Lowering IT spend",
+      "Information provisioning",
+      "Technology and platform",
+      "Flexible reconciliation options"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Build": {
+    "name": "SAP Build",
+    "url": "https://www.sap.com/products/technology-platform/build.html",
+    "category": "Trials and tours",
+    "tagline": "Use natural language to create applications that are anchored in your business context.",
+    "capabilities": [
+      "Simplify from the start",
+      "Deploy in record time",
+      "Scale with confidence",
+      "Java and JavaScript",
+      "Process Automation",
+      "SAP Build Process Automation add-on by UiPath"
+    ],
+    "description": "Use natural language to create applications that are anchored in your business context.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Asset Information Workbench": {
+    "name": "SAP Asset Information Workbench",
+    "url": "https://www.sap.com/products/data-cloud/asset-information-workbench.html",
+    "error": "Navigation timeout of 30000 ms exceeded",
+    "scraped_at": "2026-06-27"
+  },
+  "Generative AI–based code development": {
+    "name": "Generative AI–based code development",
+    "url": "https://www.sap.com/products/technology-platform/developer-tools.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "SAP Build Code simplifies development with tools and services designed for extending SAP apps",
+    "capabilities": [
+      "Generative AI-based code development with Joule copilot",
+      "Tailored for SAP development",
+      "Enhanced fusion development",
+      "Accelerate SAP development with Joule for developers"
+    ],
+    "description": "SAP Build Code simplifies development with tools and services designed for extending SAP apps",
+    "scraped_at": "2026-06-27"
+  },
+  "Process Automation with SAP Build": {
+    "name": "Process Automation with SAP Build",
+    "url": "https://www.sap.com/products/technology-platform/process-automation.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "SAP Process Automation empowers everyone in your organization to automate and transform business processes with an easy-to-use no-code experience.",
+    "capabilities": [
+      "Fast-track time to value",
+      "Create and extend processes with confidence",
+      "Deliver results your users and leaders can trust",
+      "Low-code simplicity",
+      "AI assistance with Joule",
+      "Prebuilt content"
+    ],
+    "description": "SAP Process Automation empowers everyone in your organization to automate and transform business processes with an easy-to-use no-code experience.",
+    "scraped_at": "2026-06-27"
+  },
+  "Create low-code digital workspaces": {
+    "name": "Create low-code digital workspaces",
+    "url": "https://www.sap.com/products/technology-platform/workzone.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Improve productivity company-wide by providing a personalized, integrated digital experience across multiple touch points with SAP Work Zone.",
+    "capabilities": [
+      "Build workspaces quickly",
+      "Connect enterprise applications with ease",
+      "Work together smarter",
+      "Access information faster with AI",
+      "Better experiences result in lower turnover",
+      "Product tour"
+    ],
+    "description": "Improve productivity company-wide by providing a personalized, integrated digital experience across multiple touch points with SAP Work Zone.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Build Process Automation add-ons by UiPath": {
+    "name": "SAP Build Process Automation add-ons by UiPath",
+    "url": "https://www.sap.com/products/technology-platform/process-automation-extensions.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Enhance enterprise automation with the foundation add-on by UiPath, integrated into¬ SAP for seamless end-to-end RPA and AI-driven process execution.",
+    "capabilities": [
+      "SAP Build Process Automation, foundation add-on by UiPath",
+      "Unified developer experience",
+      "Accelerate your RISE journey",
+      "Automate across all your enterprise systems",
+      "Holistic monitoring"
+    ],
+    "description": "Enhance enterprise automation with the foundation add-on by UiPath, integrated into¬ SAP for seamless end-to-end RPA and AI-driven process execution.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Application Studio": {
+    "name": "SAP Business Application Studio",
+    "url": "https://www.sap.com/products/technology-platform/business-application-studio.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "SAP Business Application Studio is a cloud-based professional developer tool for building applications and extending SAP solutions.",
+    "capabilities": [
+      "Professional full-stack development",
+      "Productivity tools",
+      "Native development on SAP HANA",
+      "Development with SAP Fiori",
+      "48% reduction in customer complaints",
+      "Sign up for the learning journey"
+    ],
+    "description": "SAP Business Application Studio is a cloud-based professional developer tool for building applications and extending SAP solutions.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Integrity Screening": {
+    "name": "SAP Business Integrity Screening",
+    "url": "https://www.sap.com/products/financial-management/fraud-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Scan large volumes of data in real time with increased accuracy",
+      "Productive minimization of fraud risk",
+      "Continuous prevention and deterrence",
+      "Fine-tuned detection strategies",
+      "Exception detection and compliance checks",
+      "Business partner screening"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Data Cloud": {
+    "name": "SAP Business Data Cloud",
+    "url": "https://www.sap.com/products/data-cloud.html",
+    "category": "All products",
+    "tagline": "Discover SAP Business Data Cloud, a comprehensive SaaS solution connecting all your mission-critical data, enabling actionable insights and reliable AI.",
+    "capabilities": [
+      "Accelerate AI with mission-critical data products",
+      "Run best of breed compute for every workload",
+      "Anchor agentic AI with a business data fabric",
+      "SAP Analytics Cloud",
+      "SAP Datasphere",
+      "SAP Business Warehouse"
+    ],
+    "description": "Discover SAP Business Data Cloud, a comprehensive SaaS solution connecting all your mission-critical data, enabling actionable insights and reliable AI.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Network Freight Collaboration": {
+    "name": "SAP Business Network Freight Collaboration",
+    "url": "https://www.sap.com/products/business-network/freight-collaboration.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Reduce logistics costs",
+      "Optimize utilization",
+      "Improve performance",
+      "Freight order collaboration",
+      "Dock appointment scheduling",
+      "Shipment execution and document exchange"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business ByDesign": {
+    "name": "SAP Business ByDesign",
+    "url": "https://www.sap.com/products/erp/business-bydesign.html",
+    "category": "Enterprise resource planning",
+    "tagline": "Manage and connect your core processes with SAP Business ByDesign, scalable cloud ERP for midmarket companies and subsidiaries.",
+    "capabilities": [
+      "Securing entrepreneurs’ futures"
+    ],
+    "description": "Manage and connect your core processes with SAP Business ByDesign, scalable cloud ERP for midmarket companies and subsidiaries.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Network Commerce Automation": {
+    "name": "SAP Business Network Commerce Automation",
+    "url": "https://www.sap.com/products/business-network/commerce-automation.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Improve procurement compliance",
+      "Automate spend management processes",
+      "Provide end-to-end visibility to your suppliers",
+      "Supplier collaboration",
+      "Regulatory and business process compliance",
+      "Automated procurement workflows"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Network Asset Collaboration": {
+    "name": "SAP Business Network Asset Collaboration",
+    "url": "https://www.sap.com/products/business-network/asset-collaboration.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Maximize uptime",
+      "Improve asset data integrity and completeness",
+      "Enhance equipment effectiveness",
+      "Central asset repository",
+      "Collaborative data handover",
+      "Collaborative work order"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Network Material Traceability": {
+    "name": "SAP Business Network Material Traceability",
+    "url": "https://www.sap.com/products/business-network/material-traceability.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Protect your brand",
+      "Streamline recalls",
+      "Measure sustainability",
+      "Multi-ingredient and multicomponent traceability",
+      "Real-time dynamic visualization",
+      "Precision alerts through the network"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Network Global Track and Trace": {
+    "name": "SAP Business Network Global Track and Trace",
+    "url": "https://www.sap.com/products/business-network/global-track-and-trace.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Reduce costs",
+      "Mitigate risk",
+      "Elevate your customer experience",
+      "Shipment and fulfillment monitoring",
+      "Impact detection and notification",
+      "Global network integration"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business One": {
+    "name": "SAP Business One",
+    "url": "https://www.sap.com/products/erp/business-one.html",
+    "category": "Enterprise resource planning",
+    "tagline": "Gain greater control over your small business with the SAP Business One application. Streamline processes by using ERP software designed to grow with you.",
+    "capabilities": [
+      "Gain greater control over your business or subsidiary",
+      "Reaching next-level business across three countries",
+      "Creating and distributing toys beyond child's play",
+      "Controlling the production of over 5,000 tons of grapes annually",
+      "Get started with SAP Business One",
+      "What is SAP Business One used for?"
+    ],
+    "description": "Gain greater control over your small business with the SAP Business One application. Streamline processes by using ERP software designed to grow with you.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Network Supply Chain Collaboration": {
+    "name": "SAP Business Network Supply Chain Collaboration",
+    "url": "https://www.sap.com/products/business-network/supply-chain-collaboration.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Improve trading partner collaboration",
+      "Drive supply chain resiliency",
+      "Gain transparency and visibility",
+      "Forecast collaboration",
+      "Procurement collaboration",
+      "Inventory collaboration"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Network Planning Collaboration": {
+    "name": "SAP Business Network Planning Collaboration",
+    "url": "https://www.sap.com/products/business-network/planning-collaboration.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Improve supply planning",
+      "Reduce lead times",
+      "Assure supply and delivery",
+      "Forecast visibility",
+      "Component planning collaboration",
+      "External manufacturing visibility"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Planning and Consolidation": {
+    "name": "SAP Business Planning and Consolidation",
+    "url": "https://www.sap.com/products/data-cloud/bpc.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Streamline planning and achieve a faster, more accurate close with the SAP Business Planning and Consolidation (SAP BPC) application.",
+    "capabilities": [
+      "Make better decisions",
+      "Improve collaboration",
+      "Increase efficiency",
+      "Unified planning and consolidation",
+      "Microsoft Office and Web Reporting",
+      "Budgeting and forecasting"
+    ],
+    "description": "Streamline planning and achieve a faster, more accurate close with the SAP Business Planning and Consolidation (SAP BPC) application.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP BusinessObjects Business Intelligence suite": {
+    "name": "SAP BusinessObjects Business Intelligence suite",
+    "url": "https://www.sap.com/products/data-cloud/bi-platform.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Easily discover and share insights on our BI platform. This scalable information architecture gives all users self-service access to business intelligence.",
+    "capabilities": [
+      "SAP BusinessObjects BI (user)",
+      "SAP BusinessObjects BI (CS)"
+    ],
+    "description": "Easily discover and share insights on our BI platform. This scalable information architecture gives all users self-service access to business intelligence.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Career and Talent Development": {
+    "name": "SAP SuccessFactors Career and Talent Development",
+    "url": "https://www.sap.com/products/hcm/career-talent-development.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Engage with a personalized, guided experience",
+      "Grow through continuous development",
+      "Fuel future readiness with skill-driven talent planning",
+      "Intuitive, seamless experiences",
+      "Tailored, AI-driven interactions and recommendations",
+      "Tools that center your strategy on skills"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Central Finance Master Data Replication by insightsoftware for SAP S/4HANA": {
+    "name": "SAP Central Finance Master Data Replication by insightsoftware for SAP S/4HANA",
+    "url": "https://www.sap.com/products/financial-management/central-finance-master-data.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplify data integration across your central finance function",
+      "Single source of trusted finance insight",
+      "Simplify the implementation of SAP S/4HANA",
+      "Enhanced operations and shared services",
+      "Consolidated central finance master data",
+      "Data extraction, preparation, and uploading"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Cash Application": {
+    "name": "SAP Cash Application",
+    "url": "https://www.sap.com/products/financial-management/cash-application.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Lowering days sales outstanding with machine learning",
+      "Reducing total cost of ownership and time to value",
+      "Scaling as your business grows with shared services",
+      "Flexible receivable matching process",
+      "Increased automation with machine learning",
+      "Extraction of information from payment advice"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Cloud Appliance Library": {
+    "name": "SAP Cloud Appliance Library",
+    "url": "https://www.sap.com/products/technology-platform/cloud-appliance-library.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Quickly test, deploy, and use the latest SAP applications in the cloud. SAP Cloud Appliance Library tool provides an online repository of preconfigured virtual appliances to get you up and running in record time.",
+    "capabilities": [
+      "Simplify IT consumption",
+      "Innovate faster",
+      "Optimize costs",
+      "Hyperscaler integration",
+      "Intuitive launch wizard",
+      "Expandable storage"
+    ],
+    "description": "Quickly test, deploy, and use the latest SAP applications in the cloud. SAP Cloud Appliance Library tool provides an online repository of preconfigured virtual appliances to get you up and running in record time.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Change Impact Analysis by Tricentis": {
+    "name": "SAP Change Impact Analysis by Tricentis",
+    "url": "https://www.sap.com/products/technology-platform/change-impact-analysis.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Know the effects of software changes, updates, and upgrades across end-to-end processes with the SAP Change Impact Analysis application by Tricentis.",
+    "capabilities": [
+      "Accelerate testing to transform your business",
+      "Boost the quality of software updates and upgrades",
+      "Reduce costs by focusing on high-risk areas",
+      "AI-based analysis of software change impacts",
+      "Integration with SAP Fiori apps and ABAP solutions",
+      "Web-based interface and dashboard reporting"
+    ],
+    "description": "Know the effects of software changes, updates, and upgrades across end-to-end processes with the SAP Change Impact Analysis application by Tricentis.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Cloud Public Edition, a foundational application of SAP Cloud ERP": {
+    "name": "SAP S/4HANA Cloud Public Edition, a foundational application of SAP Cloud ERP",
+    "url": "https://www.sap.com/products/erp/s4hana.html",
+    "category": "Enterprise resource planning",
+    "tagline": "Get started with SAP S/4HANA Cloud Public Edition, a modular ERP solution designed to bring built-in AI to your core business process so you can scale without limits.",
+    "capabilities": [
+      "SAP S/4HANA Cloud Public Edition helps you:",
+      "for delivery of initial scope*",
+      "decrease in implementation cost",
+      "quicker time-to-value",
+      "Proven best practices",
+      "Fast time to value"
+    ],
+    "description": "Get started with SAP S/4HANA Cloud Public Edition, a modular ERP solution designed to bring built-in AI to your core business process so you can scale without limits.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Central Finance Transaction Replication by insightsoftware for SAP S/4HANA": {
+    "name": "SAP Central Finance Transaction Replication by insightsoftware for SAP S/4HANA",
+    "url": "https://www.sap.com/products/financial-management/central-finance-transaction-replication.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Support a faster, more cost-effective implementation",
+      "Facilitating data integration for central finance",
+      "Enabling agile, intelligent finance operations",
+      "Reducing integration cost, risk, and effort",
+      "Data integration across source systems",
+      "Transaction replication and source data access"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Channel Program Management by Vistex": {
+    "name": "SAP Channel Program Management by Vistex",
+    "url": "https://www.sap.com/products/financial-management/channel-program-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Enhance customer and partner satisfaction",
+      "Maximize profitability",
+      "Make more-informed decisions",
+      "Partner claims processing",
+      "Sales rebate programs",
+      "Co-op and market development funds management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Cloud ERP Private": {
+    "name": "SAP Cloud ERP Private",
+    "url": "https://www.sap.com/products/erp/cloud-erp-private.html",
+    "category": "Enterprise resource planning",
+    "tagline": "Learn about SAP Cloud ERP Private, our cloud ERP that can be customized to meet all your business needs and hosted by SAP, a hyperscaler, or on your own data center.",
+    "capabilities": [
+      "Connected domain intelligence",
+      "Adaptive, extensible platform",
+      "Trusted managed foundation",
+      "Future-proof your business",
+      "Boost productivity and accuracy",
+      "Increase visibility with a unified data foundation"
+    ],
+    "description": "Learn about SAP Cloud ERP Private, our cloud ERP that can be customized to meet all your business needs and hosted by SAP, a hyperscaler, or on your own data center.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Commerce Marketplace Management by Mirakl": {
+    "name": "SAP Commerce Marketplace Management by Mirakl",
+    "url": "https://www.sap.com/products/crm/commerce-marketplace-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Bring your digital marketplace to life",
+      "Support and automate your purchasing processes",
+      "Enrich commerce to improve your bottom line",
+      "Fast onboarding",
+      "Scaled control",
+      "Complex order management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Cloud Identity Access Governance": {
+    "name": "SAP Cloud Identity Access Governance",
+    "url": "https://www.sap.com/products/financial-management/cloud-iam.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Streamline IAM in complex on-premise and cloud environments",
+      "Simplified governance of data access",
+      "Delivery of a smooth user experience",
+      "Adaptive identity and access governance",
+      "Access compliance management",
+      "Intelligent optimization of assignments"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Manage water and energy data based on Big Data technology": {
+    "name": "Manage water and energy data based on Big Data technology",
+    "url": "https://www.sap.com/products/scm/cloud-for-energy.html",
+    "category": "Supply chain management",
+    "tagline": "SAP’s public cloud solution for the digital economy of the energy industry combines a Big Data–enabled energy & water data management on an open platform with easy-to-manage integration into established processes and IT infrastructures, along with sm",
+    "capabilities": [
+      "Improved process efficiency",
+      "Reduced total cost of ownership",
+      "Enhanced decision-making process",
+      "Details",
+      "Compatibility",
+      "Operational monitoring to analyze metering data"
+    ],
+    "description": "SAP’s public cloud solution for the digital economy of the energy industry combines a Big Data–enabled energy & water data management on an open platform with easy-to-manage integration into established processes and IT infrastructures, along with smart and industry-relevant analytical capabilities.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Commerce Cloud": {
+    "name": "SAP Commerce Cloud",
+    "url": "https://www.sap.com/products/crm/commerce-cloud.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Grow sales across every channel",
+      "Reduce TCO and accelerate time to value",
+      "Uncover insights and provide transparency",
+      "Create seamless unified commerce experiences",
+      "Stay future ready with AI innovation",
+      "Tailor to your unique business"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Complaint Handling | Complaint Management Software": {
+    "name": "SAP Complaint Handling | Complaint Management Software",
+    "url": "https://www.sap.com/products/scm/complaint-handling.html",
+    "category": "Supply chain management",
+    "tagline": "SAP Complaint Handling helps companies manage complaints seamlessly from end to end by breaking silos between different departments. It provides a centralized cockpit enabling seamless orchestration of various types of complaints, whether they are re",
+    "capabilities": [
+      "Increased supplier recovery ratio",
+      "Decreased logistics costs",
+      "Reduced time to process and settle complaints",
+      "Details",
+      "Compatibility",
+      "Complaint orchestration"
+    ],
+    "description": "SAP Complaint Handling helps companies manage complaints seamlessly from end to end by breaking silos between different departments. It provides a centralized cockpit enabling seamless orchestration of various types of complaints, whether they are received from customers or created towards suppliers",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Content Management Core by OpenText": {
+    "name": "SAP Content Management Core by OpenText",
+    "url": "https://www.sap.com/products/technology-platform/content-management-core.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Available for SAP Content Management Core by OpenText",
+    "capabilities": [
+      "Greater productivity and information flow",
+      "Improved collaboration and overall efficiency",
+      "Enhanced corporate record management",
+      "Document management",
+      "Records management",
+      "Microsoft Office 365 integration"
+    ],
+    "description": "Available for SAP Content Management Core by OpenText",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Commodity Management": {
+    "name": "SAP Commodity Management",
+    "url": "https://www.sap.com/products/scm/commodity-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Fast and efficient commodity procurement and sales",
+      "Better handling of complex hedging scenarios",
+      "Proactive price risk exposure management",
+      "Commodity physicals",
+      "Commodity derivatives",
+      "Commodity risk analytics"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP CPQ": {
+    "name": "SAP CPQ",
+    "url": "https://www.sap.com/products/financial-management/cpq.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Provide a richer customer experience",
+      "Increasing sales effectiveness",
+      "Enhancing operational efficiency",
+      "Working smarter",
+      "Configuration optimization",
+      "Margin protection and expansion"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Corporate Serialization": {
+    "name": "SAP Corporate Serialization",
+    "url": "https://www.sap.com/products/scm/corporate-serialization.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Close the product lifecycle knowledge gap",
+      "Monitor the integrity of product distribution",
+      "Achieve product lifecycle intelligence",
+      "Corporate object event repository",
+      "Central-level serial number management",
+      "Integration"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Content Stream by Skillsoft": {
+    "name": "SAP Content Stream by Skillsoft",
+    "url": "https://www.sap.com/products/hcm/content-stream-skillsoft.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Provide tailored learning",
+      "Centralize management",
+      "Close critical skill gaps",
+      "Deep and broad content",
+      "Multimodal learning",
+      "Native language capabilities"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Crystal solutions": {
+    "name": "SAP Crystal solutions",
+    "url": "https://www.sap.com/products/data-cloud/crystal-bi.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Provide ready-to-consume information as reports and dashboards to colleagues, suppliers, partners, and customers.",
+    "capabilities": [
+      "SAP Crystal Server",
+      "SAP Crystal Reports",
+      "TrustRadius",
+      "What are SAP Crystal solutions?",
+      "What is included in the SAP Crystal Solution portfolio?",
+      "How do SAP Crystal Reports and SAP Crystal Server work together?"
+    ],
+    "description": "Provide ready-to-consume information as reports and dashboards to colleagues, suppliers, partners, and customers.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Convergent Mediation by DigitalRoute": {
+    "name": "SAP Convergent Mediation by DigitalRoute",
+    "url": "https://www.sap.com/products/financial-management/convergent-mediation.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Optimize data monetization and impact your bottom line",
+      "Faster introduction of new business models",
+      "Visibility into revenue stream processing",
+      "Less revenue loss and revenue leakage",
+      "Business models for the connected economy",
+      "Monetization of digital offerings"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Crystal Server": {
+    "name": "SAP Crystal Server",
+    "url": "https://www.sap.com/products/data-cloud/crystal-server.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Run standard reports on a flexible schedule and distribute them efficiently while minimizing repetitive use of databases.",
+    "capabilities": [
+      "Start with SAP Crystal Server 2025 (user)",
+      "Optimize with SAP Crystal Server 2025 (CS)",
+      "Start with SAP Crystal Server 2020 (user)",
+      "Optimize with SAP Crystal Server 2020 (CS)",
+      "Get access to your 60-day trial experience",
+      "TrustRadius"
+    ],
+    "description": "Run standard reports on a flexible schedule and distribute them efficiently while minimizing repetitive use of databases.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Crystal Reports": {
+    "name": "SAP Crystal Reports",
+    "url": "https://www.sap.com/products/data-cloud/crystal-reports.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Add flexibility to your reporting with the use of product wizards and parameters.",
+    "capabilities": [
+      "Deliver a flexible report design solution for advanced users",
+      "Efficiently share your business data",
+      "Access your business data",
+      "SAP Crystal Reports 2025 (64 bit) 1 user",
+      "SAP Crystal Reports 2020 (64 bit) 1 User"
+    ],
+    "description": "Add flexibility to your reporting with the use of product wizards and parameters.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Customer Data Platform": {
+    "name": "SAP Customer Data Platform",
+    "url": "https://www.sap.com/products/data-cloud/customer-data-platform.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "SAP Customer Data Platform and customer data management solutions from SAP provide an enterprise solution for increased conversion rates and enhanced customer experiences.",
+    "capabilities": [
+      "Gain a deep understanding of your customers",
+      "Get the most value from customer data",
+      "Grow your business through focused engagement",
+      "Gaining a 360-degree view of the customer",
+      "Reaching 100+ countries with digital customer engagement",
+      "Reaching ~1,000 daily logins to the mobile app"
+    ],
+    "description": "SAP Customer Data Platform and customer data management solutions from SAP provide an enterprise solution for increased conversion rates and enhanced customer experiences.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Dairy Management by msg": {
+    "name": "SAP Dairy Management by msg",
+    "url": "https://www.sap.com/products/scm/dairy-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Accelerate decision-making with real-time insight",
+      "Increase end-to-end process visibility",
+      "Reduce production cost and loss",
+      "Efficient raw material and production planning",
+      "Dairy and cheese production",
+      "Dairy activity-based costing"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Customer Activity Repository applications bundle": {
+    "name": "SAP Customer Activity Repository applications bundle",
+    "url": "https://www.sap.com/products/crm/customer-activity-repository.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase revenue",
+      "Improve customer service",
+      "Reduce inventory and write-offs",
+      "Multichannel sales repository",
+      "Replenishment planning",
+      "Assortment planning"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Customer Identity and Access Management": {
+    "name": "SAP Customer Identity and Access Management",
+    "url": "https://www.sap.com/products/technology-platform/customer-identity.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Available for Cloud test and demo for Customer Identity and Access Management for B2C, contacts, access",
+    "capabilities": [
+      "Help secure users and safeguard data",
+      "Optimize customer consent",
+      "Scale with enterprise needs",
+      "Passwordless authentication",
+      "Maximized data activation",
+      "Unified consent management"
+    ],
+    "description": "Available for Cloud test and demo for Customer Identity and Access Management for B2C, contacts, access",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Data Intelligence Cloud": {
+    "name": "SAP Data Intelligence Cloud",
+    "url": "https://www.sap.com/products/data-cloud/data-intelligence.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Connect data assets and transform them into critical business insights with the SAP Data Intelligence Cloud service.",
+    "capabilities": [
+      "Using data intelligence to process distributed data",
+      "SAP earns TrustRadius' Top Rated award given by its customers in 2022",
+      "Listen to this podcast series on all things data",
+      "SAP recognized as leader in data integration tools",
+      "What is SAP Data Intelligence Cloud?",
+      "Why is SAP Data Intelligence Cloud necessary?"
+    ],
+    "description": "Connect data assets and transform them into critical business insights with the SAP Data Intelligence Cloud service.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Data Services": {
+    "name": "SAP Data Services",
+    "url": "https://www.sap.com/products/data-cloud/data-services.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Unlock meaning from all of your organization’s data – structured or unstructured – with SAP Data Services software. Turn your data into a trusted, ever-ready resource with some of the very best functionality for data integration, quality, and cleansi",
+    "capabilities": [
+      "Enterprise data management software",
+      "Access data for a broader perspective",
+      "Achieve information management excellence",
+      "Connect data to discover insights",
+      "Universal data access",
+      "Native-text data processing"
+    ],
+    "description": "Unlock meaning from all of your organization’s data – structured or unstructured – with SAP Data Services software. Turn your data into a trusted, ever-ready resource with some of the very best functionality for data integration, quality, and cleansing.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Datasphere in Business Data Cloud": {
+    "name": "SAP Datasphere in Business Data Cloud",
+    "url": "https://www.sap.com/products/data-cloud/datasphere.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Learn about SAP Datasphere, a comprehensive data service that enables every data professional to deliver seamless and scalable access to mission-critical business data for more impactful decision-making.",
+    "capabilities": [
+      "Preserve business context across all your data",
+      "Simplify your data landscape",
+      "Deliver trusted, AI-ready data",
+      "Unified data integration across every pattern",
+      "Analytical and semantic modeling",
+      "Knowledge graph for connected context"
+    ],
+    "description": "Learn about SAP Datasphere, a comprehensive data service that enables every data professional to deliver seamless and scalable access to mission-critical business data for more impactful decision-making.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Data Maintenance by Vistex": {
+    "name": "SAP Data Maintenance by Vistex",
+    "url": "https://www.sap.com/products/financial-management/data-maintenance.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Pricing data, generation, and analytics",
+      "Resource and information management",
+      "Data security",
+      "Compliance",
+      "Services",
+      "Support"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Data Quality Management, microservices for location data": {
+    "name": "SAP Data Quality Management, microservices for location data",
+    "url": "https://www.sap.com/products/data-cloud/data-quality-management.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Enhance contact data quality by embedding address cleansing, validation, and geocoding into any business process or application interface – with SAP Data Quality Management, microservices for location data.",
+    "capabilities": [
+      "Cut costs with cloud-based data quality services",
+      "Enable accurate location analytics",
+      "Improve customer satisfaction",
+      "Address validation and geocoding",
+      "Type-ahead autocompletion",
+      "Integration with SAP applications"
+    ],
+    "description": "Enhance contact data quality by embedding address cleansing, validation, and geocoding into any business process or application interface – with SAP Data Quality Management, microservices for location data.",
+    "scraped_at": "2026-06-27"
+  },
+  "Track and manage digital access across your system landscape": {
+    "name": "Track and manage digital access across your system landscape",
+    "url": "https://www.sap.com/products/financial-management/digital-access.html",
+    "category": "Financial management",
+    "tagline": "Adopt a clear approach to indirect usage by counting only document creation from third-party systems and using built-in reporting tools to support compliance and decision-making.",
+    "capabilities": [
+      "Increase transparency in third-party usage of SAP S/4HANA",
+      "Simplify compliance using consistent reporting",
+      "Adapt SAP Digital Access license capacity as needed",
+      "Details",
+      "Compatibility",
+      "Product documentation"
+    ],
+    "description": "Adopt a clear approach to indirect usage by counting only document creation from third-party systems and using built-in reporting tools to support compliance and decision-making.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Digital Manufacturing": {
+    "name": "SAP Digital Manufacturing",
+    "url": "https://www.sap.com/products/scm/digital-manufacturing.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Track and manage performance and foster cooperation",
+      "Orchestrate workforce around production priorities",
+      "Execute agile production plans",
+      "Promote quality, speedy production",
+      "Insights bundle with customizable parameters",
+      "Resource orchestration bundle"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Digital Asset Management Cloud by OpenText": {
+    "name": "SAP Digital Asset Management Cloud by OpenText",
+    "url": "https://www.sap.com/products/crm/digital-asset-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Enhance brand control with global access to content",
+      "Reduce operating costs with streamlined processes",
+      "Deliver a consistent experience across channels",
+      "Management of rich media from a single library",
+      "Enriched marketing processes",
+      "Consistent, omnichannel customer experience"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Document and Reporting Compliance": {
+    "name": "SAP Document and Reporting Compliance",
+    "url": "https://www.sap.com/products/financial-management/document-reporting-compliance.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase efficiency with standardization and automation",
+      "Boosting standardization, efficiency, and automation",
+      "Streamlining operations with scalable capabilities",
+      "Complying globally in an ever-changing digital world",
+      "Holistic dashboard, from e-documents to reporting",
+      "Automated e-documents and smooth corrections"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Digital Vehicle Suite": {
+    "name": "SAP Digital Vehicle Suite",
+    "url": "https://www.sap.com/products/scm/digital-vehicle-suite.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Speed order fulfillment",
+      "Enable greater flexibility",
+      "Improve operational insights",
+      "Vehicle management system",
+      "Digital vehicle hub",
+      "Data security"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP E-Mobility": {
+    "name": "SAP E-Mobility",
+    "url": "https://www.sap.com/products/scm/e-mobility.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Charge intelligently",
+      "Charge sustainably",
+      "Charge efficiently",
+      "Ecosystem",
+      "Charge point device management",
+      "Charging session management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Document Presentment by OpenText": {
+    "name": "SAP Document Presentment by OpenText",
+    "url": "https://www.sap.com/products/technology-platform/document-presentment.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Maximize the impact of customer communications by creating documents personalized for each customer with SAP Document Presentment application by OpenText.",
+    "capabilities": [
+      "Installation and setup",
+      "Configuration",
+      "Integration",
+      "Data security",
+      "Business process security",
+      "Risk and threat mitigation"
+    ],
+    "description": "Maximize the impact of customer communications by creating documents personalized for each customer with SAP Document Presentment application by OpenText.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Document AI | Intelligent Document Processing": {
+    "name": "SAP Document AI | Intelligent Document Processing",
+    "url": "https://www.sap.com/products/artificial-intelligence/document-ai.html",
+    "category": "All products",
+    "tagline": "Available for Document AI, premium edition",
+    "capabilities": [
+      "Boost productivity with automated, integrated workflows",
+      "Enhance accuracy and quality of file handling with AI",
+      "Simplify operations with an intuitive, secure experience",
+      "Flexible document intake and various input channels",
+      "Intuitive user experience",
+      "Advanced OCR with broad language support"
+    ],
+    "description": "Available for Document AI, premium edition",
+    "scraped_at": "2026-06-27"
+  },
+  "Automate digital compliance with Concur Invoice and Concur Expense globally": {
+    "name": "Automate digital compliance with Concur Invoice and Concur Expense globally",
+    "url": "https://www.sap.com/products/financial-management/document-and-reporting-compliance-cloud-edition-starter-option.html",
+    "category": "Financial management",
+    "tagline": "Centralize and ease the integration of SAP Concur solutions with tax authorities and business partners around the world. Kick-start your digital compliance with Concur Invoice and Concur Expense using the starter option. As business needs evolve, upg",
+    "capabilities": [
+      "Automate with e-invoices and built-in digital compliance",
+      "Respond rapidly to new and evolving regulations",
+      "Centralize compliance across solutions",
+      "Details",
+      "Compatibility",
+      "Register in the Peppol network"
+    ],
+    "description": "Centralize and ease the integration of SAP Concur solutions with tax authorities and business partners around the world. Kick-start your digital compliance with Concur Invoice and Concur Expense using the starter option. As business needs evolve, upgrade to scale compliance across SAP solutions.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Enable Now transitions to WalkMe": {
+    "name": "SAP Enable Now transitions to WalkMe",
+    "url": "https://www.sap.com/products/hcm/enable-now.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Creating a repository for intellectual property",
+      "Helping ensure a smooth transition to SAP S/4HANA",
+      "The benefits, costs, and risks of SAP Enable Now",
+      "What’s the difference between SAP Enable Now and WalkMe?",
+      "How can SAP Enable Now and WalkMe work together?",
+      "What is SAP Workforce Performance Builder?"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Enterprise Data Integrity Testing by Tricentis": {
+    "name": "SAP Enterprise Data Integrity Testing by Tricentis",
+    "url": "https://www.sap.com/products/technology-platform/enterprise-data-testing.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Automate data testing to maintain data accuracy —wherever your data travels and whatever happens to it on its journey.",
+    "capabilities": [
+      "Take back your time, money, and resources",
+      "Cut costs related to process inefficiencies and compliance issues",
+      "Fill the gaps in your data management software landscape",
+      "Extension of data management software",
+      "Data testing whenever and wherever you want",
+      "Improved data validation and business processes"
+    ],
+    "description": "Automate data testing to maintain data accuracy —wherever your data travels and whatever happens to it on its journey.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Enterprise Continuous Testing by Tricentis": {
+    "name": "SAP Enterprise Continuous Testing by Tricentis",
+    "url": "https://www.sap.com/products/technology-platform/enterprise-continuous-testing.html",
+    "category": "technology platform",
+    "tagline": "Streamline testing across SAP and third-party software with advanced automation, AI, and risk-based test plans.",
+    "capabilities": [
+      "Enable fast innovation and software release cycles",
+      "Reduce risks to critical business processes",
+      "Lower costs through earlier problem solving",
+      "Business-focused test automation",
+      "Sustainable automation for dynamic environments",
+      "Transparency and real-time insights"
+    ],
+    "description": "Streamline testing across SAP and third-party software with advanced automation, AI, and risk-based test plans.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Engagement Cloud": {
+    "name": "SAP Engagement Cloud",
+    "url": "https://www.sap.com/products/crm/engagement-cloud.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Power enterprise-wide performance with:",
+      "Activate data for real-time engagement",
+      "Personalize every interaction with AI",
+      "Connect experiences across the business",
+      "Scale operations with enterprise flexibility",
+      "Comprehensive omnichannel engagement"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Engineering Control Center": {
+    "name": "SAP Engineering Control Center",
+    "url": "https://www.sap.com/products/scm/engineering-control-center.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Integrate authoring tools across the value chain",
+      "Get a 360-degree product view",
+      "Improve quality management",
+      "Intuitive interface for authoring tools",
+      "Comprehensive integration features",
+      "Intelligent process support"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Enterprise Performance Testing by Tricentis": {
+    "name": "SAP Enterprise Performance Testing by Tricentis",
+    "url": "https://www.sap.com/products/technology-platform/enterprise-performance-testing.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "The SAP Enterprise Performance Testing by Tricentis gives you real-time visibility into enterprise application performance.",
+    "capabilities": [
+      "Improve understanding of application performance",
+      "Accelerate testing and issue resolution",
+      "Achieve better transparency and real-time insights",
+      "Powerful, efficient performance testing at scale",
+      "Insights into real-world performance",
+      "Run integrated solutions for full testing support"
+    ],
+    "description": "The SAP Enterprise Performance Testing by Tricentis gives you real-time visibility into enterprise application performance.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Enterprise Service Management": {
+    "name": "SAP Enterprise Service Management",
+    "url": "https://www.sap.com/products/crm/enterprise-service-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Centralize service delivery",
+      "Add flexibility with AI-assisted automation",
+      "Integrated and ready to use",
+      "AI-powered inquiry management",
+      "AI-assisted case management",
+      "Continuous insights and improvement"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Develop new products and services profitably": {
+    "name": "Develop new products and services profitably",
+    "url": "https://www.sap.com/products/scm/project-portfolio-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Align project investments with corporate goals",
+      "Streamline project planning and execution",
+      "Optimize resource allocation across projects",
+      "Portfolio management",
+      "Project management",
+      "Resource management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Start your free trial of SAP Enterprise Service Management": {
+    "name": "Start your free trial of SAP Enterprise Service Management",
+    "url": "https://www.sap.com/products/crm/enterprise-service-management/trial.html",
+    "category": "CRM and customer experience",
+    "tagline": "Explore SAP Enterprise Service Management capabilities and benefits. See how to drive efficiency, add flexibility, elevate operations with AI.",
+    "capabilities": [
+      "Access your free 30-day basic trial to:",
+      "What’s included in the basic trial?",
+      "What are the limitations of the basic trial?"
+    ],
+    "description": "Explore SAP Enterprise Service Management capabilities and benefits. See how to drive efficiency, add flexibility, elevate operations with AI.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Enterprise Threat Detection": {
+    "name": "SAP Enterprise Threat Detection",
+    "url": "https://www.sap.com/products/financial-management/enterprise-threat-detection.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Comply with data protection and audit regulations",
+      "Enhanced security",
+      "Insight into suspicious activities",
+      "Neutralized threats",
+      "Protected operations",
+      "Log correlation and analysis"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "What is SAP ERP?": {
+    "name": "What is SAP ERP?",
+    "url": "https://www.sap.com/products/erp/what-is-sap-erp.html",
+    "category": "Enterprise resource planning",
+    "tagline": "SAP ERP is a comprehensive software system that streamlines processes, improves productivity, and provides real-time insights across your entire organization.",
+    "capabilities": [
+      "SAP S/4HANA Cloud Public Edition",
+      "SAP S/4HANA Cloud Private Edition",
+      "Accounting and finance",
+      "Supply chain management",
+      "Sourcing and procurement",
+      "Human resources"
+    ],
+    "description": "SAP ERP is a comprehensive software system that streamlines processes, improves productivity, and provides real-time insights across your entire organization.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Entitlement Management": {
+    "name": "SAP Entitlement Management",
+    "url": "https://www.sap.com/products/financial-management/entitlement-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Meet the needs of increasingly savvy consumers",
+      "Increasing sales and revenue with greater intelligence",
+      "Accelerating innovation and delivering better outcomes",
+      "Helping your customers get the most value from entitlements",
+      "Central entitlement repository",
+      "Entitlement modeling and lifecycle management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Excise Tax Management by Vistex": {
+    "name": "SAP Excise Tax Management by Vistex",
+    "url": "https://www.sap.com/products/financial-management/excise-tax-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve tax calculation and reporting accuracy",
+      "Reduce tax accounting and reporting costs",
+      "Help ensure regulatory compliance",
+      "Excise tax master data management",
+      "Excise tax goods movement tracking",
+      "Excise tax value calculation"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Event Ticketing": {
+    "name": "SAP Event Ticketing",
+    "url": "https://www.sap.com/products/crm/event-ticketing.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Take control of event ticketing processes",
+      "Boost ticketing revenue and keep control of data",
+      "Reduce costs and streamline processes",
+      "Ticket management",
+      "Ticket sales",
+      "Fan and customer insights"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Extended Price Management by Vistex": {
+    "name": "SAP Extended Price Management by Vistex",
+    "url": "https://www.sap.com/products/financial-management/extended-price-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Enable business-defined pricing",
+      "Achieve pricing strategy objectives",
+      "Determine true profitability",
+      "Simplified price administration",
+      "Deal management",
+      "Price execution"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Extended Enterprise Content Management by OpenText": {
+    "name": "SAP Extended Enterprise Content Management by OpenText",
+    "url": "https://www.sap.com/products/technology-platform/enterprise-content-management.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Connect unstructured content to your business processes with the SAP Extended Enterprise Content Management application by OpenText, our ECM software.",
+    "capabilities": [
+      "Simplify access to all relevant information",
+      "Improve business efficiency",
+      "Mitigate compliance risk",
+      "Process-centric collaboration",
+      "Document management",
+      "Document capture"
+    ],
+    "description": "Connect unstructured content to your business processes with the SAP Extended Enterprise Content Management application by OpenText, our ECM software.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Field Service and Asset Management": {
+    "name": "SAP Field Service and Asset Management",
+    "url": "https://www.sap.com/products/scm/field-service-and-asset-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase workforce productivity",
+      "Empower technicians",
+      "Improve operational coordination",
+      "Planning, scheduling, and dispatch",
+      "Mobile-first field execution",
+      "AI-enhanced execution intelligence"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Extended Warehouse Management (SAP EWM)": {
+    "name": "SAP Extended Warehouse Management (SAP EWM)",
+    "url": "https://www.sap.com/products/scm/extended-warehouse-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Reduce inventory and labor cost",
+      "Increase process and stock transparency",
+      "Improve space utilization",
+      "Transforming the modern WMS landscape"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Fieldglass Contingent Workforce Management": {
+    "name": "SAP Fieldglass Contingent Workforce Management",
+    "url": "https://www.sap.com/products/hcm/contingent-workforce-management.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Mitigate cyberthreats and other risks",
+      "Manage your way to the best results",
+      "Create workforce capacity on demand",
+      "Source top talent quickly to meet market demands",
+      "Streamline payment, evaluation, and reports",
+      "Centrally manage processes with strict security"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Fieldglass Services Procurement": {
+    "name": "SAP Fieldglass Services Procurement",
+    "url": "https://www.sap.com/products/spend-management/services-procurement.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Secure better outcomes and cost optimization",
+      "Mitigate exposure to hidden risks",
+      "Boost productivity and results",
+      "Data-driven decision making",
+      "Track resource time and costs automatically",
+      "Manage compliance and mitigate risk with confidence"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Global Batch Traceability": {
+    "name": "SAP Global Batch Traceability",
+    "url": "https://www.sap.com/products/scm/global-batch-traceability.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve the monitoring of batch-product quality",
+      "Act swiftly when resolving quality defects",
+      "Capture and linking of batch usage across systems",
+      "In-the-moment report generation on batches",
+      "Data security",
+      "Compliance"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Green Token": {
+    "name": "SAP Green Token",
+    "url": "https://www.sap.com/products/scm/green-token.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Show your progress toward ESG commitments",
+      "Streamline risk mitigation",
+      "Ramp up quickly with a proven cloud solution",
+      "Declaration management",
+      "Segregated or mass balance accounting",
+      "Reporting and auditing"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Guided buying capability": {
+    "name": "Guided buying capability",
+    "url": "https://www.sap.com/products/spend-management/procure-to-pay/features/guided-buying.html",
+    "category": "Features",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increased user adoption",
+      "Improved compliance to reduce costs",
+      "Real-time guidance",
+      "Cost savings",
+      "Supplier management and collaboration",
+      "Internal collaboration"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Fieldglass Worker Profile Management": {
+    "name": "SAP Fieldglass Worker Profile Management",
+    "url": "https://www.sap.com/products/hcm/worker-profile-management.html",
+    "category": "hcm",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Strengthen business security",
+      "Streamline tracking of mandatory training",
+      "Get clarity on external worker information",
+      "Increase efficiency",
+      "Single source of truth for external worker data",
+      "Standardized data record and profile"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Grower Management for Perishables by Vistex": {
+    "name": "SAP Grower Management for Perishables by Vistex",
+    "url": "https://www.sap.com/products/scm/grower-management-for-perishables.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Allocate grower resources and analyze performance",
+      "Capture data and manage inventory in real time",
+      "Comply with good agricultural practices",
+      "Reliable grower contract management and support",
+      "Real-time receipt and traceability of produce",
+      "Faster settlements and financial processes"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP HANA Cloud in SAP Business Data Cloud": {
+    "name": "SAP HANA Cloud in SAP Business Data Cloud",
+    "url": "https://www.sap.com/products/data-cloud/hana.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "SAP HANA Cloud is a single database as a service (DBaaS) foundation for modern applications and analytics across all enterprise data.",
+    "capabilities": [
+      "Accelerate building agentic applications",
+      "Improve AI cost predictability and lower TCO",
+      "Scale with elastic infrastructure",
+      "Store and query multi-model data",
+      "Run native AI and semantic processing",
+      "Predict outcomes from structured data"
+    ],
+    "description": "SAP HANA Cloud is a single database as a service (DBaaS) foundation for modern applications and analytics across all enterprise data.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Global Trade Services": {
+    "name": "SAP Global Trade Services",
+    "url": "https://www.sap.com/products/financial-management/global-trade-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve efficiency",
+      "Reduce risk",
+      "Optimize operations",
+      "Sanctioned party list (SPL) screening",
+      "Customs management",
+      "Import and export management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Incentive Management": {
+    "name": "SAP Incentive Management",
+    "url": "https://www.sap.com/products/crm/incentive-compensation-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve selling behavior",
+      "Increase incentive compensation ROI",
+      "Reduce risk, payment errors, and comp disputes",
+      "Comprehensive incentive compensation management",
+      "Real-time payment and performance insight",
+      "AI recommendations and plan optimization"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Identity and access management": {
+    "name": "Identity and access management",
+    "url": "https://www.sap.com/products/financial-management/identity-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Oversee user identities, roles, and authorizations with confidence",
+      "Control the identity lifecycle smoothly",
+      "Lower costs and increase productivity",
+      "Manage identity data in one central location",
+      "Identity authentication",
+      "Identity provisioning"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Information Steward": {
+    "name": "SAP Information Steward",
+    "url": "https://www.sap.com/products/data-cloud/data-profiling-steward.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Maximize data integrity with SAP Information Steward software. The combination of data profiling, data lineage, and metadata management tools provides continuous insight into your enterprise data model.",
+    "capabilities": [
+      "Maximize your visibility into data quality metrics",
+      "Enhance data governance with consistent processes",
+      "Lower IT costs and complexity with one solution",
+      "Information governance",
+      "Data quality monitoring",
+      "Data-related cost savings"
+    ],
+    "description": "Maximize data integrity with SAP Information Steward software. The combination of data profiling, data lineage, and metadata management tools provides continuous insight into your enterprise data model.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Incentive Administration by Vistex": {
+    "name": "SAP Incentive Administration by Vistex",
+    "url": "https://www.sap.com/products/financial-management/incentive-administration.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase profits with more-effective go-to-market programs",
+      "Deliver effective programs and visualize performance",
+      "Empower and motivate your sales team",
+      "Rebate management",
+      "Complex program management",
+      "Program performance visualization"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Information Lifecycle Management": {
+    "name": "SAP Information Lifecycle Management",
+    "url": "https://www.sap.com/products/technology-platform/information-lifecycle-management.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Improve system performance by archiving data to low-cost storage according to data retention rules – with SAP Information Lifecycle Management.",
+    "capabilities": [
+      "Control your data volumes and manage your risk",
+      "Lower cost and complexity of your IT landscape",
+      "Data archiving and management",
+      "Retention management",
+      "System decommissioning",
+      "Data security"
+    ],
+    "description": "Improve system performance by archiving data to low-cost storage according to data retention rules – with SAP Information Lifecycle Management.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Integrated Business Planning": {
+    "name": "SAP Integrated Business Planning",
+    "url": "https://www.sap.com/products/scm/integrated-business-planning.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Predict demand through AI-powered algorithms",
+      "Empower planners with multilevel supply planning",
+      "Foster collaboration in one unified S&OP process",
+      "Forecasting and demand management",
+      "Response and supply planning",
+      "Sales and operations planning (S&OP)"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Integrated Product Development": {
+    "name": "SAP Integrated Product Development",
+    "url": "https://www.sap.com/products/scm/integrated-product-development.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Innovate new products quickly",
+      "Provide actionable information",
+      "Empower the enterprise",
+      "Define",
+      "Develop",
+      "Deliver"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Integration Suite | Integration Platform as a Service": {
+    "name": "SAP Integration Suite | Integration Platform as a Service",
+    "url": "https://www.sap.com/products/technology-platform/integration-suite.html",
+    "category": "Trials and tours",
+    "tagline": "Empower agents with secure, reliable APIs optimized for AI consumption.",
+    "capabilities": [
+      "SAP Integration Suite empowers businesses with:",
+      "Integrate AI agents, apps, and data with one solution",
+      "Govern and run all processes with confidence",
+      "Accelerate productivity with AI and prebuilt content",
+      "Reducing runtime costs by 50%",
+      "Scaling processes with 100,000 daily transactions"
+    ],
+    "description": "Empower agents with secure, reliable APIs optimized for AI consumption.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Intelligent Agriculture": {
+    "name": "SAP Intelligent Agriculture",
+    "url": "https://www.sap.com/products/scm/intelligent-agriculture.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Achieve consistency in your farming data",
+      "Increase productivity in farm management",
+      "Digitalize your own farming experience",
+      "Farm data management",
+      "Farming processes",
+      "Farming intelligence"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Intelligent Clinical Supply Management": {
+    "name": "SAP Intelligent Clinical Supply Management",
+    "url": "https://www.sap.com/products/scm/intelligent-clinical-supply-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Reduce cycle time and improve efficiency",
+      "Increase transparency",
+      "Optimize collaboration",
+      "Setup of complex clinical studies",
+      "Planning and forecasting",
+      "Intelligent manufacturing and packaging"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Intercompany Governance by BlackLine": {
+    "name": "SAP Intercompany Governance by BlackLine",
+    "url": "https://www.sap.com/products/financial-management/intercompany-governance-blackline.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Process optimization with governance and visibility",
+      "Simplified, connected, and transparent accounting tasks",
+      "Enhanced processing and handling of finance transactions",
+      "Centralized intercompany processing",
+      "Intercompany reconciliation and settlements",
+      "Global view with transparency and control"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP IQ": {
+    "name": "SAP IQ",
+    "url": "https://www.sap.com/products/data-cloud/sybase-iq-big-data-management.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Make Big Data your biggest ally with SAP IQ software, our extreme-scale relational database management system (RDBMS).",
+    "capabilities": [
+      "Scale to meet business needs",
+      "High-speed data loading",
+      "Cloud-ready, flexible deployment",
+      "Streamline IT administration tasks",
+      "Enterprise wide analytics",
+      "Now is the time to modernize with the cloud native version of SAP IQ"
+    ],
+    "description": "Make Big Data your biggest ally with SAP IQ software, our extreme-scale relational database management system (RDBMS).",
+    "scraped_at": "2026-06-27"
+  },
+  "Joule Agents and Joule Assistants": {
+    "name": "Joule Agents and Joule Assistants",
+    "url": "https://www.sap.com/products/artificial-intelligence/ai-agents.html",
+    "category": "All products",
+    "tagline": "Embedded in code, rules, and SAP Knowledge Graph as a reliable foundation for autonomous coordination.",
+    "capabilities": [
+      "Drive enterprise-scale productivity with:",
+      "Accelerate complex workflows",
+      "Simplify AI adoption",
+      "Realize AI value at scale",
+      "Joule Studio: Build trusted custom agentic solutions",
+      "SAP AI Agent Hub: Centrally manage and govern AI agents"
+    ],
+    "description": "Embedded in code, rules, and SAP Knowledge Graph as a reliable foundation for autonomous coordination.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Invoice Management by OpenText": {
+    "name": "SAP Invoice Management by OpenText",
+    "url": "https://www.sap.com/products/financial-management/invoice-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Integration",
+      "Automation",
+      "Optimization",
+      "Reporting",
+      "Integration and control",
+      "Reporting and compliance"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Joule Studio | Build AI Agents, Apps, and Workflows": {
+    "name": "Joule Studio | Build AI Agents, Apps, and Workflows",
+    "url": "https://www.sap.com/products/artificial-intelligence/joule-studio.html",
+    "category": "FAQ",
+    "tagline": "Build and deploy agents shaped by your business context.",
+    "capabilities": [
+      "Bring your next big idea to life",
+      "Build your way",
+      "Build with context",
+      "Build with confidence",
+      "Cut app development time by 25%",
+      "Eliminated manual data retrieval"
+    ],
+    "description": "Build and deploy agents shaped by your business context.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Joule for Consultants": {
+    "name": "SAP Joule for Consultants",
+    "url": "https://www.sap.com/products/artificial-intelligence/sap-consulting-capability.html",
+    "category": "All products",
+    "tagline": "Make consultants more efficient on SAP projects with AI assistance grounded in the most up-to-date and comprehensive knowledge base of SAP-focused content.",
+    "capabilities": [
+      "Accelerate project delivery by up to 14%*",
+      "Reduce knowledge search time",
+      "Interpret custom code faster",
+      "Cut rework and boost quality",
+      "Extensive, current, and gated content",
+      "Guidance aligned to your organization and projects"
+    ],
+    "description": "Make consultants more efficient on SAP projects with AI assistance grounded in the most up-to-date and comprehensive knowledge base of SAP-focused content.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Joule for Developers | The AI Copilot for SAP Developers": {
+    "name": "SAP Joule for Developers | The AI Copilot for SAP Developers",
+    "url": "https://www.sap.com/products/artificial-intelligence/joule-for-developers.html",
+    "category": "All products",
+    "tagline": "SAP Joule for Developers is a collection of embedded AI capabilities for SAP Build, delivered through Joule, that accelerates development of apps and extensions, reduces costs by 30%*, and improves developer proficiency.",
+    "capabilities": [
+      "Specialized",
+      "Comprehensive",
+      "Integrated",
+      "Engineered for ABAP excellence",
+      "Optimized for Java, JS, and low-code development",
+      "AI embedded where you build"
+    ],
+    "description": "SAP Joule for Developers is a collection of embedded AI capabilities for SAP Build, delivered through Joule, that accelerates development of apps and extensions, reduces costs by 30%*, and improves developer proficiency.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Landscape Transformation Replication Server": {
+    "name": "SAP Landscape Transformation Replication Server",
+    "url": "https://www.sap.com/products/data-cloud/landscape-replication-server.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Get real-time insights by moving your data from your IT systems and networks to SAP HANA in real time with SAP Landscape Transformation Replication Server.",
+    "capabilities": [
+      "Accelerate real-time replication",
+      "Reduce your volume of data",
+      "Create a central foundation for real-time finance",
+      "Reduced time and effort of configuration",
+      "Replication in large, distributed landscapes",
+      "Realization of transformative capabilities"
+    ],
+    "description": "Get real-time insights by moving your data from your IT systems and networks to SAP HANA in real time with SAP Landscape Transformation Replication Server.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Knowledge Graph | AI with Business Context": {
+    "name": "SAP Knowledge Graph | AI with Business Context",
+    "url": "https://www.sap.com/products/artificial-intelligence/knowledge-graph.html",
+    "category": "All products",
+    "tagline": "See how SAP Knowledge Graph enables Joule and AI agents to provide insights and business recommendations based on your customer database.",
+    "capabilities": [
+      "Trust your AI",
+      "Simplify your everyday work",
+      "Always be on top of your business",
+      "Safely run at your best",
+      "Elevate your workforce’s expertise",
+      "Gain peace of mind and reduce IT costs"
+    ],
+    "description": "See how SAP Knowledge Graph enables Joule and AI agents to provide insights and business recommendations based on your customer database.",
+    "scraped_at": "2026-06-27"
+  },
+  "Enterprise architecture management": {
+    "name": "Enterprise architecture management",
+    "url": "https://www.sap.com/products/business-transformation-management/enterprise-architecture-management.html",
+    "category": "All products",
+    "tagline": "SAP LeanIX gives your business a common language and single source of truth to make your transformations happen better, faster and with greater impact.",
+    "capabilities": [
+      "Unify data to establish a single source of truth",
+      "Accelerate transformation execution",
+      "Optimize IT spend",
+      "Drive successful transformation",
+      "Get assistance where enterprise architects need it",
+      "Evaluate your current software landscape"
+    ],
+    "description": "SAP LeanIX gives your business a common language and single source of truth to make your transformations happen better, faster and with greater impact.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Landscape Transformation": {
+    "name": "SAP Landscape Transformation",
+    "url": "https://www.sap.com/products/data-cloud/landscape-transformation.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Streamline your business and IT landscape with our landscape transformation software, support, and training.",
+    "capabilities": [
+      "Analyze transformation feasibility",
+      "Sell, buy, and restructure",
+      "Unify and harmonize data",
+      "Immediate deployment",
+      "Transformation planning",
+      "Improved operations and management"
+    ],
+    "description": "Streamline your business and IT landscape with our landscape transformation software, support, and training.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Knowledge Central by NICE": {
+    "name": "SAP Knowledge Central by NICE",
+    "url": "https://www.sap.com/products/crm/knowledge-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplify integration with preconfiguration",
+      "Curb support tickets with self-services",
+      "Speed query resolution across all channels",
+      "Refine knowledge base quality and scope",
+      "Deliver knowledge when and where it’s needed",
+      "Convenient self-services"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Linear Asset Management": {
+    "name": "SAP Linear Asset Management",
+    "url": "https://www.sap.com/products/scm/linear-asset-management.html",
+    "category": "Supply chain management",
+    "tagline": "Gain tighter control over costs and improve reporting.",
+    "capabilities": [
+      "Asset infrastructure management",
+      "Asset lifecycle management",
+      "Operations management",
+      "Data security",
+      "Compliance",
+      "Services"
+    ],
+    "description": "Gain tighter control over costs and improve reporting.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Management of Change": {
+    "name": "SAP Management of Change",
+    "url": "https://www.sap.com/products/scm/management-of-change-moc.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Maintain safe operations",
+      "Accelerate project delivery",
+      "Improve productivity",
+      "Automated changes",
+      "Process auditability and consistency",
+      "Process adaptability and correction"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Market Rates Management": {
+    "name": "SAP Market Rates Management",
+    "url": "https://www.sap.com/products/financial-management/market-rates-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Retrieve and manage various types of market data",
+      "Enabling a fast, streamlined setup",
+      "Avoiding the need for separate contracts",
+      "Automating your daily import processes",
+      "Simple integration with SAP S/4HANA",
+      "Choice of sound data options"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Master Data Governance in SAP Business Data Cloud": {
+    "name": "SAP Master Data Governance in SAP Business Data Cloud",
+    "url": "https://www.sap.com/products/data-cloud/master-data-governance.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Consolidate and govern your master data and ensure data quality and consistency across your organization with the SAP Master Data Governance application.",
+    "capabilities": [
+      "SAP Master Data Governance in SAP Business Data Cloud",
+      "Unify your data sources",
+      "Centralize master data governance",
+      "Enforce data quality at scale",
+      "Leverage a complete audit trail of changes",
+      "Execute mass changes for attributes"
+    ],
+    "description": "Consolidate and govern your master data and ensure data quality and consistency across your organization with the SAP Master Data Governance application.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Multi-Bank Connectivity": {
+    "name": "SAP Multi-Bank Connectivity",
+    "url": "https://www.sap.com/products/financial-management/multi-bank-connectivity.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Connected businesses with financial institutions",
+      "Increased control, efficiency, and transparency",
+      "Higher reliability of your banking network",
+      "Secure multi-bank and multi-corporate connectivity",
+      "Integration with all financial services providers",
+      "Certified for Swift gpi"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Master Data Governance, EAM extension": {
+    "name": "SAP Master Data Governance, EAM extension",
+    "url": "https://www.sap.com/products/data-cloud/master-data-governance-eam.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Unify and simplify governance of asset data with SAP Master Data Governance, enterprise asset management extension by Prometheus Group.",
+    "capabilities": [
+      "Improve plant uptime and maintenance efficiency",
+      "Simplify data maintenance and empower users",
+      "Reduce costs through efficient parts management",
+      "Intelligent master data governance",
+      "Predefined master data models for assets",
+      "Insights and visibility with enhanced reporting"
+    ],
+    "description": "Unify and simplify governance of asset data with SAP Master Data Governance, enterprise asset management extension by Prometheus Group.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Master Data Governance, retail and fashion management extension by Prometheus Group": {
+    "name": "SAP Master Data Governance, retail and fashion management extension by Prometheus Group",
+    "url": "https://www.sap.com/products/data-cloud/master-data-governance-fashion-retail.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Unify, automate, and rationalize your master data with SAP Master Data Governance, retail and fashion management extension by Prometheus Group.",
+    "capabilities": [
+      "Deliver an agile, omnichannel experience",
+      "Introduce new products faster with accurate data",
+      "Improve agility, responsiveness, and transparency",
+      "Predefined master data model",
+      "Accurate, time-based reporting",
+      "Processing of multiple updates"
+    ],
+    "description": "Unify, automate, and rationalize your master data with SAP Master Data Governance, retail and fashion management extension by Prometheus Group.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Meat and Fish Management by msg": {
+    "name": "SAP Meat and Fish Management by msg",
+    "url": "https://www.sap.com/products/scm/management-meat-fish.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplify processes with one point of access",
+      "Accelerate decision-making with real-time insight",
+      "Lower compliance risk with proactive tracking",
+      "Planning and monitoring precision",
+      "Management of meat processes",
+      "Simpler operations through improved procurement"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Order Management for sourcing and availability": {
+    "name": "SAP Order Management for sourcing and availability",
+    "url": "https://www.sap.com/products/crm/sourcing-and-availability.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Deliver on customer promises with consistency",
+      "Increase revenue and profitability",
+      "Boost business agility and resilience",
+      "Centralized inventory management",
+      "Intelligent sourcing strategy",
+      "Flexible hub for sourcing and availability"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Omnichannel Sales Transfer and Audit": {
+    "name": "SAP Omnichannel Sales Transfer and Audit",
+    "url": "https://www.sap.com/products/crm/omnichannel-sales-transfer-and-audit.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Prepare for data audits",
+      "Strengthen operational resilience",
+      "Reduce manual workload",
+      "Optimized sales data validation",
+      "Automated audit processing",
+      "Scalable retail operations foundation"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Paybacks and Chargebacks by Vistex": {
+    "name": "SAP Paybacks and Chargebacks by Vistex",
+    "url": "https://www.sap.com/products/financial-management/paybacks-chargebacks.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Create and manage promotion contracts",
+      "Optimize operational efficiency",
+      "Streamline chargebacks processing",
+      "Billback management with an integrated solution",
+      "Integrated program management",
+      "Advanced analytics and key insights"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Order Management foundation": {
+    "name": "SAP Order Management foundation",
+    "url": "https://www.sap.com/products/crm/order-management-system.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase customer trust and loyalty",
+      "Improve order operations",
+      "Scale order foundations with agility",
+      "Unified, consistent order orchestration",
+      "Centralized, agentic order monitoring and analytics",
+      "Scalable omnichannel order foundation"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "PLM system integration(s)": {
+    "name": "PLM system integration(s)",
+    "url": "https://www.sap.com/products/scm/plm-integration.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Connect data in a single product master",
+      "Maintain transparency in change management",
+      "Integrate market-leading ERP systems with PLM systems",
+      "Product data integration",
+      "Business process integration",
+      "Efficient and transparent data management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Create and consume relational databases with PostgreSQL based on hyperscalers": {
+    "name": "Create and consume relational databases with PostgreSQL based on hyperscalers",
+    "url": "https://www.sap.com/products/technology-platform/postgresql-on-sap-btp-hyperscaler-option.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Using the PostgreSQL, hyperscaler option service, you can provision, manage and consume PostgreSQL databases on hyperscalers (AWS RDS PostgreSQL or Azure Database for PostgreSQL) from within SAP Business Technology Platform and bind them to business ",
+    "capabilities": [
+      "Fully managed database service",
+      "Secure data access",
+      "Flexible scaling",
+      "Details",
+      "Compatibility",
+      "Managed backup and restore"
+    ],
+    "description": "Using the PostgreSQL, hyperscaler option service, you can provision, manage and consume PostgreSQL databases on hyperscalers (AWS RDS PostgreSQL or Azure Database for PostgreSQL) from within SAP Business Technology Platform and bind them to business applications running on the Cloud Foundry environm",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Process Control": {
+    "name": "SAP Process Control",
+    "url": "https://www.sap.com/products/financial-management/internal-control.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain real-time insight into control status and key issues",
+      "Increased efficiency",
+      "Real-time visibility",
+      "Improved compliance",
+      "Unified repository for process control data",
+      "Streamlined business processes"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Price Staging Hub by Vistex": {
+    "name": "SAP Price Staging Hub by Vistex",
+    "url": "https://www.sap.com/products/financial-management/price-staging-hub.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Speed and accuracy",
+      "Simplicity and versatility",
+      "Improved customer experience and revenue",
+      "Dynamic pricing engine",
+      "High-volume price retrieval",
+      "Price recalculation and catalog management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Product Lifecycle Costing": {
+    "name": "SAP Product Lifecycle Costing",
+    "url": "https://www.sap.com/products/scm/product-lifecycle-costing.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase profitability",
+      "Optimize costs and maximize revenue",
+      "Go to market quickly and cost-effectively",
+      "Product cost calculation and simulation",
+      "Data modeling and extensibility",
+      "Inbound and outbound integration"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Procurement expansion package for SAP Cloud ERP": {
+    "name": "Procurement expansion package for SAP Cloud ERP",
+    "url": "https://www.sap.com/products/spend-management/procurement-expansion-package.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "By embedding intelligent processes, you can:",
+      "Increase savings per purchase",
+      "Drive better compliance",
+      "Simplify supplier collaboration",
+      "Catalog content capabilities",
+      "Comprehensive rules framework"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Product and Process Governance by BDF": {
+    "name": "SAP Product and Process Governance by BDF",
+    "url": "https://www.sap.com/products/scm/product-and-process-governance.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Deliver products faster",
+      "Simplify and standardize processes",
+      "Increase transparency and traceability",
+      "Centralized product data model",
+      "Integrated order‑to‑production automation",
+      "Native SAP supply chain and service Integration"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Profitability and Performance Management": {
+    "name": "SAP Profitability and Performance Management",
+    "url": "https://www.sap.com/products/financial-management/profitability-and-performance-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Empower business users to make more strategic decisions by:",
+      "Enabling precision with impactful models",
+      "Amplifying and extending your insights",
+      "Activating steering through real-time decisions",
+      "Simplifying execution of business intents with AI",
+      "Advanced business-centric modeling"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Project and Resource Management": {
+    "name": "SAP Project and Resource Management",
+    "url": "https://www.sap.com/products/scm/project-resource-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Deliver projects on time",
+      "Streamline communication",
+      "Optimize resource staffing",
+      "Project management",
+      "Project collaboration",
+      "Intelligent resource management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Ariba Sourcing and Procurement for Public Sector in SAP S/4HANA": {
+    "name": "SAP Ariba Sourcing and Procurement for Public Sector in SAP S/4HANA",
+    "url": "https://www.sap.com/products/spend-management/public-sector-procurement-solutions.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Streamline compliance and heighten security",
+      "Simplify financial integration and enhance auditability",
+      "Transform digital procurement with a consumer-grade UX",
+      "Financial integration",
+      "Regulatory compliance",
+      "Data security"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Recommerce": {
+    "name": "SAP Recommerce",
+    "url": "https://www.sap.com/products/crm/recommerce.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Create new revenue streams",
+      "Extend customer and product lifetime value",
+      "Measure sustainability impact",
+      "Trade-in programs",
+      "Reconditioning operations management",
+      "Selling of preowned products"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Responsible Design and Production": {
+    "name": "SAP Responsible Design and Production",
+    "url": "https://www.sap.com/products/scm/responsible-design-and-production.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Reduce exposure",
+      "Deliver on commitments",
+      "Empower consumers",
+      "Packaging data management",
+      "Global regulations and plastic taxes monitoring",
+      "Delivery of obligations and strategic collaboration"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Replication Server": {
+    "name": "SAP Replication Server",
+    "url": "https://www.sap.com/products/data-cloud/data-replication-integration.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Power real-time data integration and movement across your enterprise with our proven data replication software from SAP.",
+    "capabilities": [
+      "Enable transactional data integrity",
+      "Help ensure data quality",
+      "Leverage a flexible topology",
+      "Data replication and integration",
+      "Trusted data creation",
+      "Elimination of complexities"
+    ],
+    "description": "Power real-time data integration and movement across your enterprise with our proven data replication software from SAP.",
+    "scraped_at": "2026-06-27"
+  },
+  "RISE with SAP": {
+    "name": "RISE with SAP",
+    "url": "https://www.sap.com/products/erp/rise.html",
+    "category": "Enterprise resource planning",
+    "tagline": "Learn how the RISE with SAP journey helps on-premises SAP ERP customers tailor their transformation to modernization by unlocking the value of SAP Autonomous Suite.",
+    "capabilities": [
+      "Agent-led transformation and fast path to agentic AI",
+      "Agent-led transformation",
+      "Fast path to agentic AI",
+      "Acceleration to Autonomous Enterprise",
+      "End-to-end transformation",
+      "New migration and modernization accelerators"
+    ],
+    "description": "Learn how the RISE with SAP journey helps on-premises SAP ERP customers tailor their transformation to modernization by unlocking the value of SAP Autonomous Suite.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Revenue Growth Management": {
+    "name": "SAP Revenue Growth Management",
+    "url": "https://www.sap.com/products/crm/revenue-growth-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Maximize trade promotion ROI and profitability",
+      "Integrate with finance and accounting",
+      "Enable end-to-end strategic planning",
+      "Streamlined promotion creation and management",
+      "KPI tracking and profit and loss analytics",
+      "Configurable cloud solution"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Rights and Royalty Management by Vistex": {
+    "name": "SAP Rights and Royalty Management by Vistex",
+    "url": "https://www.sap.com/products/financial-management/ip-rights-and-royalty-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Optimize IP assets",
+      "Earn more",
+      "Increase operational efficiency",
+      "Inbound royalties",
+      "Outbound royalties",
+      "Rights management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Risk and Assurance Management": {
+    "name": "SAP Risk and Assurance Management",
+    "url": "https://www.sap.com/products/financial-management/financial-compliance-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Minimize your risk of misstatements and fraud",
+      "Lowering the cost of control and risk",
+      "Improving risk and compliance efficiency",
+      "Managing achievement of objectives",
+      "Centralized control and risk definition",
+      "Configurable, automated procedures"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Risk Management": {
+    "name": "SAP Risk Management",
+    "url": "https://www.sap.com/products/financial-management/risk-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Know the impact of risk drivers on business value and reputation",
+      "Insight into value-adding risks",
+      "Visibility into emerging risks and opportunities",
+      "Minimization of needless loss",
+      "Risk strategy and planning",
+      "Risk monitoring and identification"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Asset Management for resource scheduling": {
+    "name": "SAP S/4HANA Asset Management for resource scheduling",
+    "url": "https://www.sap.com/products/scm/resource-scheduling.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain insights into current and forecasted workloads",
+      "Optimize the use of maintenance resources",
+      "Reduce asset downtime and increase productivity",
+      "KPI dashboard for maintenance planners",
+      "Maintenance schedule simulation",
+      "Graphical overview of maintenance activities"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Cloud for advanced payment management": {
+    "name": "SAP S/4HANA Cloud for advanced payment management",
+    "url": "https://www.sap.com/products/financial-management/advanced-payment-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplified processes with comprehensive integration",
+      "Increased financial transparency, scalability, and efficiency",
+      "Accelerating secure and efficient data exchange",
+      "Payment factory",
+      "In-house bank",
+      "Multi-bank connectivity"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Rural Sourcing Management": {
+    "name": "SAP Rural Sourcing Management",
+    "url": "https://www.sap.com/products/scm/agriculture-supply-chain-mgmt.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Monitor, track, and trace your supply chain",
+      "Analyze data anytime, anywhere",
+      "Comply with current and future regulations",
+      "Mobile access for field agents",
+      "Central operations insight on any device",
+      "Executive analytics in the cloud"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA for EHS workplace safety": {
+    "name": "SAP S/4HANA for EHS workplace safety",
+    "url": "https://www.sap.com/products/scm/safety-management-software.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplify safety processes with AI",
+      "Foster a proactive safety culture",
+      "Empower your workforce",
+      "Improve transparency and auditability",
+      "Incident management",
+      "Workplace safety insights"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Cloud for cash management": {
+    "name": "SAP S/4HANA Cloud for cash management",
+    "url": "https://www.sap.com/products/financial-management/cash-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Access cash positions and forecasts based on critical criteria",
+      "Real-time data insights anytime, anywhere",
+      "A single version of the truth",
+      "Enhanced cash forecasting capabilities",
+      "Bank relationship management",
+      "Cash and liquidity management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Cloud for contract accounting and invoicing": {
+    "name": "SAP S/4HANA Cloud for contract accounting and invoicing",
+    "url": "https://www.sap.com/products/financial-management/cloud-accounting-invoicing.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Transparent and simplified billing process",
+      "Simplified user experiences",
+      "Intuitive transformation and monetization",
+      "Subscription- and consumption-based invoicing",
+      "Contract accounts receivable and payable",
+      "Data security"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Cloud for central finance": {
+    "name": "SAP S/4HANA Cloud for central finance",
+    "url": "https://www.sap.com/products/financial-management/central-finance.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Connect data from SAP and third-party ERP systems",
+      "Improved data transparency",
+      "Efficient, cost-effective processes",
+      "Agile approach to transformation",
+      "Support for SAP and third-party systems",
+      "Adaptable rollout"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Cloud for receivables management": {
+    "name": "SAP S/4HANA Cloud for receivables management",
+    "url": "https://www.sap.com/products/financial-management/accounts-receivable-automation.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Optimized working capital with integration",
+      "High-quality stakeholder experience",
+      "Real-time cash prediction",
+      "Customer credit, collections, and dispute management",
+      "Customer credit risk assessment and monitoring",
+      "Online customer billing and payments"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA for advanced ATP": {
+    "name": "SAP S/4HANA for advanced ATP",
+    "url": "https://www.sap.com/products/scm/aatp.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve service levels with allocation management",
+      "Manage shortages and priority-based order promising",
+      "Enable intelligent decisions based on analytics",
+      "Efficient stock management",
+      "Effective product availability management",
+      "Intelligent selection of alternatives"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Cloud for treasury and risk management": {
+    "name": "SAP S/4HANA Cloud for treasury and risk management",
+    "url": "https://www.sap.com/products/financial-management/treasury-risk-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Integrating treasury with core processes",
+      "Boosting efficiency and process controls",
+      "Building and scaling your treasury operations",
+      "Financial risk management",
+      "Debt and investment management",
+      "Application extensions for treasury"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Finance for group reporting": {
+    "name": "SAP S/4HANA Finance for group reporting",
+    "url": "https://www.sap.com/products/financial-management/s4hana-financial-consolidation.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Real-time data access",
+      "An accelerated financial close process",
+      "Unified consolidation and transactional tasks",
+      "Unified entity and group close reporting",
+      "Continuous accounting",
+      "Advanced group consolidation features"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA for product compliance": {
+    "name": "SAP S/4HANA for product compliance",
+    "url": "https://www.sap.com/products/scm/product-compliance.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Protect and increase revenue",
+      "Safeguard and extend your brand",
+      "Reduce compliance costs",
+      "Product marketability and component compliance",
+      "Compliance document management",
+      "Dangerous goods management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA for fashion and vertical business": {
+    "name": "SAP S/4HANA for fashion and vertical business",
+    "url": "https://www.sap.com/products/scm/s4hana-fashion.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Deliver more styles faster",
+      "Increase revenue and margin",
+      "Optimize inventory and cost",
+      "Sophisticated seasons management",
+      "Flexible purchasing commitments",
+      "Intelligent matching of demand and supply"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA for contract, lease, and real estate management": {
+    "name": "SAP S/4HANA for contract, lease, and real estate management",
+    "url": "https://www.sap.com/products/financial-management/real-estate-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain a 360-degree view of your real estate portfolio performance",
+      "A single source for contract management",
+      "Improved sustainability of real estate holdings",
+      "Businesswide integration of real estate data",
+      "Real estate objects management",
+      "Contract management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA for spatial asset management": {
+    "name": "SAP S/4HANA for spatial asset management",
+    "url": "https://www.sap.com/products/scm/spatial-asset-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve your return on assets",
+      "Minimize operational risk",
+      "Enhance workforce productivity",
+      "Stand-alone, Web-based spatial explorer and editor",
+      "Linear referencing method for maintaining assets",
+      "Customization of spatially enabled solutions"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Retail for merchandise management": {
+    "name": "SAP S/4HANA Retail for merchandise management",
+    "url": "https://www.sap.com/products/scm/retail-merchandise-mgmt.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase business efficiency and agility",
+      "Empower employees with real time information",
+      "Deliver first-class shopping experiences",
+      "In-store operations",
+      "Customer-centric merchandise management",
+      "Retail supply chain management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Manufacturing for planning and scheduling": {
+    "name": "SAP S/4HANA Manufacturing for planning and scheduling",
+    "url": "https://www.sap.com/products/scm/manufacturing-for-planning-and-scheduling.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Master operational planning",
+      "Drive efficiency and agility in planning and scheduling",
+      "Leverage planning automation for all manufacturing environments",
+      "Exception-based planning",
+      "Constrained planning",
+      "Detailed scheduling"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Manufacturing solutions": {
+    "name": "SAP S/4HANA Manufacturing solutions",
+    "url": "https://www.sap.com/products/scm/s4hana-manufacturing-solutions.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplify functionality",
+      "Optimize adaptability",
+      "Enhance planning capabilities",
+      "Comprehensive end-to-end planning",
+      "Integrated, insightful scheduling",
+      "Streamlined engineering"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Secure Login Service for SAP GUI": {
+    "name": "SAP Secure Login Service for SAP GUI",
+    "url": "https://www.sap.com/products/financial-management/secure-login-service-for-gui.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increased user productivity",
+      "Higher profits from increased cost efficiency",
+      "Greater security",
+      "Simple and secure access for SAP GUI users",
+      "X.509 certificates based on lean cloud service",
+      "Advanced security capabilities"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Sales Cloud": {
+    "name": "SAP Sales Cloud",
+    "url": "https://www.sap.com/products/crm/sales-cloud.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Reap the benefits of sales automation innovations",
+      "Turn every sales rep into a top performer",
+      "Scale personalized, VIP treatment to every customer",
+      "Lead with insight and act with confidence",
+      "Sales AI",
+      "Intelligent guided selling"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP S/4HANA Supply Chain for extended service parts planning": {
+    "name": "SAP S/4HANA Supply Chain for extended service parts planning",
+    "url": "https://www.sap.com/products/scm/extended-service-parts-planning.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Balance inventory investment and customer service",
+      "Centralize and automate planning",
+      "Gain transparency and improve planning accuracy",
+      "Demand management",
+      "Inventory planning",
+      "Supply planning and distribution"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Single Sign-On": {
+    "name": "SAP Single Sign-On",
+    "url": "https://www.sap.com/products/financial-management/single-sign-on-solution.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Give users a better experience while keeping your data secure",
+      "Increased user productivity",
+      "Higher profits from increased cost efficiency",
+      "Greater security",
+      "Simple and secure access",
+      "Various authentication technologies"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Self-Service for Utilities by SEW": {
+    "name": "SAP Self-Service for Utilities by SEW",
+    "url": "https://www.sap.com/products/crm/self-service-utilities.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Respond to utility customer demand quickly",
+      "Enable real-time multichannel interactions",
+      "Gain a 360-degree view of your customer engagement",
+      "24x7 online account management",
+      "E-bills and payments management",
+      "Self-service options"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Transform field service and asset management": {
+    "name": "Transform field service and asset management",
+    "url": "https://www.sap.com/products/scm/asset-manager.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve the accuracy of captured data",
+      "Address maintenance needs to avoid costly downtime",
+      "Tailored mobile user personas and experience",
+      "Seamless integration and configuration",
+      "SAP Dynamic Forms",
+      "Maintaining compliance during Ex/ATEX inspections"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Service Cloud": {
+    "name": "SAP Service Cloud",
+    "url": "https://www.sap.com/products/crm/service-cloud.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "With this service solution, you can:",
+      "Get to the right resolution faster",
+      "Personalize support at scale",
+      "Turn customer service into a growth opportunity",
+      "AI for customer service",
+      "Agent experience"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Make sales faster with flexible configuration of complex solutions": {
+    "name": "Make sales faster with flexible configuration of complex solutions",
+    "url": "https://www.sap.com/products/financial-management/solution-sales-configuration.html",
+    "category": "Financial management",
+    "tagline": "Shorten sales cycles and boost accuracy with guided selling, collaborative modeling, modular orchestration, and deep SAP integration.",
+    "capabilities": [
+      "Easily configure complex solutions",
+      "Find products that match consumer needs with guided selling",
+      "Deliver seamless proposals with accurate configurations",
+      "Details",
+      "Compatibility",
+      "Product documentation"
+    ],
+    "description": "Shorten sales cycles and boost accuracy with guided selling, collaborative modeling, modular orchestration, and deep SAP integration.",
+    "scraped_at": "2026-06-27"
+  },
+  "SmartRecruiters for SAP SuccessFactors": {
+    "name": "SmartRecruiters for SAP SuccessFactors",
+    "url": "https://www.sap.com/products/hcm/recruiting-software.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Hire smarter with built-in AI",
+      "Deliver standout experiences",
+      "Make intelligent hiring decisions",
+      "Align hiring to business goals",
+      "Smarter talent discovery",
+      "Personalized candidate engagement"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Spend analytics software": {
+    "name": "Spend analytics software",
+    "url": "https://www.sap.com/products/spend-management/spend-analytics-software.html",
+    "category": "Spend management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Turn spend insights into a strategic competitive advantage",
+      "Increase operational and cost efficiency",
+      "Classified spend today, new possibilities tomorrow",
+      "Optimize spending with AI",
+      "Spend analysis and insights",
+      "Live insights for external workforce"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Sovereign Cloud": {
+    "name": "SAP Sovereign Cloud",
+    "url": "https://www.sap.com/products/security-and-sovereignty.html",
+    "category": "All products",
+    "tagline": "CRITICAL INFRASTRUCTURE",
+    "capabilities": [
+      "SAP Sovereign Cloud provides:",
+      "Hyperscaler option",
+      "SAP Cloud Infrastructure",
+      "SAP Sovereign Cloud On-Site",
+      "EU AI Cloud",
+      "See how Toll Group is succeeding with Sovereign Cloud"
+    ],
+    "description": "CRITICAL INFRASTRUCTURE",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SQL Anywhere": {
+    "name": "SAP SQL Anywhere",
+    "url": "https://www.sap.com/products/data-cloud/sql-anywhere.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Rapidly design and deploy embedded database applications that run remotely on servers, laptops, handhelds, and smartphones with SAP SQL Anywhere relational database management system (RDBMS) solutions.",
+    "capabilities": [
+      "Strong encryption",
+      "Data synchronization",
+      "Instant insight",
+      "SAP SQL Anywhere workgroup, Edge edition (5 named users)",
+      "SAP SQL Anywhere workgroup, Edge edition (core version)",
+      "SAP SQL Anywhere, advanced edition (25 named users)"
+    ],
+    "description": "Rapidly design and deploy embedded database applications that run remotely on servers, laptops, handhelds, and smartphones with SAP SQL Anywhere relational database management system (RDBMS) solutions.",
+    "scraped_at": "2026-06-27"
+  },
+  "Spot Buy capability": {
+    "name": "Spot Buy capability",
+    "url": "https://www.sap.com/products/spend-management/procure-to-pay/features/spot-buy.html",
+    "category": "Features",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplified spot buy purchases",
+      "Pre-enabled marketplaces",
+      "Reduced costs, faster buying",
+      "Capture and control of tail spend",
+      "Guided buying capability",
+      "SAP Ariba Catalog"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Sports One": {
+    "name": "SAP Sports One",
+    "url": "https://www.sap.com/products/data-cloud/sports-one.html",
+    "category": "SAP Business Data Cloud",
+    "tagline": "Take your professional soccer, ice hockey, basketball, handball, skiing, or rugby team to the next level with SAP Sports One – our sports performance and team management software.",
+    "capabilities": [
+      "Get a unified view of your performance data",
+      "Empower users with intuitive functionality",
+      "Create a sustainable environment for your data",
+      "Team management",
+      "Training management",
+      "Player fitness"
+    ],
+    "description": "Take your professional soccer, ice hockey, basketball, handball, skiing, or rugby team to the next level with SAP Sports One – our sports performance and team management software.",
+    "scraped_at": "2026-06-27"
+  },
+  "Empower students along every step of the academic journey": {
+    "name": "Empower students along every step of the academic journey",
+    "url": "https://www.sap.com/products/erp/student-lifecycle-management-for-sap-s4hana-cloud-private-edition.html",
+    "category": "Enterprise resource planning",
+    "tagline": "Manage the full student journey, from admission to alumni, with real-time insights. Streamline admissions, enrollment, courses, grading, and exams, all on one self-service platform.",
+    "capabilities": [
+      "Streamline academic administration",
+      "Enhance the student experience",
+      "Gain real-time analytics and insights",
+      "Integrate seamlessly across campus systems",
+      "Ensure compliance and data integrity",
+      "Details"
+    ],
+    "description": "Manage the full student journey, from admission to alumni, with real-time insights. Streamline admissions, enrollment, courses, grading, and exams, all on one self-service platform.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Compensation": {
+    "name": "SAP SuccessFactors Compensation",
+    "url": "https://www.sap.com/products/hcm/compensation-management.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Subscription Billing": {
+    "name": "SAP Subscription Billing",
+    "url": "https://www.sap.com/products/financial-management/subscription-billing.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Grow recurring revenues with flexibility, agility, and scalability",
+      "Growing recurring revenues faster",
+      "Maximizing customer lifetime value",
+      "Scaling for growth and complexity",
+      "Flexible subscription lifecycle management",
+      "Personalized customer-centric offerings"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Employee Central": {
+    "name": "SAP SuccessFactors Employee Central",
+    "url": "https://www.sap.com/products/hcm/employee-central-hris.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gestamp: Unlocking talent potential with one source of employee data",
+      "Volkswagen Group: Unifying global HR for a connected future",
+      "Maximizing the impact of AI on core HR, time management, and payroll",
+      "Beyond HR compliance: Building employee trust amid global uncertainty",
+      "What is SAP's HRIS?",
+      "Why should organizations use a cloud HRIS?"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Document Management Core by OpenText": {
+    "name": "SAP SuccessFactors Document Management Core by OpenText",
+    "url": "https://www.sap.com/products/hcm/intelligent-document-management.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Manage HR compliance obligations",
+      "Increase efficiency and productivity",
+      "Streamline HR communications",
+      "Compliance management",
+      "Document management",
+      "Document generation"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Onboarding": {
+    "name": "SAP SuccessFactors Onboarding",
+    "url": "https://www.sap.com/products/hcm/employee-onboarding.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Learning": {
+    "name": "SAP SuccessFactors Learning",
+    "url": "https://www.sap.com/products/hcm/corporate-lms.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Explore the features and benefits of SAP SuccessFactors solutions",
+      "SAP is named a Strategic Leader",
+      "Maximizing the impact of AI",
+      "What does LMS mean?",
+      "What is a lifelong learning culture?",
+      "What does compliance training mean?"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Enterprise Service Management": {
+    "name": "SAP SuccessFactors Enterprise Service Management",
+    "url": "https://www.sap.com/products/hcm/enterprise-service-management.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Enhance the employee self-service experience",
+      "Boost and scale HR service efficiency",
+      "Increase HR agility and scalability",
+      "Intuitive self-service",
+      "AI-driven case management",
+      "Insights to action"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Time Tracking": {
+    "name": "SAP SuccessFactors Time Tracking",
+    "url": "https://www.sap.com/products/hcm/employee-time-tracking-software.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Optimize labor costs and manager productivity",
+      "Stay compliant, whatever changes",
+      "Give every employee their first line of support",
+      "Connect workforce management and payroll",
+      "Built-in compliance and validation",
+      "Time Assistant"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Employee Central Payroll": {
+    "name": "SAP SuccessFactors Employee Central Payroll",
+    "url": "https://www.sap.com/products/hcm/employee-central-payroll.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Transforming experiences with intelligent automation",
+      "Harmonizing HR processes to enable efficient, compliant HR management",
+      "Transforming global payroll for a sustainable talent strategy",
+      "Revolutionizing HR in a highly regulated industry",
+      "Maximizing the impact of AI on core HR, time management, and payroll",
+      "What is payroll software?"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Sustainability Control Tower": {
+    "name": "SAP Sustainability Control Tower",
+    "url": "https://www.sap.com/products/scm/sustainability-control-tower.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Streamline sustainability data across your enterprise",
+      "Automate ESG reports with built-in compliance and AI",
+      "Turn sustainability strategy into action",
+      "Sustainability reporting foundation",
+      "Data sourcing and collection",
+      "Performance insights and business steering"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Performance and Goals": {
+    "name": "SAP SuccessFactors Performance and Goals",
+    "url": "https://www.sap.com/products/hcm/performance-goals.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Boost team and individual performance with AI-optimized goals",
+      "Accelerate employee growth with real-time coaching",
+      "Improve talent decisions with AI-powered insights",
+      "Flexible and continuous performance models",
+      "Real-time insights, feedback, and dialogue",
+      "Transparency into workforce skills"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "AI Driven Talent Management System by SAP": {
+    "name": "AI Driven Talent Management System by SAP",
+    "url": "https://www.sap.com/products/hcm/talent-management.html",
+    "category": "All products",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Manage talent with AI",
+      "Unlock employee potential",
+      "Bring skills to the forefront",
+      "Drive peak performance",
+      "Career and Talent Development Assistant",
+      "A skills-first approach to developing future-ready talent"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP SuccessFactors Work Zone": {
+    "name": "SAP SuccessFactors Work Zone",
+    "url": "https://www.sap.com/products/hcm/workzone-hr.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Deliver personalized, curated experiences",
+      "Guide employees through key moments",
+      "Boost productivity with intuitive self-service",
+      "Drive engagement with a more connected workplace",
+      "Personalized experiences",
+      "Guided journeys"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Sustainability Data Exchange": {
+    "name": "SAP Sustainability Data Exchange",
+    "url": "https://www.sap.com/products/business-network/sustainability-data-exchange.html",
+    "category": "SAP Business Network",
+    "tagline": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "capabilities": [
+      "Collaborate across your supply chain",
+      "Standardize sustainability data exchange",
+      "Accelerate carbon reduction",
+      "Request and share accurate data",
+      "Comply with standardized models",
+      "Manage current and historical data"
+    ],
+    "description": "Discover how to maximize your SAP solutions across every line of business along your journey to become an Autonomous Enterprise — October 5–7, 2026.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Sustainability Footprint Management": {
+    "name": "SAP Sustainability Footprint Management",
+    "url": "https://www.sap.com/products/scm/sustainability-footprint-management.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Scale your corporate and product footprint calculation",
+      "Drive sustainability through your core ERP processes",
+      "Move beyond carbon in one calculation",
+      "ERP foundation and integrations",
+      "Emission factor management",
+      "Calculation at scale"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Territory and Quota": {
+    "name": "SAP Territory and Quota",
+    "url": "https://www.sap.com/products/crm/territory-and-quota.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Optimize territory management",
+      "Increase quota attainment",
+      "Enhance sales performance",
+      "AI-based territory optimization and balancing",
+      "Geospatial insight and visualization",
+      "Predictive quota planning and analysis"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Test Automation by Tricentis": {
+    "name": "SAP Test Automation by Tricentis",
+    "url": "https://www.sap.com/products/technology-platform/test-automation.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Expert test automation that streamlines release cycles, minimizes risks, and enhances quality. Leverage AI for smarter software testing and quality assurance, realizing significant operational benefits.",
+    "capabilities": [
+      "Accelerate innovation and software release cycles",
+      "Minimize risks to critical business processes",
+      "Solve testing issues quickly and optimize your ROI",
+      "Testing for SAP and third-party software",
+      "Transparency and real-time insights",
+      "Integrated and extensible with reusable test assets"
+    ],
+    "description": "Expert test automation that streamlines release cycles, minimizes risks, and enhances quality. Leverage AI for smarter software testing and quality assurance, realizing significant operational benefits.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Trade Management": {
+    "name": "SAP Trade Management",
+    "url": "https://www.sap.com/products/crm/trade-management.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Gain visibility",
+      "Enable dynamic planning",
+      "Share insights",
+      "Simplify integration",
+      "Support end-to-end processes",
+      "Provide actuals and financial oversight"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Be ready to respond with total workforce management": {
+    "name": "Be ready to respond with total workforce management",
+    "url": "https://www.sap.com/products/hcm/total-workforce-management.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Quickly adapt to changing needs",
+      "Manage results across your entire team",
+      "Stay on top of compliance",
+      "Addressing skills gaps with total workforce management",
+      "Track people, performance, and projects with a single view",
+      "Create and manage a dynamic workforce"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Time and Attendance Management by WorkForce Software": {
+    "name": "SAP Time and Attendance Management by WorkForce Software",
+    "url": "https://www.sap.com/products/hcm/time-attendance-management-by-workforce.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Simplify time and attendance",
+      "Streamline complex workforce scheduling",
+      "Ensure HR regulatory compliance",
+      "Transparent time and attendance management",
+      "Shift scheduling",
+      "Absence compliance"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Streamline multilingual enablement with intelligent data reuse and AI": {
+    "name": "Streamline multilingual enablement with intelligent data reuse and AI",
+    "url": "https://www.sap.com/products/artificial-intelligence/translation-hub.html",
+    "category": "Artificial Intelligence",
+    "tagline": "SAP Translation Hub enables you to efficiently translate custom applications, extensions, documentation, and more into multiple languages. Accelerate translation by combining the reuse of language data with AI-driven machine translation. Use the inte",
+    "capabilities": [
+      "Reuse and accelerate",
+      "Simple and efficient",
+      "Integration out-of-the-box",
+      "Details",
+      "Compatibility",
+      "Benefit from SAP's Multilingual Text Repository"
+    ],
+    "description": "SAP Translation Hub enables you to efficiently translate custom applications, extensions, documentation, and more into multiple languages. Accelerate translation by combining the reuse of language data with AI-driven machine translation. Use the integrated workflow or APIs to develop integrations.",
+    "scraped_at": "2026-06-27"
+  },
+  "Human Capital Management HR Software Demos and Trials": {
+    "name": "Human Capital Management HR Software Demos and Trials",
+    "url": "https://www.sap.com/products/hcm/trials-and-tours.html",
+    "category": "All products",
+    "tagline": "Explore SAP's HR solutions with an SAP free trial. Streamline your human capital management to effectively manage talent, time, and payroll tasks.",
+    "capabilities": [
+      "Elevate employee experience with AI",
+      "Access core HR, time, and payroll capabilities",
+      "Modernize talent management",
+      "Increase Productivity with Guided Experiences",
+      "Transform HR with Enterprise Service Management",
+      "Drive Adoption with WalkMe for SAP SuccessFactors"
+    ],
+    "description": "Explore SAP's HR solutions with an SAP free trial. Streamline your human capital management to effectively manage talent, time, and payroll tasks.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Transportation Management": {
+    "name": "SAP Transportation Management",
+    "url": "https://www.sap.com/products/scm/transportation-logistics.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Increase business productivity",
+      "Work smarter",
+      "Optimize resource utilization",
+      "Strategic freight management",
+      "Order management",
+      "Transportation planning"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP U.S. Benefits Administration by Benefitfocus": {
+    "name": "SAP U.S. Benefits Administration by Benefitfocus",
+    "url": "https://www.sap.com/products/hcm/benefits-management.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Manage benefit costs proactively",
+      "Upgrade the employee experience",
+      "Streamline administration",
+      "Employee communication management",
+      "Consumer-centric enrollment experience",
+      "Healthcare utilization management"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Strengthen data protection with clear visibility into user activity": {
+    "name": "Strengthen data protection with clear visibility into user activity",
+    "url": "https://www.sap.com/products/financial-management/ui-data-protection-logging.html",
+    "category": "Financial management",
+    "tagline": "Use precise activity and content logging to help reduce data-abuse risks, meet legal retention and privacy requirements, and empower data protection teams with easy access to meaningful insights.",
+    "capabilities": [
+      "Improve visibility into user data access",
+      "Strengthen compliance with detailed logging",
+      "Accelerate investigations with faster analysis",
+      "Enable protection of sensitive identities",
+      "Details",
+      "Compatibility"
+    ],
+    "description": "Use precise activity and content logging to help reduce data-abuse risks, meet legal retention and privacy requirements, and empower data protection teams with easy access to meaningful insights.",
+    "scraped_at": "2026-06-27"
+  },
+  "Secure sensitive information with dynamic masking and access control": {
+    "name": "Secure sensitive information with dynamic masking and access control",
+    "url": "https://www.sap.com/products/financial-management/ui-data-protection-masking.html",
+    "category": "Financial management",
+    "tagline": "Control visibility and support compliant, secure business operations across SAP interfaces using masking, blocking, and contextual authorization.",
+    "capabilities": [
+      "Strengthen protection of sensitive data",
+      "Support compliance across operations",
+      "Adapt protection to business context",
+      "Unify protection across SAP interfaces",
+      "Improve transparency through audit tools",
+      "Details"
+    ],
+    "description": "Control visibility and support compliant, secure business operations across SAP interfaces using masking, blocking, and contextual authorization.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP User Experience Management by Knoa": {
+    "name": "SAP User Experience Management by Knoa",
+    "url": "https://www.sap.com/products/hcm/knoa-user-experience.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Measure user experience with real user behavior data",
+      "Optimize processes and increase user adoption",
+      "Support your entire SAP software landscape",
+      "Automated collection of productivity metrics",
+      "Improved performance through insightful metrics",
+      "Successful migration to SAP S/4HANA"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "Streamline DER and prosumer data management with SAP Utilities Core foundation": {
+    "name": "Streamline DER and prosumer data management with SAP Utilities Core foundation",
+    "url": "https://www.sap.com/products/technology-platform/utilities-core-foundation.html",
+    "category": "SAP Business Technology Platform",
+    "tagline": "Automate and standardize Distributed Energy Resources (DER) data and installations and ensure accuracy by integrating seamlessly with SAP S/4HANA Utilities and SAP Business Technology Platform.",
+    "capabilities": [
+      "Standardize and automate processes across divisions",
+      "Improve data quality and accuracy across systems",
+      "Integrate seamlessly across systems and applications",
+      "Details",
+      "Compatibility",
+      "Easily define and visualize measurement concepts"
+    ],
+    "description": "Automate and standardize Distributed Energy Resources (DER) data and installations and ensure accuracy by integrating seamlessly with SAP S/4HANA Utilities and SAP Business Technology Platform.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Vendor Program Management by Vistex": {
+    "name": "SAP Vendor Program Management by Vistex",
+    "url": "https://www.sap.com/products/financial-management/vendor-program-management.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Streamline program efficiency",
+      "Make data-driven decisions",
+      "Improve profitability and partner relations",
+      "Cost recovery and chargeback processes",
+      "Collection of owed rebate income",
+      "Higher margins with better vendor funding programs"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "WalkMe for SAP SuccessFactors HCM": {
+    "name": "WalkMe for SAP SuccessFactors HCM",
+    "url": "https://www.sap.com/products/hcm/walkme.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Drive adoption at the speed of change",
+      "Boost employee productivity at every step",
+      "Maximize the value of your investment",
+      "Digital adoption analytics",
+      "Embedded guidance and support",
+      "Intuitive tools and templates"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "WalkMe Premium for SAP CX solutions": {
+    "name": "WalkMe Premium for SAP CX solutions",
+    "url": "https://www.sap.com/products/crm/walkme.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Reduce time to value",
+      "Increase workforce productivity",
+      "Surface real adoption insights",
+      "Optimize every workflow with intelligent guidance",
+      "Eliminate inefficiencies with automation and insight",
+      "Realize business agility and ROI"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Watch List Screening": {
+    "name": "SAP Watch List Screening",
+    "url": "https://www.sap.com/products/financial-management/watch-list-screening.html",
+    "category": "Financial management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Reduced risk",
+      "Automated compliance",
+      "Simplified screening",
+      "Restricted and denied party screening",
+      "Integration and extensibility",
+      "Data security"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Workforce Forecasting and Scheduling by WorkForce Software": {
+    "name": "SAP Workforce Forecasting and Scheduling by WorkForce Software",
+    "url": "https://www.sap.com/products/hcm/workforce-forecasting-scheduling.html",
+    "category": "Human capital management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Predict and address your labor requirements",
+      "Measure and report workforce costs and compliance",
+      "Align your schedules to financial budgets",
+      "Comprehensive reporting",
+      "Optimized workforce scheduling",
+      "Employee engagement"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Yard Logistics": {
+    "name": "SAP Yard Logistics",
+    "url": "https://www.sap.com/products/scm/yard-logistics.html",
+    "category": "Supply chain management",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Improve visibility into your processes",
+      "Accelerate gate-in and gate-out processes",
+      "Use assets and areas more efficiently",
+      "Order and appointment planning and check-in",
+      "Yard execution and processing",
+      "Integration capabilities and monitoring"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Customer Checkout, cloud edition": {
+    "name": "SAP Customer Checkout, cloud edition",
+    "url": "https://www.sap.com/products/crm/pos-customer-checkout.html",
+    "category": "CRM and customer experience",
+    "tagline": "Get your early-bird discount today",
+    "capabilities": [
+      "Drive efficiency with seamless end-to-end integration",
+      "Simplify your business with one POS system",
+      "Extend functionality and adapt to your needs",
+      "Rich POS functionality",
+      "Integration with SAP ERP systems",
+      "Loyalty and personalized rewards"
+    ],
+    "description": "Get your early-bird discount today",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business Technology Platform": {
+    "name": "SAP Business Technology Platform",
+    "url": "https://www.sap.com/products/technology-platform.html",
+    "category": "All products",
+    "tagline": "SAP BTP empowers teams with agentic AI-enabled development, automation, integration, data, and analytics across SAP applications and beyond.",
+    "capabilities": [
+      "What makes SAP BTP unique?",
+      "Built for business applications",
+      "Integrate business processes",
+      "Tools for all expertise",
+      "AI with context",
+      "50% lower runtime costs"
+    ],
+    "description": "SAP BTP empowers teams with agentic AI-enabled development, automation, integration, data, and analytics across SAP applications and beyond.",
+    "scraped_at": "2026-06-27"
+  },
+  "Joule Business AI Solutions": {
+    "name": "Joule Business AI Solutions",
+    "url": "https://www.sap.com/products/artificial-intelligence.html",
+    "category": "All products",
+    "tagline": "Joule brings assistants and agents together in a unified workspace that turns intent into autonomous action—running end-to-end workflows across your business.",
+    "capabilities": [
+      "Turn siloed work into connected, trusted workflows",
+      "A new human advantage",
+      "Performance that scales",
+      "Agility without compromise",
+      "Joule Work",
+      "Joule Agents and Joule Assistants"
+    ],
+    "description": "Joule brings assistants and agents together in a unified workspace that turns intent into autonomous action—running end-to-end workflows across your business.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Business AI Platform": {
+    "name": "SAP Business AI Platform",
+    "url": "https://www.sap.com/products/ai-platform.html",
+    "category": "All products",
+    "tagline": "SAP Business AI Platform combines deep process context, unified data, and purpose-built models with enterprise governance, so you can build and integrate AI that understands your business—not just your prompts.",
+    "capabilities": [
+      "An enterprise AI platform built for your business",
+      "Build​",
+      "Contextualize and reason​",
+      "Govern​",
+      "Joule Studio",
+      "SAP Integration Suite"
+    ],
+    "description": "SAP Business AI Platform combines deep process context, unified data, and purpose-built models with enterprise governance, so you can build and integrate AI that understands your business—not just your prompts.",
+    "scraped_at": "2026-06-27"
+  },
+  "Bring it with an AI cloud ERP built to match your ambition": {
+    "name": "Bring it with an AI cloud ERP built to match your ambition",
+    "url": "https://www.sap.com/products/erp/grow.html",
+    "category": "Enterprise resource planning",
+    "tagline": "SAP GROW is your entry point to AI across finance, supply chain, and HR—paving a clear path to scalable, sustainable growth on a timeline that’s right for you.",
+    "capabilities": [
+      "Automate finance to close faster",
+      "Power a resilient supply chain",
+      "Make HR proactive, not reactive",
+      "SAP GROW helps you get started—and get growing",
+      "Built-in AI. Day-one results.",
+      "Industry depth. Global reach."
+    ],
+    "description": "SAP GROW is your entry point to AI across finance, supply chain, and HR—paving a clear path to scalable, sustainable growth on a timeline that’s right for you.",
+    "scraped_at": "2026-06-27"
+  },
+  "SAP Sustainability": {
+    "name": "SAP Sustainability",
+    "url": "https://www.sap.com/products/sustainability.html",
+    "category": "All products",
+    "tagline": "SAP enables companies become more sustainable by providing sustainability solutions and services that help them overcome sustainability challenges and identify new opportunities.",
+    "capabilities": [
+      "Integrated AI",
+      "Empowered decision-making",
+      "Accelerated transition",
+      "Sustainability data management",
+      "Carbon footprint calculation",
+      "Sustainable compliance and design"
+    ],
+    "description": "SAP enables companies become more sustainable by providing sustainability solutions and services that help them overcome sustainability challenges and identify new opportunities.",
+    "scraped_at": "2026-06-27"
+  }
+}

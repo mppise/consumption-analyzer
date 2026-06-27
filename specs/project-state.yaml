@@ -1,0 +1,54 @@
+project:
+  name: "ConsumptionAnalyzer"
+  created: 2026-06-25
+  release: "3.2.0"
+  next_release_type: null
+  active_story: null
+  active_phase: null
+ideation_complete: true
+arch_seeded: true
+pending_arch_gap: null
+pending_spec_gap: null
+stories:
+  STORY-001:
+    title: "CLI scaffold and entry point"
+    depends_on: []
+    intent_done: true
+    spec_done: true
+    built: true
+    deployed: true
+  STORY-002:
+    title: "PDF to CSV conversion (--pdf2csv)"
+    depends_on: [STORY-001]
+    intent_done: true
+    spec_done: true
+    built: true
+    deployed: true
+  STORY-003:
+    title: "AI-powered cACV analysis (--analyze)"
+    depends_on: [STORY-001]
+    intent_done: true
+    spec_done: true
+    built: true
+    deployed: true
+  STORY-004:
+    title: "CSV to JSON transformation (--transform)"
+    depends_on: [STORY-001]
+    intent_done: true
+    spec_done: true
+    built: true
+    deployed: true
+  STORY-005:
+    title: "HTML dashboard generation (--dashboard)"
+    depends_on: [STORY-004]
+    intent_done: true
+    spec_done: true
+    built: true
+    deployed: true
+  STORY-006:
+    title: "Industry vertical inference"
+    depends_on: [STORY-004]
+    intent_done: true
+    spec_done: true
+    built: true
+    deployed: true

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# @story STORY-001 | cli-scaffold
+# @intent install or reinstall the consumption-analyzer binary so it is available on PATH via npm link
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "ConsumptionAnalyzer — deploy.sh"
+echo "Installing dependencies..."
+cd "$SCRIPT_DIR"
+npm install
+
+echo "Linking binary to PATH..."
+npm link
+
+echo ""
+echo "Done. Run: consumption-analyzer --help"

@@ -1,0 +1,21 @@
+story_id: STORY-001
+runtime:
+  language: node
+  language_version: "20 LTS (>=20.0.0)"
+  package_manager: npm
+  build_command: "npm install && npm link"
+  build_output_dir: "src/ (no separate build step — ESM source served directly)"
+  has_dockerfile: false
+  has_migrations: false
+  exposed_ports: []
+files_modified:
+  - src/cli.js
+  - deploy.sh
+  - tests/scaffold.test.js
+commits: []
+gap_specs: []
+warnings:
+  - "tests/scaffold.test.js: AI_MAX_TOKENS default assertion was 2048 — corrected to 8192 to match architecture spec and config/index.js actual default"
+  - "src/cli.js --build-product-catalog: spawn updated to use absolute path via path.join(__dirname, 'scripts', 'scrape-sap-products.js') — previous relative path 'src/scripts/...' would fail when binary invoked from any directory other than project root"
+  - "deploy.sh: flag verification loop updated from [--pdf2csv, --analyze, --transform, --dashboard, --output] to the five tool flags required by Criterion 2: [--pdf2csv, --analyze, --transform, --dashboard, --build-product-catalog]; --output is a modifier flag, not a tool flag"
+overall_status: pass

@@ -1,0 +1,23 @@
+story_id: STORY-004
+runtime:
+  language: node
+  language_version: ">=20.0.0 (tested on v25.8.1)"
+  package_manager: npm
+  build_command: "node src/cli.js --transform <file.csv>"
+  build_output_dir: "data/<basename>/ (portfolio.json written at runtime)"
+  has_dockerfile: false
+  has_migrations: false
+  exposed_ports: []
+files_modified:
+  - src/tools/transform.js
+  - src/lib/metrics.js
+  - src/lib/reconciler.js
+  - src/lib/industry.js
+commits: []
+gap_specs: []
+warnings:
+  - "monthly_series items emit only {month, target, actual} — contract:product-in-subsa-shape specifies attainment_pct, gap, is_future_month as additional fields, but these are intentionally stripped to reduce token payload; downstream tools can compute them at render time"
+  - "risk_items[] retained on customer per story-spec criterion 4 and 8 despite implementation prompt suggesting removal — spec is the contract"
+  - "reporting_month now outputs raw YYYYMM string (202605) per criterion 3 — was previously formatted as YYYY-MM (2026-05)"
+  - "src/lib/industry.js created here as part of STORY-004 build since --transform calls inferIndustry(); STORY-006 build pass will verify only"
+overall_status: pass

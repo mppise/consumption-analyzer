@@ -1,0 +1,27 @@
+story_id: STORY-005
+runtime:
+  language: node
+  language_version: "20.x"
+  package_manager: npm
+  build_command: "node src/cli.js --dashboard <portfolio.json>"
+  build_output_dir: "data/ (or same directory as input file)"
+  has_dockerfile: false
+  has_migrations: false
+  exposed_ports: []
+files_modified:
+  - src/tools/dashboard.js
+commits: []
+gap_specs:
+  - gap.md
+warnings:
+  - "2026-06-27 v3 data model migration: dashboard.js updated to traverse c.solution_areas[].sub_solution_areas[].products[] instead of flat c.products[]. All eight structural traversal sites updated."
+  - "product.name used as product display name (replaces product.logical_product). product.lpr used as fallback."
+  - "risk_level/risk_reason display removed from product rows and companion panel. RAG coloring is attainment-pct only (>=90 green, >=75 amber, <75 red)."
+  - "product.insight/recommendation/ea_action shown in companion panel for LPR rows. Null fields show 'Run --analyze to generate insights' gracefully."
+  - "customer.industry displayed as small tag on customer rows (both EA tree and Exec cards)."
+  - "portfolio summary no longer references critical_count — removed from rail KPI strip; replaced with YTD Budget."
+  - "custTrend() and custAllProds() helpers added for nested hierarchy traversal."
+  - "Output file naming: <source-basename>-dashboard.html in same directory as input (spec criterion 1)."
+  - "All 80 products from 4 customers render in EA view. All companion keys resolve correctly."
+  - "File size: ~827KB (Chart.js adds ~200KB, Bootstrap ~230KB)."
+overall_status: pass
