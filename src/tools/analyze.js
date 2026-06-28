@@ -1,10 +1,10 @@
 // @story STORY-003 | analyze
-// @intent runs the 5-step bottom-up AI pipeline on a portfolio.json: Step 1 (contract ai_insights per L3, sonnet), Step 2 (solution_architecture_insights per L2, sonnet), Step 3 (enterprise_architecture_insights per L1, sonnet), Step 4 (account_insights per customer, opus), Step 5 (industry_insights summary per industry, opus) — writes each step's output back to disk after completion
+// @intent runs the 5-step bottom-up AI pipeline on a portfolio.json: Step 1 (contract_insights per L3, sonnet), Step 2 (solution_architecture_insights per L2, sonnet), Step 3 (enterprise_architecture_insights per L1, sonnet), Step 4 (account_insights per customer, opus), Step 5 (industry_insights summary per industry, opus) — writes each step's output back to disk after completion
 
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import Anthropic from '@anthropic-ai/sdk'
+import { AIClient } from '../lib/aiClient.js'
 import { config } from '../config/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -167,31 +167,11 @@ function buildCatalogContext(lprNames, catalog) {
 // ─── AI call ──────────────────────────────────────────────────────────────────
 
 /**
- * Build an async chat function for a given model.
- * Uses direct Anthropic SDK when AI_BASE_URL is empty; uses proxy via baseURL otherwise.
+ * Build an async chat function for a given model using AIClient (always streams).
  */
 function buildChatFn(model, maxTokens, apiKey, baseUrl) {
-  if (baseUrl) {
-    const anthropic = new Anthropic({ apiKey, baseURL: `${baseUrl.replace(/\/$/, '')}/anthropic` })
-    return async (prompt) => {
-      const response = await anthropic.messages.create({
-        model,
-        max_tokens: maxTokens,
-        messages: [{ role: 'user', content: prompt }],
-      })
-      return response.content.filter(b => b.type === 'text').map(b => b.text).join('')
-    }
-  } else {
-    const anthropic = new Anthropic({ apiKey })
-    return async (prompt) => {
-      const response = await anthropic.messages.create({
-        model,
-        max_tokens: maxTokens,
-        messages: [{ role: 'user', content: prompt }],
-      })
-      return response.content.filter(b => b.type === 'text').map(b => b.text).join('')
-    }
-  }
+  const ai = new AIClient({ apiKey, baseURL: baseUrl, defaultModel: model, defaultMaxTokens: maxTokens })
+  return (prompt) => ai.chat(prompt)
 }
 
 // ─── Response parsing ─────────────────────────────────────────────────────────
@@ -278,11 +258,11 @@ function savePortfolio(portfolio, resolvedPath) {
 /**
  * Format the contract data block (year-keyed monthly arrays) into human-readable text
  * suitable for injection into the Step 1 prompt.
- * @param {object} contractBlock — entity:contract object (ai_insights + year-keyed arrays)
+ * @param {object} contractBlock — entity:contract object (contract_insights + year-keyed arrays)
  * @returns {string}
  */
 function formatContractData(contractBlock) {
-  const years = Object.keys(contractBlock).filter(k => k !== 'ai_insights')
+  const years = Object.keys(contractBlock).filter(k => k !== 'contract_insights')
   if (!years.length) return '(No contract data available)'
 
   const lines = []
@@ -316,7 +296,7 @@ function sumCustomerContractValues(customer) {
       for (const l3 of l2.solutions_l3 ?? []) {
         const contract = l3.contract ?? {}
         for (const key of Object.keys(contract)) {
-          if (key === 'ai_insights') continue
+          if (key === 'contract_insights') continue
           const months = contract[key]
           if (!Array.isArray(months)) continue
           for (const m of months) {
@@ -341,10 +321,10 @@ function fmt(n) {
 
 // ─── Step implementations ─────────────────────────────────────────────────────
 
-// @entry runStep1 | Step 1 — contract ai_insights per L3 product (sonnet)
-// @contract input: portfolio with new schema → output: every contract.ai_insights[] populated | errors: warn on individual API failure, continue
+// @entry runStep1 | Step 1 — contract_insights per L3 product (sonnet)
+// @contract input: portfolio with new schema → output: every contract.contract_insights[] populated | errors: warn on individual API failure, continue
 async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
-  process.stderr.write('info: Step 1 — contract ai_insights per L3 product (sonnet)\n')
+  process.stderr.write('info: Step 1 — contract_insights per L3 product (sonnet)\n')
   let taskCount = 0
   let doneCount = 0
 
@@ -388,7 +368,7 @@ async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
 
     const parsed = parseStringArray(rawText, `Step 1 / ${customer.customer ?? customer.customer_id} / ${l3.lpr_name}`)
     l3.contract = l3.contract ?? {}
-    l3.contract.ai_insights = parsed
+    l3.contract.contract_insights = parsed
     doneCount++
     process.stderr.write(`info:   Step 1 done — ${customer.customer ?? customer.customer_id} / ${l3.lpr_name} (${parsed.length} insight(s))\n`)
   }))
@@ -424,7 +404,7 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
 
     // Build l3_contract_insights from Step 1 output
     const l3InsightsText = l3List.map(l3 => {
-      const insights = (l3.contract?.ai_insights ?? []).join(' ')
+      const insights = (l3.contract?.contract_insights ?? []).join(' ')
       return `**${l3.lpr_name}** (${l3.lpr_id}): ${insights || '(no contract insights available)'}`
     }).join('\n\n')
 
@@ -710,7 +690,7 @@ export async function run(args, _options) {
 
   process.stderr.write(`info: models — sonnet (Steps 1–3): ${config.aiModel} | opus (Steps 4–5): ${config.aiModelSenior}\n`)
 
-  // ── Step 1: contract ai_insights per L3 ──────────────────────────────────
+  // ── Step 1: contract_insights per L3 ──────────────────────────────────
   await runStep1(portfolio, chatSonnet, catalog, promptVars)
   savePortfolio(portfolio, resolvedPath)
 

@@ -1,22 +1,24 @@
 story_id: STORY-002
 runtime:
   language: node
-  language_version: "20 LTS (ran with v25.8.1)"
+  language_version: "20 LTS (detected v25.8.1 in env)"
   package_manager: npm
   build_command: "npm install"
-  build_output_dir: "src/ (no compile step — ESM executed directly)"
+  build_output_dir: "src/ (no compile step — ESM executed directly via node)"
   has_dockerfile: false
   has_migrations: false
   exposed_ports: []
 files_modified:
   - src/tools/pdf2csv.js
+  - tests/pdf2csv-cacv.test.js
 commits: []
 gap_specs:
   - gap.md
 warnings:
-  - "pdfreader v3 buffers all text items internally via pdf2json before emitting — true incremental page streaming is not achievable; per-page loop is the closest approximation."
+  - "pdfreader v3 buffers all text items internally via pdf2json before emitting — true incremental page streaming is not achievable; per-page loop is the closest approximation (pattern:stream-to-stdout note)."
   - "csv-stringify quoted:false is set explicitly so numeric values are never quote-wrapped; RFC 4180 quoting still applies for fields containing the delimiter."
-  - "new-format PDFs (CACV_CROSS_FC_OPS_DIBO_REPORT) do not carry a logical_product name column — only the LPR code (lpr → logical_product_id). logical_product is empty string in resulting CSV. Downstream --transform/fieldMapper must handle empty logical_product gracefully."
-  - "HEADER_ALIAS_MAP in pdf2csv.js is the single source of truth for PDF label → canonical column name aliases. If new PDF variants introduce new label spellings, add them here."
-  - "BOM (U+FEFF) stripping applied both at header-detection time (isCacvHeaderRow) and at cell-value transform time (transformedRaw map) to satisfy Criterion 4 completely."
+  - "new-format PDFs (CACV_CROSS_FC_OPS_DIBO_REPORT) where no separate lpr column exists: logical_product_id will be empty in output CSV. Downstream --transform/fieldMapper must parse LPR code from logical_product string (e.g. 'SAP Analytics Cloud BI (LPR1064)') when product_id is absent."
+  - "HEADER_ALIAS_MAP in pdf2csv.js is the single source of truth for PDF label to canonical column name aliases. New PDF variants with new label spellings require additions here only."
+  - "BOM (U+FEFF) stripping applied both at header-detection time (isCacvHeaderRow — via .replace) and at cell-value transform time (transformedRaw map — via .replace) to satisfy Criterion 4."
+  - "Integration tests in tests/pdf2csv.test.js that exercise the full PDF-to-CSV pipeline require CL_WPAK_CACV_ACCOUNT_TARGET.pdf in data/ which is not committed; those 7 tests are skipped. All cACV-domain logic is covered by unit tests in tests/pdf2csv-cacv.test.js."
 overall_status: pass

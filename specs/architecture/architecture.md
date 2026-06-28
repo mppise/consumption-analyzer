@@ -57,27 +57,23 @@ Users are developers and data analysts who receive PDF reports or documents cont
 
 ## Configuration
 
-| Variable      | Description                               | Example value             |
-|---------------|-------------------------------------------|---------------------------|
-| DATA_DIR      | Path to input/output data directory       | ./data                    |
-| LOG_LEVEL     | Logging verbosity (silent/info/debug)     | info                      |
-| PDF_MAX_PAGES | Max pages to process per file (0 = all)   | 0                         |
-| CSV_DELIMITER | Output CSV field delimiter                | ,                         |
-| AI_MODEL      | Model ID for --analyze                    | haiku                     |
-| AI_MAX_TOKENS | Max tokens for AI response                | 8192                      |
-| AI_API_KEY    | API key for AI service                    | 146eda31-...              |
-| AI_BASE_URL   | Custom AI API base URL (empty = Anthropic default) | http://localhost:6655 |
+| Variable        | Description                                          | Example value             |
+|-----------------|------------------------------------------------------|---------------------------|
+| DATA_DIR        | Path to input/output data directory                  | ./data                    |
+| LOG_LEVEL       | Logging verbosity (silent/info/debug)                | info                      |
+| PDF_MAX_PAGES   | Max pages to process per file (0 = all)              | 0                         |
+| CSV_DELIMITER   | Output CSV field delimiter                           | ,                         |
+| AI_MODEL        | Model ID for Steps 1–3 of --analyze (sonnet)         | claude-sonnet-4-5          |
+| AI_MODEL_SENIOR | Model ID for Steps 4–5 of --analyze (opus)           | claude-opus-4-5            |
+| AI_MAX_TOKENS   | Max tokens per AI response                           | 8192                      |
+| AI_API_KEY      | Anthropic API key                                    | sk-ant-...                |
+| AI_BASE_URL     | Custom AI API base URL (empty = Anthropic default)   | http://localhost:6655     |
 
 ## UX Model
-Navigation: flag-driven single command — no navigation model applies (CLI, not browser)
-Visual: terminal output only — no CSS framework, no component library
-Interaction: all inputs supplied at invocation time via flags; no interactive prompts (fully scriptable/pipeable)
-Output conventions:
-- stdout: success output (CSV data, AI analysis text, results)
-- stderr: progress, status, errors, warnings
-- Error prefix: `error:` · Warning prefix: `warn:`
-- No color by default; color optionally enabled at story-spec time
-Help: `consumption-analyzer --help` via commander's built-in formatter
+Navigation: flag-driven single command (CLI) — no browser navigation model for the CLI itself.
+Generated HTML dashboard: 3-pane single merged view. Navigation pattern: left-drives-right — industry selection (left pane) drives customer cards (middle pane); customer selection drives L3 product detail (right pane). No role-based tabs — single unified view for all stakeholder audiences.
+Visual: Bootstrap 5 + Bootstrap Icons (inlined in generated HTML) · vanilla JS · semantic color constants (C_ACV grey / C_BUDGET green / C_CONSUMED orange / C_PCT blue)
+CLI: terminal output only — no CSS framework, no color by default
 
 ---
 
@@ -157,24 +153,53 @@ STORY-006: Industry vertical inference (--transform or inference pass) — infer
 
 ---
 
+## Amendment — 2026-06-28: Clean-slate rewrite — new portfolio.json schema, 5-step AI pipeline, 3-pane dashboard
+
+### Changes to Vision
+The system now produces a single unified HTML dashboard (replacing separate executive/EA tab views) with a 3-pane left-drives-right navigation: industry list → customer cards → L3 product detail. The AI pipeline is rewritten as a 5-step bottom-up flow (contract → L2 → L1 → customer → industry), with Steps 1–3 using sonnet and Steps 4–5 using opus.
+
+### Changes to Data Model
+The portfolio.json schema is completely restructured. New entity names replacing prior hierarchy: `portfolio` (top-level), `industry_insight` (cross-customer industry narrative), `customer` (per-customer with account_insights), `solutions_l1` (with enterprise_architecture_insights), `solutions_l2` (grouping layer), `solutions_l3` (leaf product with solution_architecture_insights and contract block), `contract` (per-product, with ai_insights and year-keyed month arrays), `contract_month` (new canonical financial record). Metric renames applied throughout: ytd_target → budget_contract_value, ytd_actuals → consumed_contract_value, ytd_acv_act → annual_contract_value. Variances (acv_gap, budget_gap, budget_attainment) are computed fields on each contract_month.
+
+### Changes to AI Pipeline
+The 3-level pipeline (sub-SA / product / portfolio) is replaced by a 5-step bottom-up pipeline: Step 1 (contract ai_insights, sonnet), Step 2 (solution_architecture_insights per L2, sonnet), Step 3 (enterprise_architecture_insights per L1, sonnet), Step 4 (account_insights per customer, opus), Step 5 (industry_insights summary, opus). All existing prompt template files (analyze.md, analyze-sa.md) are replaced. The sole product knowledge source is src/ai/sap-product-catalog.json.
+
+### Changes to UX Model
+The separate Executive/EA/MU-Lead/CSM tab views are replaced by a single 3-pane unified dashboard. No role-based tabs. Navigation is left-drives-right: industry selection populates middle pane, customer selection populates right pane. Color constants renamed: C_CACV → C_CONSUMED, C_TARGET → C_BUDGET; C_ACV and C_PCT unchanged. Language standards updated: "consumed" replaces "cACV actuals", "budget" replaces "target/YTD target".
+
+### Changes to Actors
+actor:executive, actor:mu-lead, actor:csm, actor:ea consolidated into a single actor:stakeholder (all roles view the same unified 3-pane dashboard; no role-based access control). actor:operator updated to reflect new --analyze flag behavior (in-place portfolio enrichment, not stdout).
+
+### Changes to Configuration
+AI_MODEL_SENIOR added for Steps 4–5 (opus model). AI_BASE_URL retained. All other vars unchanged.
+
+### Superseded decisions
+- 3-level AI pipeline (sub-SA / product / portfolio) superseded by 5-step bottom-up pipeline
+- Role-based tab dashboard (Executive / EA / MU Lead / CSM tabs) superseded by 3-pane single merged view
+- Old metric names ytd_target, ytd_actuals, ytd_acv_act superseded by budget_contract_value, consumed_contract_value, annual_contract_value throughout all artifacts
+- entities portfolio-json, customer-portfolio, solution-area, sub-solution-area, product-metrics, risk-classification, recommendation superseded by new entity names
+- actor:executive, actor:mu-lead, actor:csm, actor:ea superseded by actor:stakeholder
+
+---
+
 ## Artifact Index
 
 ```yaml
 data-model:
   file: specs/architecture/data-model.md
-  entities: [pdf-input, csv-output, csv-input, analysis-result, tool-invocation, cacv-record, product-metrics, portfolio-json, customer-portfolio, solution-area, sub-solution-area, risk-classification, recommendation]
+  entities: [pdf-input, csv-output, csv-input, tool-invocation, portfolio, industry_insight, customer, solutions_l1, solutions_l2, solutions_l3, contract, contract_month]
 
 actors:
   file: specs/architecture/actors.md
-  roles: [operator, executive, mu-lead, csm, ea]
+  roles: [operator, stakeholder]
 
 contracts:
   file: specs/architecture/contracts.md
-  shapes: [error-envelope, warn-envelope, csv-row, tool-module, analysis-response, cacv-json-record, product-metrics-shape, portfolio-json, customer-portfolio-shape, solution-area-shape, sub-solution-area-shape, product-in-subsa-shape, risk-item, dashboard-recommendation, field-mapper-contract, reconciler-error]
+  shapes: [error-envelope, warn-envelope, csv-row, tool-module, cacv-json-record, portfolio-json, industry-insight-shape, customer-shape, solutions-l1-shape, solutions-l2-shape, solutions-l3-shape, contract-block-shape, contract-month-shape, field-mapper-contract, reconciler-error]
 
 patterns:
   file: specs/architecture/patterns.md
-  patterns: [cli-dispatch, stream-to-stdout, env-config, exit-code-contract, ai-prompt-call, metrics-computation, risk-classification-engine, html-generation]
+  patterns: [cli-dispatch, stream-to-stdout, env-config, exit-code-contract, bottom-up-ai-pipeline, metrics-computation, risk-classification-engine, html-generation]
 
 ux:
   file: specs/architecture/ux.md

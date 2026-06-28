@@ -1,79 +1,149 @@
-// @story STORY-004 STORY-006 | transform industry-inference
-// @intent deterministic industry vertical inference from customer name and product portfolio fingerprint — no AI, no external calls
+// @story STORY-006 | industry-vertical-inference
+// @intent infer SAP industry vertical for a customer name via AI classification — replaces prior hardcoded keyword rules
+
+import { config } from '../config/index.js'
+
+// @gap 2026-06-28 hardcoded keyword rules replaced entirely by AI call per bug-fix brief — prior verticals (Pharma/Life Sciences, Healthcare/MedTech, etc.) superseded by the 23 SAP industry verticals; function signature changed to async(customerName) — productNames parameter removed
 
 /**
- * Infer the industry vertical for a customer based on their name and product portfolio.
+ * The 23 canonical SAP industry vertical strings.
+ * The AI is instructed to return exactly one of these; any other response triggers fallback.
+ */
+export const VALID_VERTICALS = new Set([
+  'Aerospace and defense',
+  'Agribusiness',
+  'Automotive',
+  'Chemicals',
+  'Consumer products',
+  'Construction and real estate',
+  'Defense and security',
+  'Education and research',
+  'Financial services',
+  'Government',
+  'High tech',
+  'Industrial manufacturing',
+  'Life sciences and healthcare',
+  'Media, sports, and entertainment',
+  'Mill products',
+  'Mining',
+  'Oil, gas, and energy',
+  'Professional services',
+  'Retail',
+  'Telecommunications',
+  'Travel and transportation',
+  'Utilities',
+  'Wholesale distribution',
+])
+
+const FALLBACK_VERTICAL = 'Professional services'
+
+// Module-level in-memory cache — persists for the lifetime of the process (one --transform run)
+const _cache = new Map()
+
+/**
+ * Pluggable AI client factory — replaced by tests via _setAiClientFactory().
+ * Default: build from env vars using the real AIClient.
+ * @returns {Promise<object|null>} AI client instance, or null if env vars are missing
+ */
+let _aiClientFactory = async () => {
+  if (!config.aiApiKey || !config.aiBaseUrl) return null
+  const { AIClient } = await import('./aiClient.js')
+  return new AIClient({
+    apiKey: config.aiApiKey,
+    baseURL: config.aiBaseUrl,
+    defaultModel: config.aiModel,
+    defaultMaxTokens: 64,
+  })
+}
+
+/**
+ * Override the AI client factory — for testing only.
+ * @param {Function} factory — async () => aiClient | null
+ */
+export function _setAiClientFactory(factory) {
+  _aiClientFactory = factory
+}
+
+/**
+ * Emit a warn envelope to stderr.
+ * @param {string} message
+ */
+function warnStderr(message) {
+  process.stderr.write(`{"level":"warn","message":${JSON.stringify(message)}}\n`)
+}
+
+/**
+ * Infer the SAP industry vertical for a customer using an AI classification call.
  *
- * Rules are evaluated in priority order — first match wins.
- * Rule set as specified in STORY-006 story-spec.md:
- *   1. product contains "Traceability Hub" OR "Batch Release Hub" → "Pharma/Life Sciences"
- *   2. customer name matches pharma company list → "Pharma/Life Sciences"
- *   3. customer name matches health/medtech company list → "Healthcare/MedTech"
- *   4. product contains "Commerce Cloud" (no higher rule matched) → "Retail/Commerce"
- *   5. product contains "Watchlist Screening" AND Ariba present → "Financial Services"
- *   6. product contains "Watchlist Screening" (no Ariba) → "Manufacturing"
- *   7. Ariba present AND Concur present AND no higher-priority rule → "Manufacturing"
- *   8. fallback → "Unknown"
+ * - Calls are cached per unique customer name within a single process run.
+ * - If the AI call fails or returns an unrecognised value, falls back to "Professional services"
+ *   and emits a warn envelope to stderr.
+ * - If AI client cannot be constructed (missing env vars), falls back silently.
  *
  * @param {string} customerName — display name of the customer
- * @param {string[]} productNames — array of logical product names in the portfolio
- * @returns {string} industry vertical label
+ * @returns {Promise<string>} one of the 23 SAP industry vertical strings
  */
-// @contract input: customerName string, productNames string[] → output: industry string | errors: always returns at least "Unknown"
-export function inferIndustry(customerName, productNames) {
-  const name = (customerName ?? '').toLowerCase()
-  const products = (productNames ?? []).map(p => (p ?? '').toLowerCase())
+// @entry inferIndustry(customerName) | classify customer into SAP industry vertical via AI
+// @contract input: customerName string → output: Promise<industry string (one of 23 SAP verticals)> | errors: never throws — fallback to "Professional services" on AI failure or unrecognised value
+export async function inferIndustry(customerName) {
+  const name = (customerName ?? '').trim()
 
-  // ---- Rule 1: Product fingerprint — pharma-specific products (highest specificity) ----
-  // SAP Traceability Hub or Batch Release Hub → Pharma/Life Sciences
-  if (products.some(p => p.includes('traceability hub') || p.includes('batch release hub'))) {
-    return 'Pharma/Life Sciences'
+  // Return cached result immediately — same name, same industry, one API call per run
+  if (_cache.has(name)) {
+    return _cache.get(name)
   }
 
-  // ---- Rule 2: Customer name — pharma company name patterns ----
-  const pharmaTerms = [
-    'abbvie', 'pfizer', 'novartis', 'roche', 'sanofi', 'bayer', 'merck',
-    'astrazeneca', 'lilly', 'gsk', 'amgen', 'genentech', 'biogen',
-    'regeneron', 'bms', 'bristol-myers', 'bristol myers', 'astellas',
-  ]
-  if (pharmaTerms.some(term => name.includes(term))) {
-    return 'Pharma/Life Sciences'
+  // Build AI client via the factory (real or injected mock)
+  let aiClient = null
+  try {
+    aiClient = await _aiClientFactory()
+  } catch (err) {
+    warnStderr(`inferIndustry: failed to construct AI client for "${name}": ${err.message}`)
+    _cache.set(name, FALLBACK_VERTICAL)
+    return FALLBACK_VERTICAL
   }
 
-  // ---- Rule 3: Customer name — health/medtech company name patterns ----
-  // Terms are prefix/substring tokens — "cardinal" matches "Cardinal", "Cardinal Health", etc.
-  const healthTerms = [
-    'cardinal', 'medtronic', 'abbott', 'stryker', 'becton',
-    'baxter', 'zimmer', 'boston scientific', 'edwards', 'hologic', 'intuitive',
-  ]
-  if (healthTerms.some(term => name.includes(term))) {
-    return 'Healthcare/MedTech'
+  if (!aiClient) {
+    // No AI client available — fall back silently (AI vars not configured)
+    _cache.set(name, FALLBACK_VERTICAL)
+    return FALLBACK_VERTICAL
   }
 
-  // ---- Rule 4: Product fingerprint — Commerce Cloud → Retail/Commerce ----
-  if (products.some(p => p.includes('commerce cloud'))) {
-    return 'Retail/Commerce'
+  const verticalsLine = [...VALID_VERTICALS].join(', ')
+  const prompt =
+    `Classify the following company into exactly one SAP industry vertical.\n` +
+    `Reply with the vertical name only — no explanation, no punctuation, nothing else.\n\n` +
+    `Industry verticals: ${verticalsLine}\n\n` +
+    `Company name: ${name}`
+
+  let rawResult
+  try {
+    rawResult = await aiClient.chat(prompt)
+  } catch (err) {
+    warnStderr(`inferIndustry: AI call failed for "${name}": ${err.message} — falling back to "${FALLBACK_VERTICAL}"`)
+    _cache.set(name, FALLBACK_VERTICAL)
+    return FALLBACK_VERTICAL
   }
 
-  // ---- Rule 5 & 6: Watchlist Screening — Ariba presence determines Financial vs Manufacturing ----
-  const hasWatchlist = products.some(p => p.includes('watchlist screening'))
-  const hasAriba = products.some(p => p.includes('ariba'))
+  // Normalise: trim whitespace and trailing punctuation
+  const trimmed = (rawResult ?? '').trim().replace(/[.,;:!?]+$/, '')
 
-  if (hasWatchlist && hasAriba) {
-    return 'Financial Services'
+  if (VALID_VERTICALS.has(trimmed)) {
+    _cache.set(name, trimmed)
+    return trimmed
   }
 
-  if (hasWatchlist) {
-    // Rule 6: Watchlist Screening without Ariba → Manufacturing
-    return 'Manufacturing'
-  }
+  // Unrecognised value — warn and fall back
+  warnStderr(
+    `inferIndustry: AI returned unrecognised vertical "${trimmed}" for "${name}" — falling back to "${FALLBACK_VERTICAL}"`,
+  )
+  _cache.set(name, FALLBACK_VERTICAL)
+  return FALLBACK_VERTICAL
+}
 
-  // ---- Rule 7: Ariba + Concur (no higher-priority rule matched) → Manufacturing ----
-  const hasConcur = products.some(p => p.includes('concur'))
-  if (hasAriba && hasConcur) {
-    return 'Manufacturing'
-  }
-
-  // ---- Rule 8: Fallback ----
-  return 'Unknown'
+/**
+ * Clear the in-memory cache. Exposed for testing only.
+ */
+export function _clearCache() {
+  _cache.clear()
 }

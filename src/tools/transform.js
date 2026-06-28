@@ -372,7 +372,7 @@ function buildL1Hierarchy(records) {
 
         // Sort each year's months and build contract_month objects
         const contractBlock = {
-          ai_insights: [],
+          contract_insights: [],
         }
         for (const [year, monthEntries] of yearMap) {
           monthEntries.sort((a, b) => a.yyyymm.localeCompare(b.yyyymm))
@@ -465,7 +465,7 @@ function buildIndustryInsights(customers) {
         for (const l3 of l2.solutions_l3 ?? []) {
           const contract = l3.contract ?? {}
           for (const key of Object.keys(contract)) {
-            if (key === 'ai_insights') continue
+            if (key === 'contract_insights') continue
             const months = contract[key]
             if (!Array.isArray(months)) continue
             for (const m of months) {
@@ -523,7 +523,7 @@ function reconcilePortfolio(customers) {
         for (const l3 of l2.solutions_l3 ?? []) {
           const contract = l3.contract ?? {}
           for (const key of Object.keys(contract)) {
-            if (key === 'ai_insights') continue
+            if (key === 'contract_insights') continue
             const months = contract[key]
             if (!Array.isArray(months)) continue
             for (const m of months) {
@@ -645,34 +645,40 @@ export async function run(args, options) {
     cg.records.push(rec)
   }
 
-  // ── Build per-customer entries ─────────────────────────────────────────────
-  const customers = []
+  // ── Build per-customer entries (hierarchy only — industry inferred separately) ──
+  const customerBuilds = []
   for (const [, cg] of customerGroupMap) {
     // Sort records by month ascending before building hierarchy
     cg.records.sort((a, b) => a.month.localeCompare(b.month))
 
     const solutions_l1 = buildL1Hierarchy(cg.records)
 
-    // Collect all lpr_names for industry inference
-    const productNames = []
-    for (const l1 of solutions_l1) {
-      for (const l2 of l1.solutions_l2 ?? []) {
-        for (const l3 of l2.solutions_l3 ?? []) {
-          if (l3.lpr_name) productNames.push(l3.lpr_name)
-        }
-      }
-    }
-
-    const industry = inferIndustry(cg.customer_name, productNames)
-
-    customers.push({
+    customerBuilds.push({
       customer_id: cg.customer_id,
-      customer: cg.customer_name || cg.customer_id || 'Unknown',
-      industry,
-      account_insights: [],
+      customer_name: cg.customer_name,
       solutions_l1,
     })
   }
+
+  // ── Infer industry for all unique customer names (deduplicated, one call each) ──
+  // Collect unique names first so the cache is warmed before the build loop.
+  const uniqueNames = [...new Set(customerBuilds.map(cb => cb.customer_name))]
+  const industryMap = new Map()
+  await Promise.all(
+    uniqueNames.map(async name => {
+      const vertical = await inferIndustry(name)
+      industryMap.set(name, vertical)
+    }),
+  )
+
+  // ── Assemble customer objects with inferred industry ──────────────────────
+  const customers = customerBuilds.map(cb => ({
+    customer_id: cb.customer_id,
+    customer: cb.customer_name || cb.customer_id || 'Unknown',
+    industry: industryMap.get(cb.customer_name) ?? 'Professional services',
+    account_insights: [],
+    solutions_l1: cb.solutions_l1,
+  }))
 
   // ── Reconcile ──────────────────────────────────────────────────────────────
   try {

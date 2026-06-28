@@ -1,7 +1,7 @@
 project:
   name: "ConsumptionAnalyzer"
   created: 2026-06-25
-  release: "3.3.0"
+  release: "4.1.0"
   next_release_type: null
   active_story: null
   active_phase: null
@@ -25,21 +25,21 @@ stories:
     built: true
     deployed: true
   STORY-003:
-    title: "AI-powered cACV analysis (--analyze)"
+    title: "AI-powered analysis — 5-step bottom-up pipeline (--analyze)"
     depends_on: [STORY-001]
     intent_done: true
     spec_done: true
     built: true
     deployed: true
   STORY-004:
-    title: "CSV to JSON transformation (--transform)"
+    title: "CSV to JSON transformation with new portfolio schema (--transform)"
     depends_on: [STORY-001]
     intent_done: true
     spec_done: true
     built: true
     deployed: true
   STORY-005:
-    title: "HTML dashboard generation (--dashboard)"
+    title: "3-pane HTML dashboard generation (--dashboard)"
     depends_on: [STORY-004]
     intent_done: true
     spec_done: true

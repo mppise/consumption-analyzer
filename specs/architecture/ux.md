@@ -1,22 +1,22 @@
 # UX
 
 ## ux:navigation-model
-Navigation: flag-driven single command — no browser navigation model applies to the CLI itself.
+Navigation: flag-driven single command for the CLI itself — no browser navigation model applies to the CLI.
 
 Entry points (CLI):
 - `consumption-analyzer --<flag> <arg>` — one entry point per feature, all via the same binary
 - `consumption-analyzer --help` — built-in commander help, lists all available flags
 
-Entry points (generated HTML dashboard):
-- Two role-based tabs rendered via custom CSS tab bar + vanilla JS: EA | Executive
-- Navigation pattern: `central-dashboard` with role-filtered tabs — EA and Executive views; each tab shows their relevant data slice
-- Left rail: role-switcher tabs + collapsible navigation tree; sections in order: Customers → Architectural Signals (warning icon, clickable to popup) → Portfolio KPIs
-- Default tab on open: EA (first tab)
-- No URL routing — tab state is in-memory only (vanilla JS)
+Entry points (generated HTML dashboard — 3-pane single merged view):
+- Navigation pattern: `left-drives-right` — industry selection drives the middle pane; L1 solution area selection drives the right pane
+- Left pane: industry list — all industries visible on load; each entry shows aggregated ACV, budget, consumed and inline expand/collapse for industry_insights[].summary (Bootstrap collapse); clicking an industry populates the middle pane
+- Middle pane: customer cards for the selected industry — each card shows aggregated contract details, L1 solution area breakdown (always expanded, no toggle), and EA insights always visible in a card frame; clicking an L1 box on a card populates the right pane; empty/prompt state before an industry is selected
+- Right pane: L3 product detail for the selected L1 solution area, grouped by L2 then L1 — shows all contract data (Chart.js line chart filtered to current month, three datasets: ACV/budget/consumed, with data labels), all AI insights always visible in card frames (solution_architecture_insights per L2, ai_insights per L3); empty/prompt state before an L1 is selected; `selectCustomer()` does not populate the right pane
+- Starting state: left pane populated, middle and right panes show a prompt ("Select an industry" / "Select an L1 solution area")
+- No URL routing — pane state is in-memory only (vanilla JS)
+- No role-based tabs — single unified view for all audiences
 
-Shared shell: the `src/cli.js` commander program is the shared CLI shell. The generated HTML dashboard has its own shared shell (custom CSS navbar + tab bar + left rail).
-
-Actor routing: CLI has no role-based routing (single operator). Dashboard tabs are role-implicit — no login, no access control; each tab is self-selecting by audience.
+Shared shell: the `src/cli.js` commander program is the shared CLI shell. The generated HTML dashboard has its own shared shell (navbar + 3-pane layout).
 
 ---
 
@@ -29,29 +29,29 @@ CLI:
 - output-stream: stdout for data, stderr for status/errors/warnings
 
 Generated HTML dashboard:
-- css-framework: pure CSS (no Bootstrap — inlined in generated HTML)
-- icon-set: inline SVG or Unicode — no external icon font
-- component-framework: vanilla JS — no React/Vue/Angular; Chart.js for charts
-- chart-library: Chart.js (latest stable, inlined in generated HTML)
+- css-framework: Bootstrap 5 (inlined in generated HTML)
+- icon-set: Bootstrap Icons (inlined)
+- component-framework: vanilla JS — no React/Vue/Angular; Bootstrap 5 JS components for collapse and tooltips
 - font-family: system-ui, -apple-system, sans-serif
-- spacing: custom CSS variables
+- spacing: Bootstrap default spacing scale
 
-Color scheme constants (semantic, not RAG/threshold-based):
-- C_CACV:   #ea580c — orange; cACV actuals values and dots
-- C_TARGET: #16a34a — green; Target values
-- C_ACV:    #9ca3af — grey; ACV ceiling values
-- C_PCT:    #1d4ed8 — royal blue; all percentage values
+Color scheme constants (semantic):
+- C_ACV:      #9ca3af — grey; annual_contract_value (ACV ceiling)
+- C_BUDGET:   #16a34a — green; budget_contract_value (target)
+- C_CONSUMED: #ea580c — orange; consumed_contract_value (actuals)
+- C_PCT:      #1d4ed8 — royal blue; all percentage and attainment values
 
 Language standards (enforced throughout all dashboard output):
-- "cACV" — not "Actual", "actuals", or "cACV Consumed"
-- "Target" — not "Budget", "budget", or "YTD Budget"
-- "ACV" — not "Contracted ACV"
-- Dollar+label pairs: value and label rendered in same semantic color (e.g. `$1.2M cACV` all orange)
+- "consumed" or "consumed_contract_value" — not "actuals", "cACV", or "YTD actuals"
+- "budget" or "budget_contract_value" — not "target", "YTD target", or "Budget"
+- "ACV" or "annual_contract_value" — not "Contracted ACV"
+- "budget_attainment" — not "attainment %", "ytd_attainment_pct"
+- Dollar+label pairs: value and label rendered in same semantic color
 
 ---
 
 ## ux:component-conventions
-CLI conventions (unchanged):
+CLI conventions:
 - Data output: written to stdout, suitable for piping
 - Status messages: written to stderr, prefixed with log level
 - Error messages: written to stderr, prefixed with `error:`
@@ -59,25 +59,34 @@ CLI conventions (unchanged):
 - Help text: generated by commander via `--help`
 - No interactive prompts; no color by default
 
-Dashboard conventions (generated HTML):
-- No RAG/threshold color coding — all color derives from semantic color constants (C_CACV, C_TARGET, C_ACV, C_PCT); `rc()`, `rb()`, `rl()` helpers render fixed semantic colors, not green/amber/red status
-- Trend arrows: Unicode arrows (↑ ↓ →) — one per product row
-- Tables: custom CSS table styling — hover and stripe via CSS only
-- Cards: custom CSS card for KPI widgets — value large, label small
-- Tabs: custom CSS tab bar with vanilla JS switching — one pane per role
-- Charts:
-  - Waterfall SVG bar: 3 rows (ACV / Target / cACV), scaled to ACV ceiling, inline USD labels, ghost gap fill — used in EA view LPR rows
-  - Monthly attainment line chart: SVG with dots per month (C_CACV colored), att% labels in C_PCT above dots, dashed 100% reference line, month labels — rendered below waterfall in EA view
-  - Chart.js bar charts: SA-level attainment summary
-- Modals: popup for architectural signals — shows customers affected, pattern, explanation, EA action; opened via `showSignalPopup()`; no signal type label
-- Fallback messages: all companion sections that depend on AI data display "Run --analyze" message when fields are null
-- Percentage alignment: right-aligned in all scoped elements (flex row with justify-content:space-between for LPR left column; margin-left:auto for SA header; flex-shrink:0 for customer money line)
-- Max widgets per tab: 6 sections — enforced at story-spec time
+Dashboard conventions (generated HTML — 3-pane layout):
+- Pane widths: left pane ~20%, middle pane ~35%, right pane ~45% (Bootstrap grid columns; adjust at story-spec time)
+- Left pane (industry list):
+  - Each industry row: industry name + aggregated annual_contract_value, budget_contract_value, consumed_contract_value
+  - Industry summary (industry_insights[].summary) shown inline beneath each row via Bootstrap collapse with a small toggle indicator
+  - Selected industry highlighted with Bootstrap active class
+  - Aggregated values formatted as abbreviated USD (e.g. $1.2M)
+- Middle pane (customer cards):
+  - Empty state: centered text "Select an industry" before selection
+  - Each customer card: customer name, industry, account_insights (first paragraph or truncated), aggregated contract values, L1 breakdown (name + budget_attainment per L1) — always expanded, no collapse wrapper
+  - EA insights (enterprise_architecture_insights, Step 3) always visible in a Bootstrap card frame beneath each customer card
+  - Selected customer highlighted with Bootstrap active class
+  - Clicking an L1 box triggers `selectL1(custIdx, l1Idx)` to populate the right pane
+- Right pane (L3 product detail):
+  - Empty state: centered text "Select an L1 solution area" before selection; not populated by customer click
+  - Grouped by L1, then L2; each L2 group shows solution_architecture_insights (Step 2) in an always-visible card frame
+  - Each L3 row: lpr_name, lpr_id, Chart.js line chart (three datasets: ACV C_ACV, budget C_BUDGET, consumed C_CONSUMED; months filtered to ≤ portfolio.reporting_month; data labels on each point)
+  - ai_insights (Step 1) shown in an always-visible card frame below each L3 row
+  - All AI insight fields display "Run --analyze to generate insights" when the array is empty
+- No expand/collapse panels for any AI insight section (EA insights, SA insights, contract AI insights) — all rendered as always-visible card frames
+- Bootstrap collapse used only for industry summary in the left pane
+- No modal popups — all detail is inline
+- No color-coded risk RAG status — semantic color constants (C_ACV, C_BUDGET, C_CONSUMED, C_PCT) used consistently
 
 ---
 
 ## ux:screen-template
-CLI invocation template (unchanged):
+CLI invocation template:
 ```
 [stderr] warn: <any warnings before processing>
 [stdout] <data output>
@@ -90,27 +99,23 @@ On error:
 [exit 1 or 2]
 ```
 
-Dashboard layout template:
+Dashboard layout template (3-pane single merged view):
 ```
-[Navbar]      consumption-analyzer · <fiscal year> · Generated: <timestamp>
-[Tab bar]     EA | Executive
-[Left rail]   Role-switcher tabs · Customers nav tree · Architectural Signals · Portfolio KPIs
-[Center panel] View-specific content (EA hierarchy or Executive cards)
-[Right companion panel] AI insights for selected item — "Run --analyze" fallback if null
-```
-
-EA view center pane structure:
-```
-[Customer → SA → Sub-SA → LPR rows]
-  Each LPR row:
-    [Waterfall SVG] 3 bars: ACV / Target / cACV (scaled to ACV ceiling, inline USD labels, ghost gap fill)
-    [Monthly attainment line chart] dots per month (C_CACV), att% labels (C_PCT), dashed 100% reference, month labels
+[Navbar]       consumption-analyzer · <fiscal year> · Generated: <timestamp>
+[Body]
+  [Left pane]   Industry list
+                  Each entry: industry name · ACV · budget · consumed · summary (inline collapse)
+  [Middle pane] Customer cards for selected industry
+                  Empty state: "Select an industry"
+                  Each card: customer name · account_insights (truncated) · aggregated values · L1 breakdown (always expanded) · EA insights (always-visible card frame)
+  [Right pane]  L3 product detail for selected L1 solution area
+                  Empty state: "Select an L1 solution area"
+                  Grouped by L1 → L2; each L2 has solution_architecture_insights (always-visible card frame)
+                  Each L3 row: lpr_name · lpr_id · line chart (ACV/budget/consumed, current month cutoff, data labels) · ai_insights (always-visible card frame)
 ```
 
-Executive view center pane structure:
-```
-[Portfolio KPI banner] overall_attainment_pct · total_ytd_actuals · total_ytd_target · portfolio ACV
-[Per-customer health cards] attainment % · customer_name · industry · SA-level attainment only
-```
-
-No tab has more than 6 content sections. Every risk item in any tab includes the recommended action inline — no separate "recommendations page."
+Interaction flow:
+1. Page load → left pane populated with all industries; middle and right show empty states
+2. User clicks industry → middle pane renders customer cards for that industry; right pane remains empty
+3. User clicks L1 box on a customer card → right pane renders L3 detail for that L1; `selectL1(custIdx, l1Idx)` called
+4. User clicks industry summary toggle → industry_insights[].summary expands inline in left pane

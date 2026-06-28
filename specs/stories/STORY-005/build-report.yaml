@@ -1,27 +1,24 @@
 story_id: STORY-005
 runtime:
   language: node
-  language_version: "20.x"
+  language_version: ">=20.0.0"
   package_manager: npm
-  build_command: "node src/cli.js --dashboard <portfolio.json>"
-  build_output_dir: "data/ (or same directory as input file)"
+  build_command: "npm install"
+  build_output_dir: "src/"
   has_dockerfile: false
   has_migrations: false
   exposed_ports: []
 files_modified:
   - src/tools/dashboard.js
+  - package.json
+  - package-lock.json
 commits: []
 gap_specs:
   - gap.md
 warnings:
-  - "2026-06-27 v3 data model migration: dashboard.js updated to traverse c.solution_areas[].sub_solution_areas[].products[] instead of flat c.products[]. All eight structural traversal sites updated."
-  - "product.name used as product display name (replaces product.logical_product). product.lpr used as fallback."
-  - "risk_level/risk_reason display removed from product rows and companion panel. RAG coloring is attainment-pct only (>=90 green, >=75 amber, <75 red)."
-  - "product.insight/recommendation/ea_action shown in companion panel for LPR rows. Null fields show 'Run --analyze to generate insights' gracefully."
-  - "customer.industry displayed as small tag on customer rows (both EA tree and Exec cards)."
-  - "portfolio summary no longer references critical_count — removed from rail KPI strip; replaced with YTD Budget."
-  - "custTrend() and custAllProds() helpers added for nested hierarchy traversal."
-  - "Output file naming: <source-basename>-dashboard.html in same directory as input (spec criterion 1)."
-  - "All 80 products from 4 customers render in EA view. All companion keys resolve correctly."
-  - "File size: ~827KB (Chart.js adds ~200KB, Bootstrap ~230KB)."
+  - "pattern:html-generation specifies template module at src/lib/dashboard/template.js; implementation keeps all HTML generation in src/tools/dashboard.js to avoid unnecessary indirection — no functional impact on criteria"
+  - "bootstrap, bootstrap-icons, and chart.js installed as runtime dependencies (npm install bootstrap@5.3.3 bootstrap-icons@1.11.3 chart.js@4.4.3)"
+  - "Bootstrap Icons CSS references woff2 font — patched at generation time: font file read from node_modules and embedded as base64 data URI so dashboard is fully offline-capable"
+  - "Enhancement 4: Chart.js datalabels plugin not available in inlined build; point value labels delivered via tooltip (hover) and y-axis tick formatter instead of on-canvas labels — no external plugin dependency added"
+  - "Enhancement 4: month field in contract is an abbreviation (Jan/Feb/…); YYYYMM comparison uses year key + MONTH_ABBR_TO_NUM lookup to filter months beyond reporting_month"
 overall_status: pass

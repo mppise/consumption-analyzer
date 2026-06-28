@@ -76,16 +76,23 @@ const HEADER_ALIAS_MAP = {
   'consumed solution':      'solution_area',
 
   // sub_solution_area variants
-  sub_solution_area:        'sub_solution_area',
-  'sub_solution area':      'sub_solution_area',
-  'sub solution_area':      'sub_solution_area',
-  'sub solution area':      'sub_solution_area',
-  'subsolution_area':       'sub_solution_area',
-  'subsolution area':       'sub_solution_area',
+  sub_solution_area:            'sub_solution_area',
+  'sub_solution area':          'sub_solution_area',
+  'sub solution_area':          'sub_solution_area',
+  'sub solution area':          'sub_solution_area',
+  'subsolution_area':           'sub_solution_area',
+  'subsolution area':           'sub_solution_area',
+  'consumed subsolution 2026':  'sub_solution_area',
+  'consumed subsolution 2025':  'sub_solution_area',
+  'consumed subsolution':       'sub_solution_area',
 
   // logical_product variants (product name column)
-  logical_product:          'logical_product',
-  'logical product':        'logical_product',
+  logical_product:                    'logical_product',
+  'logical product':                  'logical_product',
+  // pfhier_logical_product_desc is the product-name column in new-format PDFs
+  // (contains both name and embedded LPR code, e.g. "SAP Analytics Cloud BI (LPR1064)")
+  pfhier_logical_product_desc:        'logical_product',
+  'pfhier_logical_product_desc':      'logical_product',
   // lpr in new-format CSVs is the LPR code → logical_product_id, not logical_product
   // (see HEADER_ALIAS_MAP: logical_product_id variants below)
 
@@ -237,17 +244,24 @@ function applyCacvTransform(rows) {
 
     if (normalizedHeader === null || colIndexMap === null) continue
 
-    // Transform each cell in the raw row:
+    // Transform each cell in the raw row (Criteria 4, 5):
+    //   - Strip UTF-8 BOM (﻿) from start of any cell (Criterion 4)
     //   - (Null) → empty string
-    //   - Currency-looking values → strip $ and commas (Criterion 5)
+    //   - Quoted comma-formatted numbers like "22,865" → stripped unquoted numeric (Criterion 5)
+    //   - Unquoted comma-formatted numbers like 1,234,567.89 → stripped numeric (Criterion 5)
+    //   - $ prefix stripped from currency cells
     const transformedRaw = row.map(cell => {
+      // Criterion 4: strip BOM and surrounding whitespace
       const trimmed = String(cell ?? '').replace(/^﻿/, '').trim()
       if (trimmed === '(Null)') return ''
+      // Criterion 5: strip surrounding double-quotes then commas (handles "22,865" → 22865)
+      const unquoted = trimmed.replace(/^"(.*)"$/, '$1')
       // Strip $ prefix and commas from currency/numeric cells
-      if (/^\$?[\d,]+(\.\d+)?$/.test(trimmed)) {
-        return trimmed.replace(/^\$/, '').replace(/,/g, '')
+      // Handles: $1,234.56 → 1234.56 | 22,865 → 22865 | "22,865" → 22865 | -1,234 → -1234
+      if (/^-?\$?[\d,]+(\.\d+)?$/.test(unquoted)) {
+        return unquoted.replace(/^\$/, '').replace(/,/g, '')
       }
-      return trimmed
+      return unquoted
     })
 
     // Project to canonical 7 columns (Criteria 2 + 3)
@@ -467,4 +481,16 @@ export async function run(args, options) {
   // --- Write CSV to file ---
   await writeRowsToCsvFile(finalRows, outputPath, delimiter)
   process.stdout.write(`${outputPath}\n`)
+}
+
+// ── Exports for unit testing ───────────────────────────────────────────────────
+// These internal functions are exported so the test suite can exercise them
+// without requiring a real PDF file (Criteria 2, 3, 4, 5).
+export {
+  isCacvHeaderRow,
+  buildMergedHeader,
+  normalizeHeaderToCanonical,
+  applyCacvTransform,
+  HEADER_ALIAS_MAP,
+  CANONICAL_COLUMNS,
 }

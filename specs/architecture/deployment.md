@@ -18,6 +18,14 @@ registry_identifier: none
   scaling: n/a (local CLI, single process)
   port: null
 
+- name: analyze
+  type: cli-subcommand
+  entry: src/tools/analyze.js
+  invocation: consumption-analyzer --analyze <portfolio.json>
+  output: in-place enrichment of data/<source-basename>-portfolio.json
+  scaling: n/a (local CLI, single process)
+  port: null
+
 - name: dashboard
   type: cli-subcommand
   entry: src/tools/dashboard.js
@@ -34,6 +42,7 @@ vars:
   - PDF_MAX_PAGES
   - CSV_DELIMITER
   - AI_MODEL
+  - AI_MODEL_SENIOR
   - AI_MAX_TOKENS
   - AI_API_KEY
   - AI_BASE_URL

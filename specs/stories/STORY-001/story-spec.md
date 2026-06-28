@@ -13,7 +13,7 @@ reads:
 1. `./deploy.sh` installs dependencies and links binary; `consumption-analyzer` available on PATH after run
 2. `consumption-analyzer --help` exits 0; output lists all five tool flags: --pdf2csv, --analyze, --transform, --dashboard, --build-product-catalog
 3. `consumption-analyzer` with no flags and no positional arg exits 1; contract:error-envelope written to stderr
-4. `src/config/index.js` exports a frozen config with all 8 env vars (DATA_DIR, LOG_LEVEL, PDF_MAX_PAGES, CSV_DELIMITER, AI_MODEL, AI_MAX_TOKENS, AI_API_KEY, AI_BASE_URL) with defaults per pattern:env-config
+4. `src/config/index.js` exports a frozen config with all 9 env vars (DATA_DIR, LOG_LEVEL, PDF_MAX_PAGES, CSV_DELIMITER, AI_MODEL, AI_MODEL_SENIOR, AI_MAX_TOKENS, AI_API_KEY, AI_BASE_URL) with defaults per pattern:env-config
 5. `npm test` exits 0 against the scaffold test file with no failing assertions
 6. dotenv loaded before any other logic in `src/cli.js`; importing the module does not throw
 7. `consumption-analyzer --build-product-catalog` spawns `src/scripts/scrape-sap-products.js`; exit 0 on success, exit 2 on spawn failure

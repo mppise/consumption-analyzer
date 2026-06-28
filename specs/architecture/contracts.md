@@ -62,37 +62,20 @@ Fields:
 
 ---
 
-## contract:analysis-response # inferred
-The shape of output written to stdout by the --analyze tool. Plain text — the raw response from the AI model, streamed or written in full on success.
-
-Fields:
-- content: string — the AI model's response text; no wrapping, no prefix, written directly to stdout
-- format: plain text — no JSON envelope, no ANSI codes unless explicitly enabled # inferred
-
-Examples:
-```
-Summary: The dataset contains 12 months of meter readings for three sites...
-Trend: Consumption increased 18% in Q3 relative to Q1...
-Anomaly: Row 47 shows a reading of 0 — possible gap or missing value...
-```
-
-The exact structure of the AI response is governed by the prompt template at `/src/ai/analyze.md`; this contract defines only the output channel and format rules.
-
----
-
 ## contract:cacv-json-record
 A single parsed row from the cACV CSV, as produced by --transform's CSV parser. This is the intermediate representation before metrics computation.
 
 Fields:
-- solution_area: string — top-level portfolio grouping
-- sub_solution_area: string — second-level grouping
-- logical_product: string — product name; may be empty string in CSVs derived from new-format PDFs (CACV_CROSS_FC_OPS_DIBO_REPORT) where the 'lpr' column carries only the LPR product code; downstream fieldMapper must treat empty string as unknown product name, not an error
+- solution_area: string — top-level portfolio grouping (L1)
+- sub_solution_area: string — second-level grouping (L2)
+- logical_product: string — product name; populated via `pfhier_logical_product_desc` alias when that column is present in new-format PDFs (CACV_CROSS_FC_OPS_DIBO_REPORT); falls back to empty string when neither `logical_product` nor `pfhier_logical_product_desc` is present; downstream fieldMapper must treat empty string as unknown product name, not an error
 - product_id: string — LPR product identifier code (e.g. "LPR868"); same code may appear in multiple rows with different sub_solution_areas or customer_ids
-- customer_id: string | null — customer identifier parsed from combined "Name (ID)" field via parseCustomerRaw(); null in single-customer CSVs. Note: employee_id is not present — customers are identified by customer_id only.
+- customer_id: string | null — customer identifier parsed from combined "Name (ID)" field via parseCustomerRaw(); null in single-customer CSVs
 - customer_raw: string | null — raw combined "Name (ID)" field as it appears in the CSV; null if not present
 - month: string — YYYYMM format
-- cacv_target: number — numeric value after stripping comma formatting (e.g. "1,234.56" → 1234.56); 0 if empty
-- cacv_actual: number — numeric value; 0 for future months; for FY2024/FY2025 historical rows: when both cacv_act (col 6) and cacv_target are empty and delta_cacv (col 7) is positive, delta_cacv is used as actuals proxy
+- annual_contract_value: number — ACV actuals figure for this month (formerly ytd_acv_act)
+- budget_contract_value: number — budgeted contract value; numeric value after stripping comma formatting (e.g. "1,234.56" → 1234.56); 0 if empty (formerly ytd_target / cacv_target)
+- consumed_contract_value: number — actual consumption; 0 for future months; for FY2024/FY2025 historical rows: when both consumed and budget are empty and delta_cacv is positive, delta_cacv is used as actuals proxy (formerly ytd_actuals / cacv_actual)
 - delta_cacv: number | null — value of "Δ cACV to BUD" column (col 7); retained in intermediate record for actuals fallback logic
 
 Notes:
@@ -102,153 +85,95 @@ Notes:
 
 ---
 
-## contract:product-metrics-shape
-The computed metrics object for a single product as written into entity:portfolio-snapshot. This is the JSON shape that --dashboard reads.
-
-Fields:
-- logical_product: string
-- logical_product_id: string — composite uniqueness key `customer_id|solution_area|sub_solution_area|product_id`; used as the reconciler and display key; unique per product-within-sub_area-within-customer
-- lpr_id: string — canonical LPR product registry code (e.g. "LPR868"); the real product identifier; may be shared across multiple logical_product_id entries
-- product_id: string — alias for lpr_id; retained for backward compatibility
-- solution_area: string
-- sub_solution_area: string
-- months: array of month-records (see below)
-- ytd_target: number
-- ytd_actual: number
-- ytd_attainment_pct: number | null
-- run_rate_projection: number
-- predictability_short_term: number (0–100)
-- predictability_long_term: number (0–100)
-- risk_level: "Critical" | "High" | "Medium" | "Low" | "OnTrack" | "NoData"
-- trend_direction: "up" | "down" | "flat"
-
-Month-record shape:
-- month: string (YYYYMM)
-- target: number
-- actual: number
-- attainment_pct: number | null
-- gap: number
-- is_future_month: boolean
-
----
-
 ## contract:portfolio-json
-The top-level JSON file written to disk by --transform and read by --dashboard. Filename convention: `<source-basename>-portfolio.json` in data/. Products are nested inside customers → solution_areas → sub_solution_areas, not at the root level.
+The top-level JSON file written to disk by --transform and enriched in-place by --analyze. Read by --dashboard to generate the HTML output. Filename convention: `<source-basename>-portfolio.json` in `data/`.
 
 Fields:
-- generated_at: string (ISO 8601)
-- reporting_month: string (YYYYMM — latest month with non-zero actuals)
-- fiscal_year: string (e.g. "FY2026")
+- generated_at: string (ISO 8601) — timestamp of when --transform ran
+- reporting_month: string (YYYYMM) — latest month with non-zero actuals
+- fiscal_year: string — e.g. "FY2026"
 - customer_count: integer — number of distinct customers in the dataset
-- industry: string — inferred industry vertical (e.g. "Pharma/Life Sciences", "Manufacturing", "Healthcare"); populated by STORY-006 (--transform or a dedicated inference pass)
-- customers: contract:customer-portfolio-shape[] — one entry per distinct customer
-- summary: object — portfolio-level rollup:
-  - total_ytd_target: number
-  - total_ytd_actuals: number
-  - overall_attainment_pct: number (1 decimal precision)
-- ai_insights: object | null — structured JSON insights block written by --analyze; null until --analyze has run. Fields:
-  - pulse_narrative: string — portfolio-level narrative text
-  - per_customer: object[] — per-customer insight entries (no `key_signals` field)
-  - executive_view: object — executive roll-up; `portfolio_health_by_customer[]` entries each include `recommended_ask_rationale: string`
-  - renewal_risks: object[] — renewal risk signals across the portfolio
-  - momentum: object[] — positive consumption momentum signals
-  - architectural_signals: object[] — each entry has `title`, `pattern`, `explanation`, `action_for_ea` (no `signal_type`)
-  - industry_perspectives: object[] — industry-vertical-specific observations
-
-AI pipeline levels (3-level):
-1. Sub-SA level — haiku model; produces per-sub-SA narrative context
-2. Product level — haiku model (via sub-SA response); populates product.insight, product.recommendation, product.ea_action
-3. Portfolio level — opus model; produces executive_view and portfolio pulse_narrative
+- industry_insights: contract:industry-insight-shape[] — one entry per distinct industry; populated by --analyze Step 5; empty array before --analyze runs
+- customers: contract:customer-shape[] — one entry per distinct customer
 
 ---
 
-## contract:customer-portfolio-shape
-The JSON shape for one customer entry within contract:portfolio-json.customers[].
+## contract:industry-insight-shape
+One industry-level insight block within contract:portfolio-json.industry_insights[].
 
 Fields:
-- customer_id: string — parsed identifier
-- customer_name: string — display name
-- summary: object — customer-level rollup (consumed by Executive/Regional Head view; no product detail):
-  - total_ytd_target: number
-  - total_ytd_actuals: number
-  - overall_attainment_pct: number (1 decimal precision)
-- solution_areas: contract:solution-area-shape[] — full nested hierarchy (consumed by EA view)
+- industry: string — unique industry name (e.g. "Pharma/Life Sciences", "Manufacturing")
+- summary: string[] — array of paragraph strings from --analyze Step 5 (opus model); empty array until --analyze has run
+- aggregated_contracts: object — financial roll-up:
+  - annual_contract_value: number
+  - budget_contract_value: number
+  - consumed_contract_value: number
 
 ---
 
-## contract:solution-area-shape
-One solution area entry within contract:customer-portfolio-shape.solution_areas[].
+## contract:customer-shape
+One customer entry within contract:portfolio-json.customers[].
+
+Fields:
+- customer_id: string | null — parsed from combined "Name (ID)" field; null in single-customer CSVs
+- customer: string — display name
+- industry: string — inferred industry vertical; matches contract:industry-insight-shape.industry
+- account_insights: string[] — paragraph strings from --analyze Step 4 (opus); empty array until --analyze has run
+- solutions_l1: contract:solutions-l1-shape[]
+
+---
+
+## contract:solutions-l1-shape
+One L1 solution area entry within contract:customer-shape.solutions_l1[].
 
 Fields:
 - name: string — e.g. "Finance and Spend Management"
-- ytd_target: number
-- ytd_actuals: number
-- attainment_pct: number (1 decimal precision)
-- sub_solution_areas: contract:sub-solution-area-shape[]
+- enterprise_architecture_insights: string[] — paragraph strings from --analyze Step 3 (sonnet); empty array until --analyze has run
+- solutions_l2: contract:solutions-l2-shape[]
 
 ---
 
-## contract:sub-solution-area-shape
-One sub-solution area entry within contract:solution-area-shape.sub_solution_areas[]. This is the leaf-bearing level — products live here.
+## contract:solutions-l2-shape
+One L2 grouping entry within contract:solutions-l1-shape.solutions_l2[].
 
 Fields:
 - name: string — e.g. "Procurement"
-- ytd_target: number
-- ytd_actuals: number
-- attainment_pct: number (1 decimal precision)
-- products: contract:product-in-subsa-shape[]
+- solutions_l3: contract:solutions-l3-shape[]
 
 ---
 
-## contract:product-in-subsa-shape
-The product object stored within sub_solution_areas[].products[]. This is the primary per-product data shape consumed by the EA view and AI pipeline.
+## contract:solutions-l3-shape
+One L3 product entry within contract:solutions-l2-shape.solutions_l3[]. Leaf level of the portfolio hierarchy.
 
 Fields:
-- lpr: string — LPR product code (e.g. "LPR868")
-- name: string — logical product name (e.g. "Ariba Buying and Invoicing")
-- ytd_target: number
-- ytd_actuals: number
-- ytd_attainment_pct: number | null — `Math.round((actuals / target) * 1000) / 10`; null if target = 0
-- ytd_acv_act: number — ACV actuals for the YTD period
-- contract_utilization_pct: number — utilization percentage against contract value
-- monthly_series: array of {month: string, target: number, actual: number, attainment_pct: number|null, gap: number, is_future_month: boolean}
-- trend_direction: "up" | "down" | "flat"
-- insight: string | null — AI-generated architectural insight; null until --analyze has run
-- recommendation: string | null — AI-generated recommendation; null until --analyze has run
-- ea_action: string | null — EA-specific action; null until --analyze has run
-
-Computation precision rules (enforced by --transform):
-- Summations: `Math.round(val * 100)` per value, sum as integers, divide by 100
-- Attainment %: `Math.round((actuals / target) * 1000) / 10`
-- Reconciliation tolerances: `max(0.01, 0.001 * magnitude)` — proportional, not flat
+- lpr_id: string — LPR product code (e.g. "LPR868")
+- lpr_name: string — logical product name (e.g. "Ariba Buying and Invoicing")
+- solution_architecture_insights: string[] — paragraph strings from --analyze Step 2 (sonnet); empty array until --analyze has run
+- contract: contract:contract-block-shape — the full contract data for this product
 
 ---
 
-## contract:risk-item
-A risk entry in customer-portfolio-shape.risk_items[]. Each entry represents one product that triggered at least one business rule. Note: recommendation is not a field here — per-product recommendations are AI-generated fields on contract:product-in-subsa-shape.
+## contract:contract-block-shape
+The contract data object nested inside contract:solutions-l3-shape.contract.
 
 Fields:
-- product_id: string (LPR code)
-- logical_product: string
-- solution_area: string
-- risk_level: "Critical" | "High" | "Medium" | "Low"
-- risk_reason: string (human-readable description of the triggering rule)
-- ytd_target: number
-- months_remaining: integer
-- urgency_score: number
+- ai_insights: string[] — paragraph strings from --analyze Step 1 (sonnet); raw financial/consumption signal; empty array until --analyze has run
+- [year]: contract:contract-month-shape[] — one key per fiscal year in the data (e.g. "2026"); value is an array of monthly records for that year
 
 ---
 
-## contract:dashboard-recommendation
-The recommendation block rendered per at-risk product in the dashboard. Deterministically derived from contract:risk-item; not AI-generated.
+## contract:contract-month-shape
+One month record within contract:contract-block-shape.[year][].
 
 Fields:
-- product_id: string
-- risk_level: string
-- who_to_speak_to: string[] (e.g. ["CSM", "EA"])
-- message_template: string (e.g. "Utilization gap detected — schedule enablement session")
-- urgency: "immediate" | "this-month" | "this-quarter"
-- suggested_actions: string[] (3–5 items)
+- month: string — month name or abbreviation matching source CSV (e.g. "Jan", "Feb")
+- annual_contract_value: number — ACV actuals for this month
+- budget_contract_value: number — budgeted value for this month
+- consumed_contract_value: number — actual consumption for this month
+- variances: object — computed variance metrics:
+  - acv_gap: number — annual_contract_value - consumed_contract_value
+  - budget_gap: number — budget_contract_value - consumed_contract_value
+  - budget_attainment: number | null — (consumed / budget) * 100 as percentage; null if budget = 0
 
 ---
 
@@ -260,28 +185,27 @@ Input:
 - row: object — raw row keyed by original header strings
 
 Output (mapped object):
-- target: number — mapped from `cacv_target` alias or equivalent
-- actuals: number — mapped from `cacv_actual` alias or equivalent
+- annual_contract_value: number — mapped from ACV actuals column
+- budget_contract_value: number — mapped from budget/target column
+- consumed_contract_value: number — mapped from actuals/consumed column
 - solution_area: string
 - sub_solution_area: string
 - logical_product: string
 - product_id: string
 - month: string (YYYYMM)
-- customer_raw: string | null — raw combined "Name (ID)" field; present in new-format CSVs (CACV_CROSS_FC_OPS_DIBO_REPORT); null if not in CSV
+- customer_raw: string | null — raw combined "Name (ID)" field; present in new-format CSVs; null if not in CSV
 - delta_cacv: number | null — "Δ cACV to BUD" value; passed through for actuals fallback in transform.js
 
-CANONICAL_FIELDS (8 total): solution_area, sub_solution_area, logical_product, product_id, month, cacv_target, cacv_actual, customer_raw
+CANONICAL_FIELDS (8 total): solution_area, sub_solution_area, logical_product, product_id, month, budget_contract_value, consumed_contract_value, customer_raw
 
-REQUIRED_FIELDS (4 — throw on missing): solution_area, logical_product, month, actuals
+REQUIRED_FIELDS (4 — throw on missing): solution_area, logical_product, month, consumed_contract_value
 - All other canonical fields are optional; missing values mapped to null/0 rather than throwing
 
 Behavior:
-- Direct alias match: checked first (e.g. `cacv_target` → `target`)
+- Direct alias match: checked first (legacy names ytd_target, ytd_actuals, ytd_acv_act, cacv_target, cacv_actual are all recognised aliases)
 - Fuzzy match: applied if no direct alias found
 - AI fallback: invoked if fuzzy match score below threshold; returns best-guess canonical key
 - Numbers stripped of comma formatting before returning
-
-Note: downstream `transform.js` reads `mapped.target` / `mapped.actuals`; `metrics.js` receives the canonical `cacv-json-record` shape (with `cacv_target`/`cacv_actual`) for backwards compatibility.
 
 ---
 
@@ -296,4 +220,4 @@ Fields:
 - actual: string | number — what was found in the data
 - message: string — `error: reconciliation check <n> failed — <description>`
 
-Attainment field note: Check 5 reads `ytd_attainment_pct` from the product object (the actual field name); it also handles `attainment_pct` as a legacy alias for backwards compatibility.
+Note: reconciler reads budget_contract_value, consumed_contract_value, and budget_attainment from the contract_month shape; legacy field aliases (ytd_target, ytd_actuals, ytd_attainment_pct) are recognised for backwards compatibility.

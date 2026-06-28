@@ -10,12 +10,17 @@ runtime:
   exposed_ports: []
 files_modified:
   - src/cli.js
+  - src/config/index.js
   - deploy.sh
   - tests/scaffold.test.js
-commits: []
+  - .env.example
+commits:
+  - "feat(STORY-001): add AI_MODEL_SENIOR to config and update scaffold tests for 9 env vars"
 gap_specs: []
 warnings:
+  - "Scaffold was pre-built from prior session; this run added the missing AI_MODEL_SENIOR (9th env var) to config, tests, and .env.example to satisfy criterion 4"
   - "tests/scaffold.test.js: AI_MAX_TOKENS default assertion was 2048 — corrected to 8192 to match architecture spec and config/index.js actual default"
-  - "src/cli.js --build-product-catalog: spawn updated to use absolute path via path.join(__dirname, 'scripts', 'scrape-sap-products.js') — previous relative path 'src/scripts/...' would fail when binary invoked from any directory other than project root"
-  - "deploy.sh: flag verification loop updated from [--pdf2csv, --analyze, --transform, --dashboard, --output] to the five tool flags required by Criterion 2: [--pdf2csv, --analyze, --transform, --dashboard, --build-product-catalog]; --output is a modifier flag, not a tool flag"
+  - "src/cli.js --build-product-catalog: spawn uses absolute path via path.join(__dirname, 'scripts', 'scrape-sap-products.js') — relative path would fail when binary invoked outside project root"
+  - "deploy.sh: flag verification loop covers [--pdf2csv, --analyze, --transform, --dashboard, --build-product-catalog]; --output is a modifier flag, not a tool flag"
+  - "7 pdf2csv tests are skipped due to absent sample PDF fixture — noted in test comments, expected behavior"
 overall_status: pass

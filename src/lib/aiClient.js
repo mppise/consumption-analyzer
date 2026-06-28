@@ -78,10 +78,9 @@ export class AIClient {
       messages:   messages  ?? [{ role: 'user', content: prompt }],
     }
 
-    // Use streaming for large token budgets to avoid proxy timeout errors
-    const useStream = (payload.max_tokens ?? 0) > 8192
-    try {
-      if (useStream) {
+    const MAX_RETRIES = 5
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
         const chunks = []
         const stream = await this._llmClient.messages.stream(payload)
         for await (const event of stream) {
@@ -90,15 +89,18 @@ export class AIClient {
           }
         }
         return chunks.join('')
-      } else {
-        const response = await this._llmClient.messages.create(payload)
-        return response.content
-          .filter(block => block.type === 'text')
-          .map(block => block.text)
-          .join('')
+      } catch (err) {
+        const msg = err.message ?? String(err)
+        // Parse retry-after from 429 response body: "Please retry after N seconds"
+        const retryMatch = msg.match(/"seconds"\s*:\s*(\d+)/) ?? msg.match(/retry after (\d+) second/i)
+        const isRateLimit = msg.includes('429') || msg.toLowerCase().includes('rate limit')
+        if (isRateLimit && attempt < MAX_RETRIES) {
+          const waitSecs = retryMatch ? parseInt(retryMatch[1], 10) + 1 : Math.pow(2, attempt + 1)
+          await new Promise(resolve => setTimeout(resolve, waitSecs * 1000))
+          continue
+        }
+        throw new Error(`AI chat error: ${msg}`)
       }
-    } catch (err) {
-      throw new Error(`AI chat error: ${err.message ?? String(err)}`)
     }
   }
 

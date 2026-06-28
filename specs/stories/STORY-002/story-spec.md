@@ -11,7 +11,7 @@ reads:
 
 ## Criteria
 1. Given a valid SAP cACV PDF, the tool writes a CSV to `<input-dir>/<input-basename>.csv`; stdout emits the output file path on success; exit code 0.
-2. Output header is exactly: `solution_area,sub_solution_area,logical_product,logical_product_id,month,cacv_target,cacv_actual` — derived by `buildMergedHeader()` followed by `normalizeHeaderToCanonical()`; `HEADER_ALIAS_MAP` is the single source of PDF-label-to-canonical mapping; unknown columns are dropped and missing canonical columns are filled with `''`; neither raw header row appears as a data row.
+2. Output header is exactly: `solution_area,sub_solution_area,logical_product,logical_product_id,month,cacv_target,cacv_actual` — derived by `buildMergedHeader()` followed by `normalizeHeaderToCanonical()`; `HEADER_ALIAS_MAP` is the single source of PDF-label-to-canonical mapping and must include `consumed subsolution [year]` variants (e.g. `consumed subsolution 2026`, `consumed subsolution 2025`, `consumed subsolution`) for `sub_solution_area` mapping and `pfhier_logical_product_desc` for `logical_product` mapping; unknown columns are dropped and missing canonical columns are filled with `''`; neither raw header row appears as a data row.
 3. Both old-format PDFs (Measures row first, column labels second) and new-format PDFs (CACV_CROSS_FC_OPS_DIBO_REPORT — reversed row order) are correctly detected by `isCacvHeaderRow()` and produce the same normalized 7-column output.
 4. A UTF-8 BOM (`﻿`) at the start of any extracted text cell is stripped before parsing; no BOM character appears in the output CSV.
 5. Comma-formatted numbers (e.g. `"22,865"` or `1,234,567.89`) are stripped of commas and quote-wrapping and emitted as plain unquoted numeric strings.
@@ -52,4 +52,4 @@ reads:
 | 1.1.0   | 2026-06-25 | Gap merged: clean output mode — headers deduplicated, page-number/date/metadata noise filtered                   | gap-merge  |
 | 2.0.0   | 2026-06-26 | Spec rewritten for cACV domain: 2-row header detection, comma-number parsing, normalized 7-column output         | story-spec |
 | 3.0.0   | 2026-06-27 | Re-spec: old vs new format detection (isCacvHeaderRow/buildMergedHeader), BOM stripping made explicit criteria   | story-spec |
-| 3.0.0   | 2026-06-27 | Gap merged: HEADER_ALIAS_MAP + normalizeHeaderToCanonical canonical projection; BOM cell-level stripping; lpr→logical_product_id alias clarified | gap-merge  |
+| 4.0.0   | 2026-06-28 | Gap merged: HEADER_ALIAS_MAP expanded with new-format aliases (consumed subsolution variants, pfhier_logical_product_desc); quoted comma-number fix; cACV functions exported for unit testing | gap-merge  |

@@ -4,27 +4,28 @@ title: "Industry vertical inference"
 depends_on: [STORY-004]
 reads:
   actors:    [operator]
-  data:      [portfolio-json, customer-portfolio, cacv-record]
-  contracts: [portfolio-json, warn-envelope]
+  data:      [portfolio, customer]
+  contracts: [portfolio-json, cacv-json-record, warn-envelope]
   patterns:  [metrics-computation]
 ---
 
 ## Criteria
-1. After --transform completes, every portfolio JSON contains a non-null `industry` string at the root level.
-2. `inferIndustry(customerName, productNames)` returns exactly one of: "Pharma/Life Sciences", "Healthcare/MedTech", "Manufacturing", "Financial Services", "Retail/Commerce", "Technology", "Public Sector", "Unknown".
+1. After --transform completes, every customer entry in the portfolio JSON contains a non-null `industry` string.
+2. `inferIndustry(customerName)` returns exactly one of the 23 canonical SAP industry verticals (as enumerated in `VALID_VERTICALS` exported from src/lib/industry.js); the AI model (AI_MODEL env var, sonnet) selects the best match from that enum for the given customer name.
 3. AbbVie → "Pharma/Life Sciences"; Cardinal → "Healthcare/MedTech"; Medtronic → "Healthcare/MedTech"; Abbott → "Healthcare/MedTech" (unit test assertions).
-4. Rules are evaluated in priority order — higher-priority signals win (e.g. Traceability Hub presence beats Commerce Cloud presence).
-5. If no rule matches, `inferIndustry` returns "Unknown" — never null, never throws.
-6. Inference runs purely in-process; no AI call, no network access, no disk I/O beyond the existing transform write.
+4. Deduplication: each unique customer name results in exactly one AI call per --transform run; in-memory cache ensures subsequent references to the same name reuse the cached result.
+5. If the AI call fails or returns an unrecognised value, `inferIndustry` returns "Professional services" — never null, never throws.
+6. Inference uses an AI call via `src/lib/aiClient.js` (AI_MODEL env var, sonnet); `_setAiClientFactory` and `_clearCache` hooks are exported from src/lib/industry.js for test injection without ESM module mocking.
 
 ## Interfaces
-No new CLI flag or HTTP endpoint. `inferIndustry` is an internal function called by `src/tools/transform.js`.
+No new CLI flag or HTTP endpoint. `inferIndustry` is an internal async function called by `src/tools/transform.js`.
 
 Call site in transform.js:
-  location: after customer data is assembled, before portfolio JSON is written
-  input:    customerName (string), productNames (string[] — logical product names from cacv-records)
-  output:   string — one of the 8 enumerated verticals
+  location: after customer data is assembled; customer names deduplicated; all inferIndustry() calls awaited before portfolio JSON is written
+  input:    customerName (string)
+  output:   Promise<string> — one of the 23 VALID_VERTICALS; "Professional services" on error/unrecognised
   module:   src/lib/industry.js
+  model:    AI_MODEL env var (sonnet)
 
 ## Permissions
 - actor:operator — runs --transform; receives enriched portfolio JSON with industry field populated
@@ -33,22 +34,13 @@ Call site in transform.js:
 No state transitions — creation only (industry field written once per --transform run).
 
 ## Data
-- owns: data:portfolio-json (writes `industry` field at root level)
-- reads: data:customer-portfolio (customer_name per customer), data:cacv-record (logical_product per record)
+- owns: data:portfolio (writes `customer[].industry` and `industry_insights[]`)
+- reads: data:customer (customer name field)
 - new fields:
-  - portfolio-json.industry: string — enumerated vertical; already declared in contract:portfolio-json and entity:portfolio-json
-
-Rule priority (encoded in src/lib/industry.js, evaluated in order, first match wins):
-  1. product contains "Traceability Hub" OR "Batch Release Hub" → "Pharma/Life Sciences"
-  2. customer name matches pharma terms (AbbVie, Pfizer, Novartis, Roche, Sanofi, Bayer, Merck, AstraZeneca, Lilly, GSK, Amgen, Genentech, Biogen, Regeneron, BMS) → "Pharma/Life Sciences"
-  3. customer name matches health/medtech terms (Cardinal, Medtronic, Abbott, Stryker, Becton, Baxter, Zimmer, Boston Scientific, Edwards, Hologic, Intuitive) → "Healthcare/MedTech"
-  4. product contains "Commerce Cloud" (no higher-priority rule matched) → "Retail/Commerce"
-  5. product contains "Watchlist Screening" AND (Ariba present) → "Financial Services"
-  6. product contains "Watchlist Screening" (no Ariba) → "Manufacturing"
-  7. Ariba present AND Concur present AND no higher-priority rule → "Manufacturing"
-  8. fallback → "Unknown"
+  - customer.industry: string — SAP industry vertical from VALID_VERTICALS; already declared in contract:customer-shape and entity:customer
 
 ## Change history
 | release | date       | summary                                                                                           | source    |
 |---------|------------|---------------------------------------------------------------------------------------------------|-----------|
 | 3.0.0   | 2026-06-27 | Gap merged: rules 6 and 7 absent from src/lib/industry.js — rewrote rule set with Ariba-presence branching for Watchlist Screening and Ariba+Concur→Manufacturing; spec was complete and correct, no spec changes required | gap-merge |
+| 3.1.0   | 2026-06-28 | Gap merged: AI rewrite — hardcoded rules replaced by AI call (AI_MODEL/sonnet); 8-vertical enum replaced by 23 SAP verticals; inferIndustry now async, productNames param removed; fallback changed to "Professional services"; caching and test hooks added | gap-merge |

@@ -54,28 +54,49 @@ Consistent exit codes across all tool modules, enforced by `cli.js`:
 
 - `0` — success; output written
 - `1` — user error (bad args, file not found, missing required flag)
-- `2` — processing failure (no tables detected, corrupt/unreadable PDF, write error)
+- `2` — processing failure (no tables detected, corrupt/unreadable PDF, write error, reconciliation failure)
 
 `cli.js` wraps every `module.run()` call in try/catch and maps thrown error types to exit codes.
 
 ---
 
-## pattern:ai-prompt-call
-The pattern for tools that call an external AI/LLM API. Used by the --analyze tool.
+## pattern:bottom-up-ai-pipeline
+The 5-step bottom-up AI analysis pattern. Used by the --analyze tool. All AI calls are mediated through prompt templates in `/src/ai/` — no inline prompt strings in source code. The sole product knowledge source is `src/ai/sap-product-catalog.json`.
 
-Flow:
-1. Tool reads the input file (CSV) from disk into a string
-2. Tool loads the prompt template from `/src/ai/analyze.md` — a Markdown file with `{{placeholder}}` syntax
-3. Template variables (e.g. `{{csv_content}}`, `{{filename}}`) are substituted to produce the final prompt string
-4. Tool calls the Anthropic SDK (`@anthropic-ai/sdk`) using config values from `src/config/index.js` (AI_MODEL, AI_MAX_TOKENS, AI_API_KEY)
-5. Response text is written directly to `process.stdout`
-6. On API error: tool throws with a descriptive message; `cli.js` writes `error: <message>` to stderr and exits with code 2
+The pipeline processes each customer independently and writes AI insight fields back into the portfolio JSON in-place. Steps run bottom-up from leaf (L3 contract) to root (industry), each step consuming the outputs of the step below it.
 
-Key constraints:
-- The prompt template is always a `.md` file under `/src/ai/` — never inline strings in source code
-- API key is sourced from `AI_API_KEY` env var — never hardcoded
-- The tool never interprets or reformats the AI response — raw text goes to stdout as-is
-- Large CSV files must be trimmed or summarised before inclusion in the prompt if they exceed AI_MAX_TOKENS context limits # inferred
+**Step 1 — Contract insights per L3 product (sonnet model)**
+- Input: all year/month records in entity:contract for this one L3 product, including variances (acv_gap, budget_gap, budget_attainment)
+- Output: contract.ai_insights[] — short paragraphs of raw financial and consumption signal for this product
+- Scope: one API call per L3 product
+
+**Step 2 — Solution-architecture insights per L2 grouping (sonnet model)**
+- Input: Step 1 ai_insights from ALL L3 products under this L2 + relevant entries from sap-product-catalog.json
+- Output: solutions_l3[].solution_architecture_insights[] — functional architecture observations across the L2's products
+- Scope: one API call per L2 grouping per customer
+
+**Step 3 — Enterprise-architecture insights per L1 solution area (sonnet model)**
+- Input: Step 2 enterprise_architecture_insights (and Step 1 insights as context) from ALL L2s under this L1 + relevant entries from sap-product-catalog.json
+- Output: solutions_l1[].enterprise_architecture_insights[] — EA-level action items, patterns, and risks
+- Scope: one API call per L1 solution area per customer
+
+**Step 4 — Account insights per customer (opus model)**
+- Input: Steps 1+2+3 outputs for this customer + aggregated contract values across all L3 products
+- Output: customer.account_insights[] — executive-facing summary and prioritised action items
+- Scope: one API call per customer
+
+**Step 5 — Industry insights (opus model)**
+- Input: Steps 1+2+3 outputs for ALL customers in this industry + contract values aggregated across those customers (from industry_insights[].aggregated_contracts)
+- Output: industry_insights[].summary[] — VAT-facing cross-customer industry narrative and action items
+- Scope: one API call per distinct industry
+
+**Key constraints:**
+- Every prompt template is a `.md` file under `/src/ai/` with `{{placeholder}}` syntax — all existing prompt files (analyze.md, analyze-sa.md) are replaced by new step-specific templates
+- API key sourced from `AI_API_KEY` env var — never hardcoded
+- Product catalog (`src/ai/sap-product-catalog.json`) is the sole product knowledge source; no other file may inject product knowledge into prompts
+- Steps 1–3 use `AI_MODEL` (sonnet); Steps 4–5 use `AI_MODEL_SENIOR` (opus) — both env vars required
+- The tool writes each step's output back into the portfolio JSON on disk after each step completes — a crash mid-pipeline loses at most one step's worth of computation
+- AI responses are never interpreted or reformatted in source code — they are stored as string arrays verbatim in the JSON
 
 ---
 
@@ -85,38 +106,38 @@ The pattern for computing all cACV-domain metrics in Node.js inside --transform.
 Flow:
 1. `src/tools/transform.js` reads the CSV file using csv-parse, skipping the 2-row header
 2. Each row is parsed into a `cacv-json-record` — comma-formatted numbers stripped and converted to float
-3. Records are grouped by `product_id` into a Map; within each product, records are sorted by month ascending
-4. For each product group, `src/lib/metrics.js` computes:
-   - Per-month: attainment_pct = actual / target * 100 (null if target = 0), gap = actual - target
-   - YTD: sum targets and actuals for all months where is_future_month = false
-   - trend_direction: compare average attainment of last 3 reported months vs prior 3
-   - run_rate_projection: (ytd_actual / reported_months) * total_fiscal_months
-   - predictability scores: derived from variance and trend consistency across reported months # inferred
-5. The `src/lib/risk.js` module evaluates each product against the 9 business rules in order of severity (Critical first) — returns the highest matching risk level and the triggering rule
-6. `src/lib/recommendations.js` maps each risk-classified product to a `dashboard-recommendation` using a static rule table (no AI)
-7. All products are assembled into a `portfolio-json` and written to `data/<source-basename>-portfolio.json`
+3. Records are grouped by `product_id` and month into the L1 → L2 → L3 hierarchy
+4. For each L3 product, `src/lib/metrics.js` computes per entity:contract_month:
+   - annual_contract_value: ACV actuals for this month
+   - budget_contract_value: budgeted value for this month
+   - consumed_contract_value: actual consumption (0 for future months)
+   - variances.acv_gap: annual_contract_value - consumed_contract_value
+   - variances.budget_gap: budget_contract_value - consumed_contract_value
+   - variances.budget_attainment: (consumed / budget) * 100; null if budget = 0
+5. Industry is inferred by STORY-006 logic (--transform pass or dedicated inference pass) and written to entity:customer.industry
+6. The completed portfolio object is written to `data/<source-basename>-portfolio.json`
 
-Key constraint: all metric computations happen in `src/lib/` modules — never inline in the tool module. `src/lib/risk.js` is the single source of truth for the 9 business rules; no other file may implement risk logic.
+Key constraint: all metric computations happen in `src/lib/` modules — never inline in the tool module. Integer-safe arithmetic: Math.round(val * 100) per value, sum as integers, divide by 100.
 
 ---
 
 ## pattern:risk-classification-engine
-The deterministic risk classification algorithm. Applied per product in `src/lib/risk.js`. Rules evaluated in order of severity — first match wins (Critical takes precedence over High, etc.).
+The deterministic risk classification algorithm. Applied per L3 product in `src/lib/risk.js`. Rules evaluated in order of severity — first match wins (Critical takes precedence over High, etc.). Risk classification operates on the contract_month series for each L3 product.
 
 Rules (in evaluation order):
-1. Critical: any 2+ consecutive reported months where attainment_pct < 50%
-2. Critical: any reported month where actual = 0 AND target > 0 (zero-utilization)
-3. High: latest reported month attainment_pct in [50, 74] AND downward trend over last 3 months
-4. High: ytd_attainment_pct < 70% AND count of reported months > 3
-5. Medium: attainment_pct in [75, 89] in latest reported month AND downward trend
-6. Medium: exactly one reported month with actual = 0 AND target > 0 (not consecutive)
-7. Low: latest reported month attainment_pct in [90, 99]
-8. OnTrack: ytd_attainment_pct >= 100%
-8b. OnTrack (catch-all): ytd_attainment_pct >= 90% with no active risk triggers from rules 1–7
+1. Critical: any 2+ consecutive reported months where budget_attainment < 50%
+2. Critical: any reported month where consumed_contract_value = 0 AND budget_contract_value > 0 (zero-utilization)
+3. High: latest reported month budget_attainment in [50, 74] AND downward trend over last 3 months
+4. High: average budget_attainment across reported months < 70% AND count of reported months > 3
+5. Medium: budget_attainment in [75, 89] in latest reported month AND downward trend
+6. Medium: exactly one reported month with consumed_contract_value = 0 AND budget_contract_value > 0
+7. Low: latest reported month budget_attainment in [90, 99]
+8. OnTrack: average budget_attainment >= 100%
+8b. OnTrack (catch-all): average budget_attainment >= 90% with no active risk triggers from rules 1–7
 8c. Low (catch-all): any product with at least one reported month and no match from rules 1–8b
-9. NoData: target = 0 for all months OR no reported months yet
+9. NoData: budget_contract_value = 0 for all months OR no reported months yet
 
-Key constraint: these rule definitions live as constants in `src/lib/risk.js`. No other file may define or modify risk thresholds. When a rule is updated, only `src/lib/risk.js` changes.
+Key constraint: these rule definitions live as constants in `src/lib/risk.js`. No other file may define or modify risk thresholds.
 
 ---
 
@@ -125,15 +146,13 @@ The pattern for generating the self-contained, portable HTML dashboard in --dash
 
 Flow:
 1. `src/tools/dashboard.js` reads the `portfolio-json` file from disk
-2. For each of the four tab views, `src/lib/dashboard/[view].js` computes the view-specific data slice (e.g. top 5 at-risk by $ value for Executive tab)
-3. `src/lib/dashboard/template.js` holds the HTML shell template as a JS template literal; Bootstrap 5 CSS and Chart.js are read from `node_modules` at generation time and inlined as `<style>` and `<script>` blocks
-4. The portfolio JSON data is embedded in the HTML as a `<script>const DATA = {...}</script>` block — no external fetch required
-5. Tab switching is handled by Bootstrap's tab component (JS inline in the template)
-6. Charts (heatmap, bar, trend) are rendered by Chart.js using the embedded DATA object
-7. The final HTML string is written to `data/<source-basename>-dashboard.html`
+2. Bootstrap 5 CSS, Bootstrap JS, and Bootstrap Icons are read from `node_modules` at generation time and inlined as `<style>` and `<script>` blocks; Chart.js is also inlined. The HTML shell may be defined as a template in `src/lib/dashboard/template.js` or kept inline in `dashboard.js` — either is acceptable provided the zero-CDN constraint is met.
+3. The portfolio JSON data is embedded in the HTML as a `<script>const DATA = {...}</script>` block — no external fetch required
+4. The 3-pane layout (industry list / customer list / L3 detail) is rendered as a single HTML document; pane content is driven by vanilla JS click handlers that filter from the embedded DATA object
+5. The final HTML string is written to `data/<source-basename>-dashboard.html`
 
 Key constraints:
-- Zero external dependencies at view time: Bootstrap CSS, Bootstrap JS, Chart.js, and all icons are inlined — the file must be openable without internet access
-- The template is in `src/lib/dashboard/template.js` — not inline in the tool module
-- All data visible in the dashboard must come from the embedded DATA constant — no runtime computation in browser JS beyond chart rendering and tab switching
+- Zero external dependencies at view time: Bootstrap CSS, Bootstrap JS, and all icons are inlined — the file must be openable without internet access
+- HTML generation may be inline in the tool module or extracted to a separate template module — no structural requirement on file location
+- All data visible in the dashboard must come from the embedded DATA constant — no runtime computation in browser JS beyond pane filtering and rendering
 - File size is acceptable up to ~5 MB for a single customer portfolio # inferred
