@@ -1,5 +1,5 @@
 // @story STORY-001 | cli-scaffold
-// @intent scaffold test file — ensures the test runner can locate and execute tests; verifies config module exports a frozen object with all 8 expected keys
+// @intent scaffold test file — ensures the test runner can locate and execute tests; verifies config module exports a frozen object with all 9 expected keys
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -15,15 +15,16 @@ test('config module exports a frozen object', async () => {
   assert.ok(Object.isFrozen(config), 'config should be frozen')
 })
 
-test('config has all 8 expected keys with defaults', async () => {
+test('config has all 9 expected keys with defaults', async () => {
   const { config } = await import('../src/config/index.js')
   // Core config
   assert.ok('dataDir' in config, 'config.dataDir should exist')
   assert.ok('logLevel' in config, 'config.logLevel should exist')
   assert.ok('pdfMaxPages' in config, 'config.pdfMaxPages should exist')
   assert.ok('csvDelimiter' in config, 'config.csvDelimiter should exist')
-  // AI config
+  // AI config (9 vars total: AI_MODEL, AI_MODEL_SENIOR, AI_MAX_TOKENS, AI_API_KEY, AI_BASE_URL)
   assert.ok('aiModel' in config, 'config.aiModel should exist')
+  assert.ok('aiModelSenior' in config, 'config.aiModelSenior should exist')
   assert.ok('aiMaxTokens' in config, 'config.aiMaxTokens should exist')
   assert.ok('aiApiKey' in config, 'config.aiApiKey should exist')
   assert.ok('aiBaseUrl' in config, 'config.aiBaseUrl should exist')
@@ -37,6 +38,7 @@ test('config default values are correct when env vars not set', async () => {
   assert.equal(config.logLevel, process.env.LOG_LEVEL ?? 'info')
   assert.equal(config.pdfMaxPages, parseInt(process.env.PDF_MAX_PAGES ?? '0', 10))
   assert.equal(config.csvDelimiter, process.env.CSV_DELIMITER ?? ',')
-  assert.equal(config.aiModel, process.env.AI_MODEL ?? 'anthropic--claude-sonnet-latest')
+  assert.equal(config.aiModel, process.env.AI_MODEL ?? 'claude-sonnet-4-5')
+  assert.equal(config.aiModelSenior, process.env.AI_MODEL_SENIOR ?? 'claude-opus-4-5')
   assert.equal(config.aiMaxTokens, parseInt(process.env.AI_MAX_TOKENS ?? '8192', 10))
 })
