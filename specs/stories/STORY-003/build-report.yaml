@@ -1,7 +1,7 @@
 story_id: STORY-003
 runtime:
   language: node
-  language_version: "25.8.1"
+  language_version: "20.x"
   package_manager: npm
   build_command: "node src/cli.js"
   build_output_dir: "src/"
@@ -9,15 +9,18 @@ runtime:
   has_migrations: false
   exposed_ports: []
 files_modified:
-  - src/ai/analyze-sa.md
-  - src/ai/analyze.md
   - src/tools/analyze.js
-gap_specs:
-  - gap.md
+  - src/ai/step1-contract.md
+  - src/ai/step2-solution-arch.md
+  - src/ai/step3-enterprise-arch.md
+  - src/ai/step4-account.md
+  - src/ai/step5-industry.md
+  - src/ai/analyze.md (deleted — replaced by step-specific templates)
+  - src/ai/analyze-sa.md (deleted — replaced by step-specific templates)
+gap_specs: []
 warnings:
-  - "3-level pipeline rewrite 2026-06-27: L1 uses MODELS.haiku (max_tokens=2000) per sub-SA in parallel via Promise.allSettled; L2 distributes L1 product fields (insight, recommendation, ea_action) into portfolio objects; L3 uses MODELS.opus for portfolio narrative. No separate API call for L2."
-  - "AIClient constructor requires non-empty baseURL; when AI_BASE_URL is unset, analyze.js falls back to direct Anthropic SDK instantiation. Gap documented in @gap annotation in analyze.js."
-  - "action_for_csm removed from both prompt templates and AI response shapes (analyze.md and analyze-sa.md). architectural_signals no longer includes action_for_csm field."
-  - "Graceful degradation: L1 failure for a sub-SA warns to stderr and continues; product insight/recommendation/ea_action remain null for that sub-SA."
-  - "buildLPRContext function from previous implementation refactored into two functions: buildCatalogContextForProducts (used by L1 per-sub-SA) and buildPortfolioCatalogContext (used by L3 full portfolio)."
+  - "STORY-003 depends on STORY-004 for real new-schema portfolio.json input. When run against old-schema portfolio.json (customers[].solution_areas hierarchy), the pipeline runs 0 tasks and exits 0 — graceful no-op. Full pipeline validation requires STORY-004 to be built first."
+  - "Step 2 writes solution_architecture_insights to ALL L3 products under a given L2 (same array reference per sibling). This matches spec: solutions_l3[].solution_architecture_insights is the write target, and the insights describe the L2 grouping, not individual L3 products."
+  - "Steps 4-5 run customers/industries sequentially (not parallel) to respect opus model rate limits on large-context prompts."
+  - "Spec criterion 7 (missing argument) is handled by commander before reaching the tool module — message is 'option --analyze <file> argument missing' not '--analyze requires a filename argument'. Approved by gap in story-spec.md change history (Release 1.2.0)."
 overall_status: pass
