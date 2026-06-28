@@ -41,8 +41,9 @@ export function inferIndustry(customerName, productNames) {
   }
 
   // ---- Rule 3: Customer name — health/medtech company name patterns ----
+  // Terms are prefix/substring tokens — "cardinal" matches "Cardinal", "Cardinal Health", etc.
   const healthTerms = [
-    'cardinal health', 'medtronic', 'abbott', 'stryker', 'becton',
+    'cardinal', 'medtronic', 'abbott', 'stryker', 'becton',
     'baxter', 'zimmer', 'boston scientific', 'edwards', 'hologic', 'intuitive',
   ]
   if (healthTerms.some(term => name.includes(term))) {
