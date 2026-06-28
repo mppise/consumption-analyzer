@@ -1,6 +1,6 @@
 {
   "name": "consumption-analyzer",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "CLI tools for analyzing data files — PDF-to-CSV and more",
   "type": "module",
   "bin": {

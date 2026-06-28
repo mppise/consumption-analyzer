@@ -1,0 +1,11 @@
+{
+  "_comment": "Color scheme for the cACV dashboard. Edit here — dashboard.js reads C_CACV/C_TARGET/C_ACV/C_PCT at the top of the file.",
+
+  "colors": {
+    "cacv_consumed":    "#ea580c",
+    "target_budget":    "#16a34a",
+    "contracted_acv":   "#9ca3af",
+    "percentage":       "#1d4ed8",
+    "text":             "#212529"
+  }
+}

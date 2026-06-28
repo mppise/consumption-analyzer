@@ -546,12 +546,6 @@ function distributeL1Results(portfolio, l1Results) {
           product.recommendation = l1Product.recommendation ?? null
           product.ea_action      = l1Product.ea_action      ?? null
         }
-
-        // Store sub-SA signal in the sub-SA object (optional, useful for L3 context)
-        if (l1Result.signal_type) {
-          subSa._ai_signal  = l1Result.signal_type
-          subSa._ai_pattern = l1Result.pattern ?? null
-        }
       }
     }
   }
@@ -618,14 +612,12 @@ export async function run(args, options) {
   let portfolioData = null
 
   if (isJson) {
-    // @contract input: portfolio.json string → output: portfolioData object | errors: throws ProcessingError on parse failure
     try {
       portfolioData = JSON.parse(rawContent)
     } catch (err) {
       throw new ProcessingError(`cannot parse JSON: ${err.message}`)
     }
   } else {
-    // CSV path: treat as legacy — wrap in minimal object
     portfolioData = { raw_csv: rawContent }
   }
 
@@ -635,6 +627,16 @@ export async function run(args, options) {
   const reportingMonth  = formatReportingMonth(portfolioData.reporting_month)
   const monthsRemaining = computeMonthsRemaining(portfolioData.reporting_month)
   const customerName    = isJson ? extractCustomerName(portfolioData) : 'Unknown Customer'
+
+  const custCount    = portfolioData.customers?.length ?? 0
+  const subSaCount   = (portfolioData.customers ?? []).reduce((t, c) =>
+    t + (c.solution_areas ?? []).reduce((s, sa) => s + (sa.sub_solution_areas ?? []).length, 0), 0)
+  const productCount = (portfolioData.customers ?? []).reduce((t, c) =>
+    t + (c.solution_areas ?? []).reduce((s, sa) =>
+      s + (sa.sub_solution_areas ?? []).reduce((p, sub) => p + (sub.products ?? []).length, 0), 0), 0)
+
+  process.stderr.write(`info: loaded ${filename} — FY${fiscalYear}, reporting month ${reportingMonth}, ${monthsRemaining} months remaining\n`)
+  process.stderr.write(`info: portfolio — ${custCount} customer(s), ${subSaCount} sub-SA(s), ${productCount} product(s)\n`)
 
   const promptVars = {
     current_date:     currentDate,
@@ -647,14 +649,11 @@ export async function run(args, options) {
   const catalog = loadCatalog()
 
   // ── Build AI chat functions for each level ─────────────────────────────────
-  // L1 uses MODELS.haiku (2000 token budget — narrow per-sub-SA scope)
   const L1_MAX_TOKENS = 2000
   const callHaikuChat = buildAIChat(config.aiApiKey, config.aiBaseUrl, MODELS.haiku, L1_MAX_TOKENS)
-  // L3 uses MODELS.opus (full portfolio budget)
   const callOpusChat  = buildAIChat(config.aiApiKey, config.aiBaseUrl, MODELS.opus, config.aiMaxTokens)
 
   // ── L1: Run haiku calls in parallel across all sub-SAs ────────────────────
-  // Collect all sub-SA tasks
   const l1Tasks = []
   if (isJson && Array.isArray(portfolioData.customers)) {
     for (const customer of portfolioData.customers) {
@@ -678,7 +677,7 @@ export async function run(args, options) {
   // @contract input: l1Tasks[] → output: Map<key, L1Result|null> | errors: individual failures degrade gracefully (warn + null)
   const l1Results = new Map()
   if (l1Tasks.length > 0) {
-    process.stderr.write(`info: running L1 analysis across ${l1Tasks.length} sub-solution area(s)...\n`)
+    process.stderr.write(`info: L1 — ${l1Tasks.length} sub-SA(s) across ${custCount} customer(s) (haiku, parallel)\n`)
     const l1Settled = await Promise.allSettled(
       l1Tasks.map(task =>
         runL1ForSubSA({
@@ -688,19 +687,24 @@ export async function run(args, options) {
           catalog,
           promptVars,
           callHaikuChat,
-        }).then(result => ({ key: task.key, result }))
+        }).then(result => {
+          process.stderr.write(`info:   L1 done — ${task.customerName} / ${task.subSaName} (${task.products.length} product(s))\n`)
+          return { key: task.key, result }
+        })
       )
     )
+    let l1Ok = 0, l1Fail = 0
     for (const settled of l1Settled) {
       if (settled.status === 'fulfilled') {
         const { key, result } = settled.value
         l1Results.set(key, result)
+        l1Ok++
       } else {
-        // Promise.allSettled only rejects if runL1ForSubSA throws unexpectedly;
-        // internal errors are already caught and return null
         process.stderr.write(`warn: unexpected L1 failure: ${settled.reason}\n`)
+        l1Fail++
       }
     }
+    process.stderr.write(`info: L1 complete — ${l1Ok} succeeded${l1Fail ? `, ${l1Fail} failed` : ''}\n`)
   }
 
   // ── L2: Distribute L1 results into portfolio product objects ──────────────
@@ -723,9 +727,8 @@ export async function run(args, options) {
       solution_areas: (c.solution_areas ?? []).map(sa => ({
         ...sa,
         sub_solution_areas: (sa.sub_solution_areas ?? []).map(subSa => {
-          const { _ai_signal, _ai_pattern, ...cleanSubSa } = subSa
           return {
-            ...cleanSubSa,
+            ...subSa,
             products: (subSa.products ?? []).map(p => {
               const clean = { ...p }
               delete clean._composite_key
@@ -753,7 +756,7 @@ export async function run(args, options) {
   })
 
   // ── L3: Call opus for portfolio-level narrative ────────────────────────────
-  process.stderr.write('info: running L3 portfolio-level analysis (opus)...\n')
+  process.stderr.write(`info: L3 — portfolio-level analysis (opus, max ${config.aiMaxTokens} tokens)\n`)
   let l3RawText
   try {
     l3RawText = await callOpusChat(l3Prompt)
@@ -762,7 +765,6 @@ export async function run(args, options) {
   }
 
   // Parse L3 response as JSON
-  // @contract input: l3RawText (AI response) → output: ai_insights object or null on parse failure
   let aiInsights = null
   let narrativeText = l3RawText
 
@@ -770,26 +772,35 @@ export async function run(args, options) {
     const cleaned = stripCodeFences(l3RawText)
     aiInsights = JSON.parse(cleaned)
     narrativeText = aiInsights.pulse_narrative ?? l3RawText
+
+    // Log what was generated
+    const pc   = Object.keys(aiInsights.per_customer ?? {})
+    const ev   = aiInsights.executive_view?.portfolio_health_by_customer?.length ?? 0
+    const rr   = aiInsights.renewal_risks?.length ?? 0
+    const mo   = aiInsights.momentum?.length ?? 0
+    const as   = aiInsights.architectural_signals?.length ?? 0
+    const ip   = aiInsights.industry_perspectives?.length ?? 0
+    process.stderr.write(`info: L3 complete — generated:\n`)
+    process.stderr.write(`info:   per_customer      : ${pc.length} (${pc.join(', ')})\n`)
+    process.stderr.write(`info:   executive_view    : ${ev} customer(s)\n`)
+    process.stderr.write(`info:   renewal_risks     : ${rr}\n`)
+    process.stderr.write(`info:   momentum          : ${mo}\n`)
+    process.stderr.write(`info:   architectural_signals: ${as}\n`)
+    process.stderr.write(`info:   industry_perspectives: ${ip}\n`)
   } catch (parseErr) {
-    process.stderr.write(`warn: L3 AI response JSON parse failed — storing raw text in ai_narrative, ai_insights will be null: ${parseErr.message}\n`)
+    process.stderr.write(`warn: L3 JSON parse failed — storing raw text: ${parseErr.message}\n`)
     aiInsights = null
     narrativeText = l3RawText
   }
 
   // ── Write back into portfolio.json ────────────────────────────────────────
   if (isJson && portfolioData !== null) {
-    // @contract input: resolvedPath, aiInsights, narrativeText → output: updated portfolio.json with ai_insights + product AI fields
     try {
       portfolioData.ai_insights  = aiInsights
       portfolioData.ai_narrative = narrativeText
-      portfolioData.ai_config    = {
-        baseURL: config.aiBaseUrl || null,
-        model: MODELS.opus,
-        messages_endpoint: config.aiBaseUrl
-          ? `${config.aiBaseUrl}/anthropic/v1/messages`
-          : null,
-      }
       fs.writeFileSync(resolvedPath, JSON.stringify(portfolioData, null, 2), 'utf8')
+      const bytes = fs.statSync(resolvedPath).size
+      process.stderr.write(`info: written — ${resolvedPath} (${(bytes/1024).toFixed(0)} KB)\n`)
     } catch (err) {
       process.stderr.write(`warn: could not update ai_insights in ${filename}: ${err.message}\n`)
     }

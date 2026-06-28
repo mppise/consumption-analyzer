@@ -1,5 +1,5 @@
 #!/bin/bash
-# SpecGantry deploy script — Release 3.1.0 — 2026-06-27
+# SpecGantry deploy script — Release 3.2.0 — 2026-06-27
 # Target: local-npm (CLI binary installed via npm link)
 #
 # Usage:
@@ -23,7 +23,17 @@
 #   2. Run: bash specs/deploy.sh --dry-run   (verify install without linking)
 #   3. Run: bash specs/deploy.sh             (full install + npm link)
 #
-# v3.0.0 changes verified by this script:
+# v3.2.0 changes verified by this script:
+#   - STORY-003: stripCodeFences() fallback regex handles preamble text before JSON fence
+#                (fixes L1 haiku parse failures on sub-SAs with many products)
+#   - STORY-004: portfolio.json products have NO forecast fields
+#                (fy_target_total, year_end_forecast, year_end_attainment_pct, forecast_confidence ABSENT)
+#   - STORY-004: portfolio.json customers have NO risk classification fields
+#                (risk_level, risk_reason, risk_items[] ABSENT from customer objects)
+#   - STORY-005: dashboard companion panel shows NO forecast fields (year_end_attainment_pct, forecast_confidence)
+#   - STORY-005: ea_action surfaces only via "EA Priority Actions" list — no standalone EA Action block
+#
+# v3.0.0 changes (still verified):
 #   - portfolio.json: nested products (no flat c.products[]), industry field, no employee_id
 #   - portfolio.json: summary has no critical_count / products_at_risk (risk counters removed)
 #   - portfolio.json: SA and subSA have no risk_counts field
@@ -53,7 +63,7 @@ if [[ -f "$PROJECT_ROOT/.env" ]]; then
   set +a
 fi
 
-VERSION="3.1.0"
+VERSION="3.2.0"
 
 # Per-step verification with actionable diagnostics
 run_step() {
@@ -108,10 +118,10 @@ if [[ "$AI_VARS_OK" == "false" ]]; then
   echo "  (AI vars are optional for --pdf2csv, --transform, --dashboard — deploy continues)"
 fi
 
-# v3.0.0: AI_MAX_TOKENS should be >= 8192; 32000 recommended for 3-level pipeline
+# v3.2.0: AI_MAX_TOKENS should be >= 8192; 32000 recommended for 3-level pipeline
 AI_MAX_TOKENS_VAL="${AI_MAX_TOKENS:-0}"
 if [[ "$AI_MAX_TOKENS_VAL" =~ ^[0-9]+$ ]] && [[ "$AI_MAX_TOKENS_VAL" -lt 8192 ]]; then
-  echo "  warn: AI_MAX_TOKENS=$AI_MAX_TOKENS_VAL is below 8192 — v3.0.0 3-level AI pipeline recommends 32000"
+  echo "  warn: AI_MAX_TOKENS=$AI_MAX_TOKENS_VAL is below 8192 — v3.2.0 3-level AI pipeline recommends 32000"
 fi
 
 # ------------------------------------------------------------
@@ -182,6 +192,10 @@ run_step "v3.0.0: analyze.js no action_for_csm (removed in v3)" \
   "! grep -q 'action_for_csm' '$PROJECT_ROOT/src/tools/analyze.js'" \
   "analyze.js still references action_for_csm — this field was removed in v3.0.0; check src/tools/analyze.js"
 
+run_step "v3.2.0: analyze.js stripCodeFences() has fallback regex for preamble text (L1 haiku fix)" \
+  "grep -q 'preamble\|Fallback.*JSON\|extract.*JSON block\|anywhere in the response' '$PROJECT_ROOT/src/tools/analyze.js'" \
+  "analyze.js stripCodeFences() missing fallback regex for preamble — v3.2.0 requires handling text before JSON fence; check src/tools/analyze.js"
+
 # ------------------------------------------------------------
 # Build: STORY-004 — CSV to JSON transformation (--transform)
 # ------------------------------------------------------------
@@ -219,6 +233,26 @@ run_step "v3.0.0: reconciler.js uses proportional tolerance (integer-safe arithm
   "grep -q 'reconcil\|tolerance\|proportional' '$PROJECT_ROOT/src/lib/reconciler.js'" \
   "reconciler.js missing proportional reconciliation — v3.0.0 requires integer-safe arithmetic; check src/lib/reconciler.js"
 
+run_step "v3.2.0: transform.js does not write fy_target_total (forecast field removed)" \
+  "! grep -q 'fy_target_total' '$PROJECT_ROOT/src/tools/transform.js'" \
+  "transform.js still writes fy_target_total — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+run_step "v3.2.0: transform.js does not write year_end_forecast (forecast field removed)" \
+  "! grep -q 'year_end_forecast' '$PROJECT_ROOT/src/tools/transform.js'" \
+  "transform.js still writes year_end_forecast — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+run_step "v3.2.0: transform.js does not write year_end_attainment_pct (forecast field removed)" \
+  "! grep -q 'year_end_attainment_pct' '$PROJECT_ROOT/src/tools/transform.js'" \
+  "transform.js still writes year_end_attainment_pct — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+run_step "v3.2.0: transform.js does not write forecast_confidence (forecast field removed)" \
+  "! grep -q 'forecast_confidence' '$PROJECT_ROOT/src/tools/transform.js'" \
+  "transform.js still writes forecast_confidence — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+run_step "v3.2.0: transform.js does not write risk_items[] on customer (risk classification removed)" \
+  "! grep -qE '[\"'\'']risk_items[\"'\'']\\s*:|risk_items\s*=' '$PROJECT_ROOT/src/tools/transform.js'" \
+  "transform.js still writes risk_items[] — v3.2.0 removes risk_items[] from customer shape; check src/tools/transform.js"
+
 # ------------------------------------------------------------
 # Build: STORY-005 — HTML dashboard generation (--dashboard)
 # ------------------------------------------------------------
@@ -243,6 +277,22 @@ run_step "v3.0.0: dashboard.js renders EA and Executive roles" \
 run_step "v3.0.0: dashboard.js reads product.insight from product object (not ai_insights lookup)" \
   "grep -q 'product.insight\|p\.insight\|\.insight' '$PROJECT_ROOT/src/tools/dashboard.js'" \
   "dashboard.js does not read insight from product object — v3.0.0 moves insight/recommendation/ea_action to product level; check src/tools/dashboard.js"
+
+run_step "v3.2.0: dashboard.js has no standalone EA Action block (ea_action via EA Priority Actions list only)" \
+  "! grep -qiE 'EA Action[^s]|ea.action.*block|standalone.*ea' '$PROJECT_ROOT/src/tools/dashboard.js'" \
+  "dashboard.js may still have a standalone EA Action block — v3.2.0 requires ea_action only via EA Priority Actions list; check src/tools/dashboard.js"
+
+run_step "v3.2.0: dashboard.js has EA Priority Actions list (ea_action surface point)" \
+  "grep -q 'EA Priority Actions' '$PROJECT_ROOT/src/tools/dashboard.js'" \
+  "dashboard.js missing EA Priority Actions list — v3.2.0 requires ea_action shown via EA Priority Actions; check src/tools/dashboard.js"
+
+run_step "v3.2.0: dashboard.js does not display year_end_attainment_pct (forecast field removed)" \
+  "! grep -q 'year_end_attainment_pct' '$PROJECT_ROOT/src/tools/dashboard.js'" \
+  "dashboard.js still references year_end_attainment_pct — v3.2.0 removes forecast fields from companion panel; check src/tools/dashboard.js"
+
+run_step "v3.2.0: dashboard.js does not display forecast_confidence (forecast field removed)" \
+  "! grep -q 'forecast_confidence' '$PROJECT_ROOT/src/tools/dashboard.js'" \
+  "dashboard.js still references forecast_confidence — v3.2.0 removes forecast fields from companion panel; check src/tools/dashboard.js"
 
 # ------------------------------------------------------------
 # Build: STORY-006 — Industry vertical inference
@@ -310,7 +360,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
     "node '$PROJECT_ROOT/src/cli.js' --help 2>&1 | grep -q '\[file\]'" \
     "Positional [file] argument missing from --help — check src/cli.js registers .argument('[file]', ...)"
 
-  # v3.0.0 pipeline: always regenerate portfolio.json to pick up nested structure
+  # v3.2.0: always regenerate portfolio.json to verify updated schema
   run_step "End-to-end (CSV path): --transform on CACV_CROSS_FC_OPS_DIBO_REPORT.csv exits 0" \
     "cd '$PROJECT_ROOT' && node '$PROJECT_ROOT/src/cli.js' --transform data/CACV_CROSS_FC_OPS_DIBO_REPORT.csv >/dev/null 2>&1" \
     "--transform failed — check src/tools/transform.js and that data/CACV_CROSS_FC_OPS_DIBO_REPORT.csv exists"
@@ -354,6 +404,35 @@ if [[ "$DRY_RUN" == "true" ]]; then
     "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); if(!/^[0-9]{6}$/.test(String(d.reporting_month))) process.exit(1);\"" \
     "reporting_month is not a 6-digit YYYYMM string — v3.0.0 requires raw YYYYMM format; check src/tools/transform.js"
 
+  # v3.2.0 portfolio.json schema checks — forecast and risk classification fields ABSENT
+  run_step "v3.2.0: product has no fy_target_total (forecast field absent)" \
+    "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('fy_target_total' in p) process.exit(1);\"" \
+    "portfolio.json product still contains fy_target_total — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+  run_step "v3.2.0: product has no year_end_forecast (forecast field absent)" \
+    "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('year_end_forecast' in p) process.exit(1);\"" \
+    "portfolio.json product still contains year_end_forecast — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+  run_step "v3.2.0: product has no year_end_attainment_pct (forecast field absent)" \
+    "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('year_end_attainment_pct' in p) process.exit(1);\"" \
+    "portfolio.json product still contains year_end_attainment_pct — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+  run_step "v3.2.0: product has no forecast_confidence (forecast field absent)" \
+    "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('forecast_confidence' in p) process.exit(1);\"" \
+    "portfolio.json product still contains forecast_confidence — v3.2.0 removes all forecast fields from product shape; check src/tools/transform.js"
+
+  run_step "v3.2.0: customer has no risk_items[] (risk classification removed)" \
+    "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); if('risk_items' in d.customers[0]) process.exit(1);\"" \
+    "portfolio.json customer still contains risk_items[] — v3.2.0 removes risk classification from customer shape; check src/tools/transform.js"
+
+  run_step "v3.2.0: customer has no risk_level field (risk classification removed)" \
+    "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); if('risk_level' in d.customers[0]) process.exit(1);\"" \
+    "portfolio.json customer still contains risk_level — v3.2.0 removes risk classification fields; check src/tools/transform.js"
+
+  run_step "v3.2.0: customer has no risk_reason field (risk classification removed)" \
+    "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); if('risk_reason' in d.customers[0]) process.exit(1);\"" \
+    "portfolio.json customer still contains risk_reason — v3.2.0 removes risk classification fields; check src/tools/transform.js"
+
   # Dashboard generation
   run_step "End-to-end: --dashboard on portfolio.json exits 0" \
     "cd '$PROJECT_ROOT' && node '$PROJECT_ROOT/src/cli.js' --dashboard data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio.json >/dev/null 2>&1" \
@@ -387,6 +466,22 @@ if [[ "$DRY_RUN" == "true" ]]; then
   run_step "v3.0.0: dashboard.html renders insight/recommendation/ea_action from product" \
     "grep -qE 'insight|recommendation|ea_action' '$DASHBOARD_HTML'" \
     "Product insight fields not found in dashboard.html — v3.0.0 shows insight/recommendation/ea_action from product objects; check src/tools/dashboard.js"
+
+  run_step "v3.2.0: dashboard.html has EA Priority Actions list (ea_action surface point)" \
+    "grep -q 'EA Priority Actions' '$DASHBOARD_HTML'" \
+    "EA Priority Actions list not found in dashboard.html — v3.2.0 requires ea_action shown only via EA Priority Actions; check src/tools/dashboard.js"
+
+  run_step "v3.2.0: dashboard.html has no standalone EA Action label (ea_action not duplicated)" \
+    "! grep -qE '>EA Action<|>EA Action\b' '$DASHBOARD_HTML'" \
+    "Standalone EA Action label found in dashboard.html — v3.2.0 requires ea_action only via EA Priority Actions list, not as a standalone label; check src/tools/dashboard.js"
+
+  run_step "v3.2.0: dashboard.html has no year_end_attainment_pct display (forecast field removed)" \
+    "! grep -q 'year_end_attainment_pct\|Year.End Attainment' '$DASHBOARD_HTML'" \
+    "year_end_attainment_pct found in dashboard.html — v3.2.0 removes forecast fields from companion panel; check src/tools/dashboard.js"
+
+  run_step "v3.2.0: dashboard.html has no forecast_confidence display (forecast field removed)" \
+    "! grep -q 'forecast_confidence\|Forecast Confidence' '$DASHBOARD_HTML'" \
+    "forecast_confidence found in dashboard.html — v3.2.0 removes forecast fields from companion panel; check src/tools/dashboard.js"
 
   run_step "v3.0.0: dashboard.html inline scripts parse without SyntaxError" \
     "node -e \"const h=require('fs').readFileSync('$DASHBOARD_HTML','utf8'); const s=[...h.matchAll(/<script>([\\\\s\\\\S]*?)<\\/script>/g)].map(m=>m[1]).join('\\\\n'); new Function(s)\"" \
@@ -456,7 +551,7 @@ run_step "Verify positional [file] argument appears in --help" \
   "consumption-analyzer --help 2>&1 | grep -q '\[file\]'" \
   "Positional [file] argument missing from --help — check src/cli.js registers .argument('[file]', ...)"
 
-# v3.0.0: always regenerate portfolio.json to confirm nested structure is produced
+# v3.2.0: regenerate portfolio.json to confirm updated schema (no forecast/risk fields)
 run_step "End-to-end (CSV path): --transform on CACV_CROSS_FC_OPS_DIBO_REPORT.csv exits 0" \
   "cd '$PROJECT_ROOT' && consumption-analyzer --transform data/CACV_CROSS_FC_OPS_DIBO_REPORT.csv >/dev/null 2>&1" \
   "--transform failed — check src/tools/transform.js and that data/CACV_CROSS_FC_OPS_DIBO_REPORT.csv exists"
@@ -496,6 +591,35 @@ run_step "v3.0.0: solution_areas have no risk_counts field (removed in v3)" \
   "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const sa=d.customers[0].solution_areas[0]; if('risk_counts' in sa) process.exit(1);\"" \
   "solution_areas still has risk_counts — v3.0.0 removes risk_counts from SA/subSA; check src/tools/transform.js"
 
+# v3.2.0 structural checks — forecast and risk classification fields ABSENT
+run_step "v3.2.0: product has no fy_target_total (forecast field absent)" \
+  "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('fy_target_total' in p) process.exit(1);\"" \
+  "portfolio.json product still contains fy_target_total — v3.2.0 removes all forecast fields; check src/tools/transform.js"
+
+run_step "v3.2.0: product has no year_end_forecast (forecast field absent)" \
+  "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('year_end_forecast' in p) process.exit(1);\"" \
+  "portfolio.json product still contains year_end_forecast — v3.2.0 removes all forecast fields; check src/tools/transform.js"
+
+run_step "v3.2.0: product has no year_end_attainment_pct (forecast field absent)" \
+  "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('year_end_attainment_pct' in p) process.exit(1);\"" \
+  "portfolio.json product still contains year_end_attainment_pct — v3.2.0 removes all forecast fields; check src/tools/transform.js"
+
+run_step "v3.2.0: product has no forecast_confidence (forecast field absent)" \
+  "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); const p=d.customers[0].solution_areas[0].sub_solution_areas[0].products[0]; if('forecast_confidence' in p) process.exit(1);\"" \
+  "portfolio.json product still contains forecast_confidence — v3.2.0 removes all forecast fields; check src/tools/transform.js"
+
+run_step "v3.2.0: customer has no risk_items[] (risk classification removed)" \
+  "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); if('risk_items' in d.customers[0]) process.exit(1);\"" \
+  "portfolio.json customer still contains risk_items[] — v3.2.0 removes risk classification from customer shape; check src/tools/transform.js"
+
+run_step "v3.2.0: customer has no risk_level field (risk classification removed)" \
+  "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); if('risk_level' in d.customers[0]) process.exit(1);\"" \
+  "portfolio.json customer still contains risk_level — v3.2.0 removes risk classification fields; check src/tools/transform.js"
+
+run_step "v3.2.0: customer has no risk_reason field (risk classification removed)" \
+  "node -e \"const d=JSON.parse(require('fs').readFileSync('$PORTFOLIO_JSON','utf8')); if('risk_reason' in d.customers[0]) process.exit(1);\"" \
+  "portfolio.json customer still contains risk_reason — v3.2.0 removes risk classification fields; check src/tools/transform.js"
+
 # Dashboard
 run_step "End-to-end: --dashboard on portfolio.json exits 0" \
   "cd '$PROJECT_ROOT' && consumption-analyzer --dashboard data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio.json >/dev/null 2>&1" \
@@ -529,6 +653,22 @@ run_step "v3.0.0: dashboard.html displays industry tag" \
 run_step "v3.0.0: dashboard.html renders insight/recommendation/ea_action from product" \
   "grep -qE 'insight|recommendation|ea_action' '$DASHBOARD_HTML'" \
   "Product insight fields not found in dashboard.html — v3.0.0 reads from product objects"
+
+run_step "v3.2.0: dashboard.html has EA Priority Actions list (ea_action surface point)" \
+  "grep -q 'EA Priority Actions' '$DASHBOARD_HTML'" \
+  "EA Priority Actions list not found in dashboard.html — v3.2.0 requires ea_action shown only via EA Priority Actions; check src/tools/dashboard.js"
+
+run_step "v3.2.0: dashboard.html has no standalone EA Action label (ea_action not duplicated)" \
+  "! grep -qE '>EA Action<|>EA Action\b' '$DASHBOARD_HTML'" \
+  "Standalone EA Action label found in dashboard.html — v3.2.0 requires ea_action only via EA Priority Actions list; check src/tools/dashboard.js"
+
+run_step "v3.2.0: dashboard.html has no year_end_attainment_pct (forecast field absent)" \
+  "! grep -q 'year_end_attainment_pct\|Year.End Attainment' '$DASHBOARD_HTML'" \
+  "year_end_attainment_pct found in dashboard.html — v3.2.0 removes forecast fields from companion panel; check src/tools/dashboard.js"
+
+run_step "v3.2.0: dashboard.html has no forecast_confidence (forecast field absent)" \
+  "! grep -q 'forecast_confidence\|Forecast Confidence' '$DASHBOARD_HTML'" \
+  "forecast_confidence found in dashboard.html — v3.2.0 removes forecast fields from companion panel; check src/tools/dashboard.js"
 
 run_step "v3.0.0: dashboard.html inline scripts parse without SyntaxError" \
   "node -e \"const h=require('fs').readFileSync('$DASHBOARD_HTML','utf8'); const s=[...h.matchAll(/<script>([\\\\s\\\\S]*?)<\\/script>/g)].map(m=>m[1]).join('\\\\n'); new Function(s)\"" \

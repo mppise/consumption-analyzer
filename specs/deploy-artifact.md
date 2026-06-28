@@ -1,14 +1,25 @@
-# Deploy Artifact — Release 3.2.0
+# Deploy Artifact — Release 3.3.0
 **Date:** 2026-06-27  **Status:** deployed
 **Platform:** local-npm (CLI binary installed via npm link)
 
 ## Release summary
 
-Minor release (3.1.0 → 3.2.0). Bug fixes and field removal across STORY-003, STORY-004, STORY-005.
+Minor release (3.2.0 → 3.3.0). Full deployment of STORY-003 (--analyze, 3-level AI pipeline) and STORY-005 (--dashboard, v3 nested data model). All 6 stories are now deployed.
 
-- STORY-003: `stripCodeFences()` fallback regex added — extracts JSON block from anywhere in the AI response, fixing L1 haiku parse failures when the model returns preamble text before the JSON fence
-- STORY-004: Forecast fields removed from `product-in-subsa-shape` (`fy_target_total`, `year_end_forecast`, `year_end_attainment_pct`, `forecast_confidence`) and risk classification fields removed from customer shape (`risk_level`, `risk_reason`, `risk_items[]`)
-- STORY-005: EA action no longer duplicated — surfaces only via EA Priority Actions list; forecast fields (`year_end_attainment_pct`, `forecast_confidence`) removed from LPR companion panel display
+- STORY-003: Full deployment of AI-powered cACV analysis (--analyze)
+  - 3-level pipeline: L1 haiku per sub-SA (parallel, Promise.allSettled), L2 product field distribution, L3 opus portfolio narrative
+  - stripCodeFences() fallback regex — extracts JSON from anywhere in AI response (preamble-safe)
+  - AIClient falls back to direct Anthropic SDK when AI_BASE_URL is unset
+  - action_for_csm removed from prompt templates and response shapes
+  - Graceful degradation: L1 sub-SA parse failure warns to stderr, continues with null AI fields
+- STORY-005: Full deployment of HTML dashboard generation (--dashboard)
+  - Traverses c.solution_areas[].sub_solution_areas[].products[] (v3 nested data model — 8 traversal sites)
+  - product.name used as display name (product.lpr as fallback)
+  - risk_level/risk_reason display removed; RAG coloring is attainment-pct only (>=90 green, >=75 amber, <75 red)
+  - product.insight/recommendation/ea_action shown in companion panel; null fields show graceful fallback
+  - customer.industry displayed as small tag on customer rows (EA tree and Executive cards)
+  - custTrend() and custAllProds() helpers added for nested hierarchy traversal
+  - Output: <source-basename>-dashboard.html in same directory as input (~827KB with inlined Chart.js + Bootstrap)
 
 ## Stories in this release
 
@@ -34,7 +45,7 @@ Minor release (3.1.0 → 3.2.0). Bug fixes and field removal across STORY-003, S
 | File | Purpose |
 |------|---------|
 | specs/deploy.sh | Main deploy script — run with --dry-run first |
-| specs/deploy.sh.old | Backup of previous deploy.sh (Release 3.1.0) |
+| specs/deploy.sh.old | Backup of previous deploy.sh (Release 3.2.0) |
 | specs/.env.example | Environment template — copy to .env and fill values |
 
 ## Checks
@@ -47,35 +58,23 @@ Minor release (3.1.0 → 3.2.0). Bug fixes and field removal across STORY-003, S
 | Dependency order resolved | pass (topological: 001→002, 001→003, 001→004→005, 001→004→006) |
 | Runtime profiles read from build-report.yaml | pass (all 6 stories) |
 | Platform target | local-npm |
-| Version stamp method | npm version 3.2.0 --no-git-tag-version |
+| Version stamp method | npm version 3.3.0 --no-git-tag-version |
 | deploy.sh syntax | pass |
 | deploy.sh permissions | executable |
 
-## v3.2.0 verification checks added to deploy.sh
+## v3.3.0 newly deployed stories
+
+| Story | Checks added |
+|-------|-------------|
+| STORY-003 | analyze.js present, @anthropic-ai/sdk installed, aiClient.js present, analyze-sa.md present, 3-level pipeline present, action_for_csm absent, stripCodeFences preamble fallback |
+| STORY-005 | dashboard.js present, sub_solution_areas traversal, industry tag, data-role attrs, product.insight reads, no standalone EA Action, EA Priority Actions list, no forecast fields |
+
+All checks were already present in the 3.2.0 deploy.sh — no new checks added for 3.3.0 (all criteria already covered).
 
 | Check | Scope |
 |-------|-------|
-| v3.2.0: analyze.js stripCodeFences() has fallback regex for preamble text | STORY-003 source |
-| v3.2.0: transform.js does not write fy_target_total | STORY-004 source |
-| v3.2.0: transform.js does not write year_end_forecast | STORY-004 source |
-| v3.2.0: transform.js does not write year_end_attainment_pct | STORY-004 source |
-| v3.2.0: transform.js does not write forecast_confidence | STORY-004 source |
-| v3.2.0: transform.js does not write risk_items[] on customer | STORY-004 source |
-| v3.2.0: dashboard.js no standalone EA Action block | STORY-005 source |
-| v3.2.0: dashboard.js has EA Priority Actions list | STORY-005 source |
-| v3.2.0: dashboard.js does not display year_end_attainment_pct | STORY-005 source |
-| v3.2.0: dashboard.js does not display forecast_confidence | STORY-005 source |
-| v3.2.0: portfolio.json product has no fy_target_total | --dry-run runtime (both branches) |
-| v3.2.0: portfolio.json product has no year_end_forecast | --dry-run runtime (both branches) |
-| v3.2.0: portfolio.json product has no year_end_attainment_pct | --dry-run runtime (both branches) |
-| v3.2.0: portfolio.json product has no forecast_confidence | --dry-run runtime (both branches) |
-| v3.2.0: portfolio.json customer has no risk_items[] | --dry-run runtime (both branches) |
-| v3.2.0: portfolio.json customer has no risk_level | --dry-run runtime (both branches) |
-| v3.2.0: portfolio.json customer has no risk_reason | --dry-run runtime (both branches) |
-| v3.2.0: dashboard.html has EA Priority Actions list | --dry-run runtime (both branches) |
-| v3.2.0: dashboard.html no standalone EA Action label | --dry-run runtime (both branches) |
-| v3.2.0: dashboard.html no year_end_attainment_pct | --dry-run runtime (both branches) |
-| v3.2.0: dashboard.html no forecast_confidence | --dry-run runtime (both branches) |
+| v3.3.0: STORY-003 fully deployed (--analyze, 3-level pipeline) | STORY-003 source + runtime |
+| v3.3.0: STORY-005 fully deployed (--dashboard, v3 data model) | STORY-005 source + runtime |
 
 ## Deployment history
 
@@ -95,6 +94,7 @@ Minor release (3.1.0 → 3.2.0). Bug fixes and field removal across STORY-003, S
 | 2.6.0 | 2026-06-26 | local-npm |
 | 3.0.0 | 2026-06-27 | local-npm |
 | 3.1.0 | 2026-06-27 | local-npm |
+| 3.3.0 | 2026-06-27 | local-npm |
 | 3.2.0 | 2026-06-27 | local-npm |
 
 ## Environment variables required
@@ -114,7 +114,7 @@ Minor release (3.1.0 → 3.2.0). Bug fixes and field removal across STORY-003, S
 
 ## Unmerged gap specs (informational)
 
-None — no gap specs remain open at 3.2.0.
+None — no gap specs remain open at 3.3.0.
 
 ## Development warnings (from build reports — non-blocking)
 

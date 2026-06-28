@@ -146,7 +146,14 @@ Fields:
   - total_ytd_target: number
   - total_ytd_actuals: number
   - overall_attainment_pct: number (1 decimal precision)
-- ai_insights: object | null — structured JSON insights block written by --analyze; contains pulse_narrative, per_customer, executive_view, and other fields; null until --analyze has run
+- ai_insights: object | null — structured JSON insights block written by --analyze; null until --analyze has run. Fields:
+  - pulse_narrative: string — portfolio-level narrative text
+  - per_customer: object[] — per-customer insight entries (no `key_signals` field)
+  - executive_view: object — executive roll-up; `portfolio_health_by_customer[]` entries each include `recommended_ask_rationale: string`
+  - renewal_risks: object[] — renewal risk signals across the portfolio
+  - momentum: object[] — positive consumption momentum signals
+  - architectural_signals: object[] — each entry has `title`, `pattern`, `explanation`, `action_for_ea` (no `signal_type`)
+  - industry_perspectives: object[] — industry-vertical-specific observations
 
 AI pipeline levels (3-level):
 1. Sub-SA level — haiku model; produces per-sub-SA narrative context

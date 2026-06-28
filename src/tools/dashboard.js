@@ -9,6 +9,13 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// ── Color scheme ─────────────────────────────────────────────────────────────
+const C_CACV   = '#ea580c'   // orange      — cACV (actuals consumed)
+const C_TARGET = '#16a34a'   // green       — budget / target
+const C_ACV    = '#9ca3af'   // light grey  — contracted ACV ceiling
+const C_PCT    = '#1d4ed8'   // royal blue  — all percentages
+const C_TEXT   = '#212529'   // black       — all other text
+
 const CHARTJS_URL      = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js'
 const BOOTSTRAP_CSS_URL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
 const BOOTSTRAP_ICONS_URL = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
@@ -40,45 +47,24 @@ function pct(n) {
   return Number(n).toFixed(1) + '%'
 }
 
-function rc(p) {   // rag color
-  if (p == null || isNaN(p)) return '#9ca3af'
-  return p >= 90 ? '#16a34a' : p >= 75 ? '#d97706' : '#dc2626'
+function rc(p) { return C_CACV }   // kept for call-sites; always dark green now
+function rb(p) { return '#f0fdf4' } // light tint background
+function rl(p) { return '—' }
+
+function uc(u) {
+  return u === 'IMMEDIATE' ? C_TEXT : u === 'THIS_QUARTER' ? C_TEXT : '#6b7280'
 }
 
-function rb(p) {   // rag background
-  if (p == null || isNaN(p)) return '#f3f4f6'
-  return p >= 90 ? '#dcfce7' : p >= 75 ? '#fef3c7' : '#fee2e2'
-}
-
-function rl(p) {   // rag label
-  if (p == null || isNaN(p)) return 'NO DATA'
-  return p >= 90 ? 'ON TRACK' : p >= 75 ? 'AT RISK' : 'CRITICAL'
-}
-
-function uc(u) {   // urgency color
-  return u === 'IMMEDIATE' ? '#dc2626' : u === 'THIS_QUARTER' ? '#d97706' : '#6b7280'
-}
-
-function siIcon(t) {
-  const m = {
-    INTEGRATION_GAP:       '<i class="bi bi-lightning-charge-fill"></i>',
-    DEPENDENCY_BLOCK:      '<i class="bi bi-link-45deg"></i>',
-    ADOPTION_PLATEAU:      '<i class="bi bi-pause-circle-fill"></i>',
-    RENEWAL_RISK:          '<i class="bi bi-exclamation-triangle-fill"></i>',
-    EXPANSION_OPPORTUNITY: '<i class="bi bi-rocket-takeoff-fill"></i>',
-  }
-  return m[t] ?? '<i class="bi bi-circle-fill"></i>'
-}
 function siColor(t) {
-  return { INTEGRATION_GAP:'#7c3aed', DEPENDENCY_BLOCK:'#dc2626', ADOPTION_PLATEAU:'#d97706', RENEWAL_RISK:'#dc2626', EXPANSION_OPPORTUNITY:'#16a34a' }[t] ?? '#6b7280'
+  return '#6b7280'
 }
 function lcColor(p) {
-  return { GREENFIELD:'#2563eb', EXPANDING:'#16a34a', PLATEAUED:'#d97706', CONTRACTING:'#dc2626', CONSOLIDATING:'#7c3aed' }[p] ?? '#6b7280'
+  return '#6b7280'
 }
 
 function arrow(d) {
-  return d === 'up'   ? '<i class="bi bi-arrow-up-short" style="color:#16a34a;font-size:1.1rem;font-weight:900"></i>'
-       : d === 'down' ? '<i class="bi bi-arrow-down-short" style="color:#dc2626;font-size:1.1rem;font-weight:900"></i>'
+  return d === 'up'   ? '<i class="bi bi-arrow-up-short" style="color:#6b7280;font-size:1.1rem;font-weight:900"></i>'
+       : d === 'down' ? '<i class="bi bi-arrow-down-short" style="color:#6b7280;font-size:1.1rem;font-weight:900"></i>'
        : '<i class="bi bi-arrow-right-short" style="color:#9ca3af;font-size:1.1rem"></i>'
 }
 
@@ -106,52 +92,49 @@ function sparkline(series, color='#2563eb', w=90, h=28) {
 function attBar(p, maxW=140) {
   const fill = Math.min(100, Math.max(0, p ?? 0))
   return `<div class="att-bar-wrap">
-    <div class="att-bar-track" style="max-width:${maxW}px"><div class="att-bar-fill" style="width:${fill}%;background:${rc(p)}"></div></div>
-    <span style="font-size:.72rem;color:${rc(p)};font-weight:800;white-space:nowrap">${pct(p)}</span>
+    <div class="att-bar-track" style="max-width:${maxW}px"><div class="att-bar-fill" style="width:${fill}%;background:${C_CACV}"></div></div>
+    <span style="font-size:.72rem;color:${C_PCT};font-weight:800;white-space:nowrap">${pct(p)}</span>
   </div>`
 }
 
-// ── ACV Waterfall helpers ─────────────────────────────────────────────────────
-// Legend used wherever act/bud/acv values appear:
-//   bi-circle-fill  Actual cACV  = consumed cACV YTD
-//   bi-dash-lg      Budget cACV  = planned consumption YTD
-//   bi-circle       ACV          = total contracted value (the ceiling)
+// ── ACV helpers ───────────────────────────────────────────────────────────────
+// Canonical labels: cACV (actuals consumed), Target (budget plan), ACV (contract ceiling)
 
-const ACV_LEGEND = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
-  <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;color:#475569"><i class="bi bi-circle-fill" style="color:#16a34a;font-size:.7rem"></i>Actual cACV</span>
-  <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;color:#475569"><i class="bi bi-dash-lg" style="color:#64748b"></i>Budget cACV</span>
-  <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;color:#475569"><i class="bi bi-circle" style="color:#6366f1;font-size:.7rem"></i>Contracted ACV</span>
+function acvLegend() {
+  return `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
+  <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;color:${C_CACV}">${BI.dotFill} cACV</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;color:${C_TARGET}">${BI.dash} Target</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;color:${C_ACV}">${BI.dot} ACV</span>
 </div>`
+}
 
-// Compact 3-tier stacked bar with legend — wider/bolder, icons on labels
+// Compact 3-tier stacked bar
 function acvBar(actuals, budget, acv, maxW = 220) {
   if (!acv || acv <= 0) return attBar(budget > 0 ? (actuals / budget * 100) : null, maxW)
   const cap = Math.max(acv, actuals, budget)
-  const budPct  = Math.min(100, (budget  / cap) * 100)
-  const actPct  = Math.min(100, (actuals / cap) * 100)
-  const attColor = rc(budget > 0 ? actuals / budget * 100 : null)
+  const budPct = Math.min(100, (budget  / cap) * 100)
+  const actPct = Math.min(100, (actuals / cap) * 100)
   return `<div style="margin-top:8px;max-width:${maxW}px">
-    ${ACV_LEGEND}
+    ${acvLegend()}
     <div style="position:relative;height:12px;background:#f1f5f9;border-radius:6px;overflow:visible;margin-bottom:4px">
-      <div style="position:absolute;left:0;top:0;height:100%;width:${budPct.toFixed(1)}%;background:#cbd5e1;border-radius:6px"></div>
-      <div style="position:absolute;left:0;top:0;height:100%;width:${actPct.toFixed(1)}%;background:${attColor};border-radius:6px"></div>
+      <div style="position:absolute;left:0;top:0;height:100%;width:${budPct.toFixed(1)}%;background:${C_TARGET};border-radius:6px"></div>
+      <div style="position:absolute;left:0;top:0;height:100%;width:${actPct.toFixed(1)}%;background:${C_CACV};border-radius:6px"></div>
       <div style="position:absolute;left:${budPct.toFixed(1)}%;top:-3px;height:18px;width:2.5px;background:#64748b;border-radius:2px"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:.72rem;font-weight:700;color:#475569;margin-top:4px">
-      <span style="color:${attColor}"><i class="bi bi-circle-fill" style="font-size:.6rem"></i> ${usd(actuals)}</span>
-      <span style="color:#64748b"><i class="bi bi-dash-lg"></i> ${usd(budget)}</span>
-      <span style="color:#6366f1"><i class="bi bi-circle" style="font-size:.6rem"></i> ${usd(acv)}</span>
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;font-weight:700;margin-top:4px">
+      <span style="color:${C_CACV}">${usd(actuals)} cACV</span>
+      <span style="color:${C_TARGET}">${usd(budget)} Target</span>
+      <span style="color:${C_ACV}">${usd(acv)} ACV</span>
     </div>
   </div>`
 }
 
-// Full waterfall block for popup — larger, with legend and insight text
+// Full waterfall block for popup
 function acvWaterfall(actuals, budget, acv) {
   if (!acv || acv <= 0) return ''
   const cap = Math.max(acv, actuals, budget)
   const budPct = Math.min(100, (budget  / cap) * 100)
   const actPct = Math.min(100, (actuals / cap) * 100)
-  const attColor = rc(budget > 0 ? actuals / budget * 100 : null)
 
   const budOfAcv = budget / acv * 100
   let paceInsight
@@ -165,35 +148,26 @@ function acvWaterfall(actuals, budget, acv) {
     paceInsight = `Budget is only ${budOfAcv.toFixed(0)}% of contract — either a conservative ramp plan or the contract was over-sized relative to near-term consumption intent.`
   }
 
-  // Gap insight
-  const actOfAcv = actuals / acv * 100
   const attOfBud = budget > 0 ? actuals / budget * 100 : null
-  let gapInsight
-  if (actOfAcv < 10) {
-    gapInsight = `Only ${actOfAcv.toFixed(0)}% of contracted ACV is being consumed — renewal of the full contract value is at high risk.`
-  } else if (attOfBud !== null && attOfBud < 60) {
-    gapInsight = `${actOfAcv.toFixed(0)}% of contract consumed, but only ${attOfBud.toFixed(0)}% of budget attained — consumption is running significantly behind plan.`
-  } else if (actuals > acv) {
-    gapInsight = `Actual consumption exceeds contract value — over-consuming against the contract ceiling.`
-  } else {
-    gapInsight = `${actOfAcv.toFixed(0)}% of contract value consumed YTD.`
-  }
+  const gapInsight = attOfBud != null
+    ? `${attOfBud.toFixed(0)}% budget attainment.`
+    : `No budget data.`
 
-  const row = (label, val, pct, color, bold = false) => `
+  const row = (label, val, rowPct, color, bold = false) => `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
       <div style="width:90px;font-size:.72rem;color:#64748b;flex-shrink:0;font-weight:${bold?'700':'400'}">${label}</div>
       <div style="flex:1;background:#f1f5f9;border-radius:4px;height:10px;position:relative;overflow:hidden">
-        <div style="position:absolute;left:0;top:0;height:100%;width:${Math.min(100,pct).toFixed(1)}%;background:${color};border-radius:4px"></div>
+        <div style="position:absolute;left:0;top:0;height:100%;width:${Math.min(100,rowPct).toFixed(1)}%;background:${color};border-radius:4px"></div>
       </div>
       <div style="width:72px;text-align:right;font-size:.78rem;font-weight:${bold?'800':'600'};color:${color};flex-shrink:0">${usd(val)}</div>
     </div>`
 
   return `<div style="margin-top:4px">
-    ${row('Contracted ACV', acv, 100, '#e2e8f0')}
-    ${row('YTD Budget', budget, budPct, '#94a3b8')}
-    ${row('YTD Actual', actuals, actPct, attColor, true)}
-    <div style="font-size:.78rem;color:#475569;margin-top:8px;line-height:1.5;padding:8px 10px;background:#f8fafc;border-radius:6px">${paceInsight}</div>
-    <div style="font-size:.78rem;color:${actOfAcv < 15 ? '#dc2626' : '#475569'};margin-top:6px;line-height:1.5;padding:8px 10px;background:${actOfAcv < 15 ? '#fff5f5' : '#f8fafc'};border-radius:6px">${gapInsight}</div>
+    ${row('ACV',    acv,    100,    C_ACV)}
+    ${row('Target', budget, budPct, C_TARGET)}
+    ${row('cACV',   actuals, actPct, C_CACV, true)}
+    <div style="font-size:.78rem;color:${C_TEXT};margin-top:8px;line-height:1.5;padding:8px 10px;background:#f8fafc;border-radius:6px">${paceInsight}</div>
+    <div style="font-size:.78rem;color:${C_PCT};font-weight:700;margin-top:6px;line-height:1.5;padding:8px 10px;background:#eff6ff;border-radius:6px">${gapInsight}</div>
   </div>`
 }
 
@@ -247,61 +221,51 @@ const BI = {
   briefcase:  '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5m1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0M1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5"/></svg>',
 }
 
+function biArrow_dup_removed() {}
 function biArrow(dir, monthCount) {
   const tip = monthCount ? `title="Trend over last ${Math.min(3, monthCount)} reported month${Math.min(3, monthCount)!==1?'s':''}"` : ''
-  if (dir === 'up')   return `<span style="color:#16a34a" ${tip}>${BI.arrowUp}</span>`
-  if (dir === 'down') return `<span style="color:#dc2626" ${tip}>${BI.arrowDown}</span>`
-  return `<span style="color:#9ca3af" ${tip}>${BI.arrowRight}</span>`
+  return `<span style="color:#9ca3af" ${tip}>${dir === 'up' ? BI.arrowUp : dir === 'down' ? BI.arrowDown : BI.arrowRight}</span>`
 }
 
-function biSignal(type) {
-  const m = {
-    INTEGRATION_GAP: BI.lightning,
-    DEPENDENCY_BLOCK: BI.link,
-    ADOPTION_PLATEAU: BI.pause,
-    RENEWAL_RISK: BI.warning,
-    EXPANSION_OPPORTUNITY: BI.rocket,
-  }
-  return m[type] ?? BI.dotFill
-}
+function biSignal(type) { return BI.dotFill }
 
-// ── Three-bar ACV row (updated to use SVG icons) ─────────────────────────────
+// ── Three-bar ACV row ─────────────────────────────────────────────────────────
 function acvRow(actuals, budget, acv, maxW = 260) {
   if (!acv || acv <= 0) {
-    // Fallback: simple attainment bar
     const pp = budget > 0 ? actuals / budget * 100 : null
     const fill = Math.min(100, Math.max(0, pp ?? 0))
     return `<div style="display:flex;align-items:center;gap:8px;margin-top:4px">
       <div style="flex:1;max-width:${maxW}px;background:#f1f5f9;border-radius:3px;height:8px;position:relative">
-        <div style="height:8px;border-radius:3px;background:${rc(pp)};width:${fill.toFixed(1)}%"></div>
+        <div style="height:8px;border-radius:3px;background:${C_CACV};width:${fill.toFixed(1)}%"></div>
       </div>
-      <span style="font-size:13px;font-weight:700;color:${rc(pp)}">${pct(pp)}</span>
+      <span style="font-size:13px;font-weight:700;color:${C_PCT}">${pct(pp)}</span>
     </div>`
   }
   const cap = Math.max(acv, actuals, budget)
   const budPct = Math.min(100, budget  / cap * 100)
   const actPct = Math.min(100, actuals / cap * 100)
-  const attColor = rc(budget > 0 ? actuals / budget * 100 : null)
   return `<div style="margin-top:5px;max-width:${maxW}px">
     <div style="position:relative;height:10px;background:#e9ecef;border-radius:5px;overflow:visible">
-      <div style="position:absolute;left:0;top:0;height:100%;width:${budPct.toFixed(1)}%;background:#adb5bd;border-radius:5px"></div>
-      <div style="position:absolute;left:0;top:0;height:100%;width:${actPct.toFixed(1)}%;background:${attColor};border-radius:5px"></div>
+      <div style="position:absolute;left:0;top:0;height:100%;width:${budPct.toFixed(1)}%;background:${C_TARGET};border-radius:5px"></div>
+      <div style="position:absolute;left:0;top:0;height:100%;width:${actPct.toFixed(1)}%;background:${C_CACV};border-radius:5px"></div>
       <div style="position:absolute;left:${budPct.toFixed(1)}%;top:-3px;height:16px;width:2px;background:#495057;border-radius:1px"></div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:12px;font-weight:600;max-width:${maxW}px">
-      <span style="color:${attColor};display:flex;align-items:center;gap:3px">${BI.dotFill} ${usd(actuals)}</span>
-      <span style="color:#6c757d;display:flex;align-items:center;gap:3px">${BI.dash} ${usd(budget)}</span>
-      <span style="color:#6366f1;display:flex;align-items:center;gap:3px">${BI.dot} ${usd(acv)}</span>
+      <span style="color:${C_CACV};display:flex;align-items:center;gap:3px">${usd(actuals)} cACV</span>
+      <span style="color:${C_TARGET};display:flex;align-items:center;gap:3px">${usd(budget)} Target</span>
+      <span style="color:${C_ACV};display:flex;align-items:center;gap:3px">${usd(acv)} ACV</span>
     </div>
   </div>`
 }
 
-// ── Compact ACV legend (shown once per section) ───────────────────────────────
-const ACV_LEGEND_ROW = `<div style="display:flex;gap:16px;align-items:center;padding:4px 0 8px;border-bottom:1px solid #dee2e6;margin-bottom:4px">
-  <span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#495057">${BI.dotFill} <span style="color:#6c757d">Actual cACV consumed</span></span>
-  <span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#495057">${BI.dash} <span style="color:#6c757d">Budget cACV (YTD plan)</span></span>
-  <span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#495057">${BI.dot} <span style="color:#6c757d">Contracted ACV (ceiling)</span></span>
+// ── Compact ACV legend ────────────────────────────────────────────────────────
+function acvLegendRow() {
+  return `<div style="display:flex;gap:16px;align-items:center;padding:4px 0 8px;border-bottom:1px solid #dee2e6;margin-bottom:4px">
+  <span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:${C_CACV}">${BI.dotFill} cACV</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:${C_TARGET}">${BI.dash} Target</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:${C_ACV}">${BI.dot} ACV</span>
 </div>`
+}
 
 // ── Main HTML ─────────────────────────────────────────────────────────────────
 function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
@@ -316,63 +280,55 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
   const ai        = portfolio.ai_insights ?? {}
   const perCust   = ai.per_customer ?? {}
   const execAI    = ai.executive_view ?? {}
-  const signals   = ai.architectural_signals ?? []
+    const signals = ai.architectural_signals ?? []
   const custHealthMap = {}
   for (const h of execAI.portfolio_health_by_customer ?? []) custHealthMap[h.customer_name] = h
 
-  // ── Build the full data tree as HTML rows ─────────────────────────────────
-  // Each row has a data-key attribute for JS selection routing
-  // ── Color constants for consistent ACV/Budget/Actual display ─────────────
-  // Actual cACV:  RAG color (green/amber/red based on attainment)
-  // Budget cACV:  #6c757d (gray)
-  // ACV contract: #6f42c1 (purple)
-  const C_BUDGET = '#6c757d'
-  const C_ACV    = '#6f42c1'
+  // ── Color constants (module-level scheme used throughout) ─────────────────
+  // C_CACV = dark green (actuals), C_TARGET = light green (budget), C_ACV = grey (contract), C_PCT = royal blue (%)
 
-  // Inline money display: $$ prominent left, % plain right-aligned number
   function custMoneyLine(actuals, budget, acv, attPct) {
-    const attColor = rc(attPct)
     return `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-          <span style="font-size:26px;font-weight:900;color:${attColor};letter-spacing:-.02em;line-height:1">${usd(actuals)} <span style="font-size:13px;font-weight:600;color:${attColor}90">cACV</span></span>
-          <span style="font-size:13px;color:${C_BUDGET};font-weight:600">${usd(budget)} <span style="font-size:11px;font-weight:500">budget</span></span>
-          ${acv > 0 ? `<span style="font-size:13px;color:${C_ACV};font-weight:600">${usd(acv)} <span style="font-size:11px;font-weight:500">ACV</span></span>` : ''}
+          <span style="font-size:26px;font-weight:900;color:${C_CACV};letter-spacing:-.02em;line-height:1">${usd(actuals)} <span style="font-size:13px;font-weight:600">cACV</span></span>
+          <span style="font-size:13px;color:${C_TARGET};font-weight:600">${usd(budget)} Target</span>
+          ${acv > 0 ? `<span style="font-size:13px;color:${C_ACV};font-weight:600">${usd(acv)} ACV</span>` : ''}
         </div>
       </div>
-      <span style="font-size:16px;font-weight:800;color:${attColor};flex-shrink:0">${pct(attPct)}</span>
+      <span style="font-size:16px;font-weight:800;color:${C_PCT};flex-shrink:0">${pct(attPct)}</span>
     </div>`
   }
 
-  // SA header summary line — $$ first, % plain right
   function saMoneyLine(actuals, budget, acv, attPct) {
-    const attColor = rc(attPct)
-    return `<span style="font-size:14px;font-weight:700;color:${attColor}">${usd(actuals)}</span>
-      <span style="font-size:12px;color:${C_BUDGET};font-weight:500;margin-left:6px">/ ${usd(budget)}</span>
-      ${acv > 0 ? `<span style="font-size:12px;color:${C_ACV};font-weight:500;margin-left:6px">/ ${usd(acv)} ACV</span>` : ''}
-      <span style="font-size:13px;font-weight:800;color:${attColor};margin-left:10px">${pct(attPct)}</span>`
+    return `<div style="display:flex;align-items:baseline;gap:0;width:100%">
+      <span style="font-size:14px;font-weight:700;color:${C_CACV}">${usd(actuals)} cACV</span>
+      <span style="font-size:12px;color:${C_TARGET};font-weight:500;margin-left:6px">${usd(budget)} Target</span>
+      ${acv > 0 ? `<span style="font-size:12px;color:${C_ACV};font-weight:500;margin-left:6px">${usd(acv)} ACV</span>` : ''}
+      <span style="font-size:13px;font-weight:800;color:${C_PCT};margin-left:auto;padding-left:12px">${pct(attPct)}</span>
+    </div>`
   }
 
-  // LPR stacked bar — wide (uses full available width via CSS variable)
+  // LPR stacked bar
   function lprBar(actuals, budget, acv) {
     if (!budget || budget <= 0) return ''
     const cap = Math.max(acv || 0, actuals, budget)
     const budPct = Math.min(100, budget  / cap * 100)
     const actPct = Math.min(100, actuals / cap * 100)
-    const attColor = rc(actuals / budget * 100)
+    const attColor = C_CACV
     const acvPct = acv > 0 ? Math.min(100, acv / cap * 100) : null
 
     return `<div class="lpr-bar-wrap">
       <div class="lpr-bar-track">
-        ${acvPct ? `<div style="position:absolute;left:0;top:0;height:100%;width:${acvPct.toFixed(1)}%;background:${C_ACV}22;border-radius:5px;border-right:2px solid ${C_ACV}80"></div>` : ''}
-        <div style="position:absolute;left:0;top:0;height:100%;width:${budPct.toFixed(1)}%;background:#dee2e6;border-radius:5px"></div>
-        <div style="position:absolute;left:0;top:0;height:100%;width:${actPct.toFixed(1)}%;background:${attColor};border-radius:5px"></div>
+        ${acvPct ? `<div style="position:absolute;left:0;top:0;height:100%;width:${acvPct.toFixed(1)}%;background:${C_ACV}44;border-radius:5px;border-right:2px solid ${C_ACV}"></div>` : ''}
+        <div style="position:absolute;left:0;top:0;height:100%;width:${budPct.toFixed(1)}%;background:${C_TARGET};border-radius:5px"></div>
+        <div style="position:absolute;left:0;top:0;height:100%;width:${actPct.toFixed(1)}%;background:${C_CACV};border-radius:5px"></div>
         <div style="position:absolute;left:${budPct.toFixed(1)}%;top:-3px;height:18px;width:2.5px;background:#495057;border-radius:2px"></div>
       </div>
       <div class="lpr-bar-labels">
-        <span style="color:${attColor};font-weight:700">${usd(actuals)}</span>
-        <span style="color:${C_BUDGET};font-weight:500">/ ${usd(budget)}</span>
-        ${acv > 0 ? `<span style="color:${C_ACV};font-weight:500;margin-left:4px">/ ${usd(acv)} ACV</span>` : ''}
+        <span style="color:${C_CACV};font-weight:700">${usd(actuals)} cACV</span>
+        <span style="color:${C_TARGET};font-weight:500">${usd(budget)} Target</span>
+        ${acv > 0 ? `<span style="color:${C_ACV};font-weight:500">${usd(acv)} ACV</span>` : ''}
       </div>
     </div>`
   }
@@ -385,8 +341,8 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
       const cAI        = perCust[c.customer_name] ?? {}
       const execH  = custHealthMap[c.customer_name] ?? {}
       const cp     = c.summary?.overall_attainment_pct
-      const hLabel = execH.health ?? rl(cp)
-      const hColor = { STRONG:'#16a34a', STABLE:'#1a6fb3', AT_RISK:'#d97706', CRITICAL:'#dc2626' }[hLabel] ?? rc(cp)
+      const hLabel = execH.health ?? '—'
+      const hColor = C_TEXT
       const custKey = `${pfx}-c${ci}`
       // Collect ACV from nested products
       const custAcv = custAllProds(c).reduce((s,p) => s + (p.ytd_acv_act ?? 0), 0)
@@ -422,9 +378,9 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
             <div class="tree-expand-btn" onclick="event.stopPropagation();toggleTree('${saKey}')">${BI.chevronDown}</div>
           </div>
           <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
               <span style="font-size:15px;font-weight:700;color:#212529">${esc(sa.name)}</span>
-              ${saMoneyLine(sa.ytd_actuals, sa.ytd_target, saAcv, sa.attainment_pct)}
+              <div style="margin-top:2px">${saMoneyLine(sa.ytd_actuals, sa.ytd_target, saAcv, sa.attainment_pct)}</div>
             </div>
           </div>
         </div>`
@@ -443,102 +399,96 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
           const lprRows = sortedProds.map((p, pi) => {
             const pp = p.ytd_attainment_pct
             const lprKey = `${pfx}-c${ci}-sa${si}-sub${subi}-lpr${pi}`
-            const attColor = rc(pp)
 
             const mo3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-
-            // Build inline SVG: line chart + data table fused into one block.
-            // Layout (top→bottom): chart area → month labels → Act row → Bud row → Att% row
             const series = (p.monthly_series ?? []).slice().sort((a,b)=>(a.month||'').localeCompare(b.month||''))
-            const svgW = 500
-            const chartH = 48   // height of the line chart area
-            const rowH   = 16   // height of each text data row
-            const lblY   = chartH + 14        // month label baseline
-            const actY   = lblY + rowH        // Act row baseline
-            const budY   = actY + rowH        // Bud row baseline
-            const attY   = budY + rowH        // Att% row baseline
-            const totalH = attY + 6           // total SVG height
-            const padX   = 20
 
+            // Monthly attainment line chart — att% per dot, month labels on x-axis
             const lineChartSvg = (() => {
               if (series.length < 1) return ''
-              const vals = series.map(m => m.actual ?? 0)
-              const maxVal = Math.max(...vals, 1)
-              const xOf = i => padX + (series.length > 1 ? i / (series.length - 1) : 0.5) * (svgW - padX * 2)
+              const mcW    = 500
+              const mcH    = 52    // chart area height
+              const mcPadX = 24
+              const mcPadT = 18   // top padding for data labels above dots
+              const mcLblY = mcH + mcPadT + 10  // month label baseline
+              const mcTotalH = mcLblY + 6
+              const xOf = i => mcPadX + (series.length > 1 ? i / (series.length - 1) : 0.5) * (mcW - mcPadX * 2)
 
-              // Polyline points
-              const pts = vals.map((v, i) => `${xOf(i).toFixed(1)},${(4 + (1 - v / maxVal) * (chartH - 8)).toFixed(1)}`).join(' ')
-
-              // Per-column data
               const cols = series.map((m, i) => {
                 const monthNum = parseInt(String(m.month ?? '').slice(4), 10)
                 const lbl = mo3[(monthNum - 1) % 12] ?? ''
                 const act = m.actual ?? 0
                 const tgt = m.target ?? 0
                 const att = tgt > 0 ? act / tgt * 100 : null
-                const actColor = rc(att)
-                const attColor3 = rc(att)
-                return { x: xOf(i), lbl, act, tgt, att, actColor, attColor3 }
+                return { x: xOf(i), lbl, att }
               })
 
-              const monthLabels = cols.map(c =>
-                `<text x="${c.x.toFixed(1)}" y="${lblY}" text-anchor="middle" font-size="12" font-weight="700" fill="#adb5bd">${c.lbl}</text>`
-              ).join('')
+              const attVals = cols.map(c => c.att ?? 0)
+              const maxAtt = Math.max(...attVals, 100)
+              const yOf = v => mcPadT + (1 - Math.min(v, maxAtt) / maxAtt) * (mcH - mcPadT)
 
-              const actLabels = cols.map(c =>
-                `<text x="${c.x.toFixed(1)}" y="${actY}" text-anchor="middle" font-size="11" font-weight="700" fill="${c.actColor}">${usd(c.act)}</text>`
-              ).join('')
+              const pts = cols.filter(c => c.att != null)
+                .map(c => `${c.x.toFixed(1)},${yOf(c.att).toFixed(1)}`).join(' ')
 
-              const budLabels = cols.map(c =>
-                `<text x="${c.x.toFixed(1)}" y="${budY}" text-anchor="middle" font-size="11" fill="#6c757d">${usd(c.tgt)}</text>`
-              ).join('')
+              // Horizontal 100% reference line
+              const refY = yOf(100).toFixed(1)
 
-              const attLabels = cols.map(c =>
-                `<text x="${c.x.toFixed(1)}" y="${attY}" text-anchor="middle" font-size="11" font-weight="700" fill="${rc(c.att)}">${c.att != null ? pct(c.att) : '—'}</text>`
-              ).join('')
-
-              // Row labels on the left
-              const rowLabels = `
-                <text x="0" y="${actY}" text-anchor="start" font-size="10" font-weight="700" fill="#adb5bd" letter-spacing="0.5">ACT</text>
-                <text x="0" y="${budY}" text-anchor="start" font-size="10" font-weight="700" fill="#adb5bd" letter-spacing="0.5">BUD</text>
-                <text x="0" y="${attY}" text-anchor="start" font-size="10" font-weight="700" fill="#adb5bd" letter-spacing="0.5">ATT%</text>`
-
-              return `<svg viewBox="0 0 ${svgW} ${totalH}" width="100%" height="${totalH * 0.72}" style="display:block;overflow:visible">
-                ${series.length >= 2 ? `<polyline points="${pts}" fill="none" stroke="${attColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
-                ${vals.map((v, i) => `<circle cx="${xOf(i).toFixed(1)}" cy="${(4 + (1 - v / maxVal) * (chartH - 8)).toFixed(1)}" r="3" fill="${attColor}"/>`).join('')}
-                ${monthLabels}
-                <line x1="${padX}" y1="${lblY - 11}" x2="${svgW - padX}" y2="${lblY - 11}" stroke="#e9ecef" stroke-width="1"/>
-                ${rowLabels}
-                ${actLabels}
-                ${budLabels}
-                ${attLabels}
+              return `<svg viewBox="0 0 ${mcW} ${mcTotalH}" width="100%" height="${mcTotalH}" style="display:block;overflow:visible;margin-top:10px">
+                <line x1="${mcPadX}" y1="${refY}" x2="${mcW - mcPadX}" y2="${refY}" stroke="#e9ecef" stroke-width="1" stroke-dasharray="3,3"/>
+                ${cols.length >= 2 ? `<polyline points="${pts}" fill="none" stroke="#ced4da" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+                ${cols.map(c => {
+                  if (c.att == null) return ''
+                  const cx = c.x.toFixed(1)
+                  const cy = yOf(c.att).toFixed(1)
+                  const col = C_CACV
+                  return `<circle cx="${cx}" cy="${cy}" r="4" fill="${col}" stroke="#fff" stroke-width="1.5"/>
+                    <text x="${cx}" y="${(yOf(c.att) - 7).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${C_PCT}">${c.att.toFixed(0)}%</text>
+                    <text x="${cx}" y="${mcLblY}" text-anchor="middle" font-size="10" font-weight="600" fill="#adb5bd">${c.lbl}</text>`
+                }).join('')}
               </svg>`
             })()
 
-            // Labeled bar — transparency layering: actual (opaque) → budget (semi) → ACV (light)
-            // When actual > budget or ACV, darker actual color still visible through lighter overlays
+            // Waterfall bar — 3 horizontal rows (ACV / Budget / Actual) scaled to ACV ceiling.
+            // Each row is a filled bar + gap + inline dollar label. Attainment % on Actual row.
             const labeledBar = (() => {
               const act = p.ytd_actuals ?? 0
               const bud = p.ytd_target ?? 0
               const acv = p.ytd_acv_act ?? 0
-              // Cap is the largest value — bars scale relative to this
+              if (!acv && !bud && !act) return ''
               const cap = Math.max(acv, act, bud, 1)
-              const actPct = Math.min(100, act / cap * 100)
-              const budPct = Math.min(100, bud / cap * 100)
-              const acvPct = acv > 0 ? Math.min(100, acv / cap * 100) : null
-              const attColor2 = rc(bud > 0 ? act / bud * 100 : null)
+              const attColor2 = C_CACV
+
+              // SVG dimensions
+              const wfW   = 500
+              const barH  = 18
+              const gap   = 8
+              const lblOff = 8
+              const trackW = 380
+              const leftPad = 52    // wider to fit "Target" label
+              const totalH = 3 * barH + 2 * gap
+
+              const barOf = val => Math.min(trackW, val / cap * trackW)
+
+              const rows = [
+                { y: 0,              lbl: 'ACV',    filled: barOf(acv), color: C_ACV,    val: acv,  suffix: '' },
+                { y: barH + gap,     lbl: 'Target', filled: barOf(bud), color: C_TARGET, val: bud,  suffix: '' },
+                { y: (barH + gap)*2, lbl: 'cACV',   filled: barOf(act), color: C_CACV,  val: act,  suffix: '' },
+              ]
+
+              const svgRows = rows.map(r => {
+                const gapW = trackW - r.filled
+                const lblX = leftPad + r.filled + lblOff
+                return `
+                  <text x="0" y="${r.y + barH - 4}" font-size="10" font-weight="700" fill="${r.color}" letter-spacing="0.4">${r.lbl}</text>
+                  <rect x="${leftPad}" y="${r.y}" width="${r.filled.toFixed(1)}" height="${barH}" rx="4" fill="${r.color}"/>
+                  ${gapW > 0 ? `<rect x="${(leftPad + r.filled).toFixed(1)}" y="${r.y}" width="${gapW.toFixed(1)}" height="${barH}" rx="4" fill="${r.color}" opacity="0.12"/>` : ''}
+                  <text x="${lblX.toFixed(1)}" y="${r.y + barH - 4}" font-size="12" font-weight="700" fill="${r.color}">${usd(r.val)}${r.suffix}</text>`
+              }).join('')
 
               return `<div style="margin:10px 0 6px;width:100%">
-                <div style="position:relative;height:32px;border-radius:6px;overflow:hidden;background:#f1f3f5">
-                  ${acvPct ? `<div style="position:absolute;left:0;top:0;height:100%;width:${acvPct.toFixed(1)}%;background:${C_ACV};opacity:0.9;border-radius:6px 0 0 6px"></div>` : ''}
-                  <div style="position:absolute;left:0;top:0;height:100%;width:${budPct.toFixed(1)}%;background:#8fa0b5;opacity:0.6;border-radius:6px 0 0 6px"></div>
-                  <div style="position:absolute;left:0;top:0;height:100%;width:${actPct.toFixed(1)}%;background:${attColor2};opacity:0.35;border-radius:6px 0 0 6px"></div>
-                </div>
-                <div style="display:flex;gap:12px;margin-top:4px;font-size:9px;font-weight:600">
-                  <span style="color:${attColor2}">${BI.dotFill} ${usd(act)} actual</span>
-                  <span style="color:#6c757d">${BI.dash} ${usd(bud)} budget</span>
-                  ${acv > 0 ? `<span style="color:${C_ACV}">${BI.dot} ${usd(acv)} ACV</span>` : ''}
-                </div>
+                <svg viewBox="0 0 ${wfW} ${totalH}" width="100%" height="${totalH}" style="display:block;overflow:visible">
+                  ${svgRows}
+                </svg>
               </div>`
             })()
 
@@ -548,17 +498,21 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
                 <!-- Left 30%: LPR name + attainment + recommendation -->
                 <div style="width:28%;min-width:160px;padding-right:16px;flex-shrink:0">
                   <div style="display:flex;align-items:flex-start;gap:6px">
-                    <span style="width:8px;height:8px;border-radius:50%;background:${attColor};display:inline-block;flex-shrink:0;margin-top:3px"></span>
-                    <div>
-                      <div class="tree-name" style="font-size:13px;font-weight:600;color:#212529;line-height:1.3">${esc(p.name??p.lpr??'')}</div>
-                      <div style="font-size:13px;font-weight:800;color:${attColor};margin-top:2px">${pct(pp)}</div>
+                    <span style="width:8px;height:8px;border-radius:50%;background:${C_CACV};display:inline-block;flex-shrink:0;margin-top:3px"></span>
+                    <div style="flex:1;min-width:0">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:4px">
+                        <div class="tree-name" style="font-size:13px;font-weight:600;color:#212529;line-height:1.3">${esc(p.name??p.lpr??'')}</div>
+                        <div style="font-size:13px;font-weight:800;color:${C_PCT};flex-shrink:0;text-align:right">${pct(pp)}</div>
+                      </div>
                       ${p.recommendation ? `<div style="font-size:12px;color:#495057;line-height:1.55;margin-top:6px">${esc(p.recommendation)}</div>` : ''}
                     </div>
                   </div>
                 </div>
-                <!-- Right 70%: labeled bar + fused line chart + data table -->
+                <!-- Right 70%: waterfall bar + monthly attainment chart -->
                 <div style="flex:1;min-width:0;padding:4px 0">
-                  ${labeledBar}
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#adb5bd;margin-bottom:4px">YTD Consumption</div>
+                  ${labeledBar ? `<div style="margin-bottom:8px">${labeledBar}</div>` : ''}
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#adb5bd;margin-top:18px;margin-bottom:4px">Monthly Attainment</div>
                   ${lineChartSvg}
                 </div>
               </div>
@@ -591,13 +545,6 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
         title: c.customer_name,
         subtitle: (c.industry ? c.industry + ' · ' : '') + (cAI.landscape_pattern?.replace(/_/g,' ') || ''),
         observation: cAI.architectural_summary || '',
-        signals: (cAI.key_signals ?? []).map(s => ({
-          type: s.signal_type,
-          title: s.title,
-          products: s.products_involved ?? [],
-          pattern: s.pattern || '',
-          action: s.action || '',
-        })),
         actions: cAI.ea_recommended_actions ?? [],
         exec: {
           headline: execH.headline || '',
@@ -609,31 +556,20 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
       // SA level
       c.solution_areas.forEach((sa, si) => {
         const saKey = `c${ci}-sa${si}`
-        const saSignals = (cAI.key_signals ?? []).filter(s =>
-          (s.products_involved ?? []).some(pname =>
-            (sa.sub_solution_areas??[]).some(sub => (sub.products??[]).find(p => p.name === pname))
-          )
-        )
         data[saKey] = {
           title: sa.name,
           subtitle: c.customer_name,
-          observation: saSignals.length ? saSignals[0].pattern : (cAI.architectural_summary || ''),
-          signals: saSignals.map(s => ({ type: s.signal_type, title: s.title, products: s.products_involved ?? [], pattern: s.pattern, action: s.action })),
+          observation: cAI.architectural_summary || '',
           actions: [],
           exec: {},
         }
 
-        // SubSA level
         sa.sub_solution_areas?.forEach((sub, subi) => {
           const subKey = `c${ci}-sa${si}-sub${subi}`
-          const subSignals = (cAI.key_signals ?? []).filter(s =>
-            (s.products_involved ?? []).some(pname => (sub.products??[]).find(p => p.name === pname))
-          )
           data[subKey] = {
             title: sub.name,
             subtitle: sa.name + ' · ' + c.customer_name,
-            observation: subSignals.length ? subSignals[0].explanation || subSignals[0].pattern : '',
-            signals: subSignals.map(s => ({ type: s.signal_type, title: s.title, products: s.products_involved ?? [], pattern: s.pattern, action: s.action })),
+            observation: '',
             actions: [],
             exec: {},
           }
@@ -647,8 +583,7 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
                 subtitle: sub.name + ' · ' + c.customer_name,
                 observation: p.insight || '',
                 recommendation: p.recommendation || '',
-                signals: [],
-                actions: p.ea_action ? [p.ea_action] : [],
+                signals: [],                actions: p.ea_action ? [p.ea_action] : [],
                 exec: {},
                 lpr: {
                   ytd_actuals: p.ytd_actuals,
@@ -685,37 +620,21 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
     customers.forEach((c, ci) => {
       const execH = custHealthMap[c.customer_name] ?? {}
       const cAI   = (ai.per_customer ?? {})[c.customer_name] ?? {}
-      // v3: use risk_items for critical/high products; on-track from nested products
-      const critProds = c.risk_items?.filter(r => r.risk_level==='CRITICAL'||r.risk_level==='critical') ?? []
-      const highProds  = c.risk_items?.filter(r => r.risk_level==='HIGH'||r.risk_level==='high') ?? []
-      const allProds   = custAllProds(c)
-      const onTrackProds = allProds.filter(p => (p.ytd_attainment_pct ?? 0) >= 90)
-      // Customer-specific signals from per_customer.key_signals
-      const custSignals = (cAI.key_signals ?? []).map(s => ({
-        type: s.signal_type, title: s.title,
-        products: s.products_involved ?? [],
-        pattern: s.pattern,
-        explanation: s.explanation || '',
-        action: s.action || '',
-      }))
       data[`exec-c${ci}`] = {
         title: c.customer_name,
         subtitle: (c.industry ? c.industry + ' · ' : '') + (execH.health?.replace(/_/g,' ') || ''),
         observation: execH.headline || cAI.architectural_summary || '',
-        signals: custSignals,
         actions: [],
         exec: {
           headline: execH.headline || '',
           top_risk: execH.top_risk || '',
+          recommended_ask_rationale: execH.recommended_ask_rationale || '',
           recommended_ask: execH.recommended_ask || '',
-          // QBR data from per_customer — richer than executive_view
           qbr_opening: cAI.qbr?.opening || '',
           qbr_key_points: cAI.qbr?.key_points || [],
           qbr_recommended_ask: cAI.qbr?.recommended_ask || '',
           qbr_questions: cAI.qbr?.questions_they_will_ask || [],
-          // Renewal risks for this customer
           renewal_risks: (ai.renewal_risks ?? []).filter(r => r.customer_name === c.customer_name),
-          // Momentum items for this customer
           momentum: (ai.momentum ?? []).filter(m => m.customer_name === c.customer_name),
           sa_breakdown: c.solution_areas.map(sa => ({
             name: sa.name,
@@ -723,39 +642,20 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
             actuals: sa.ytd_actuals,
             budget: sa.ytd_target,
           })),
-          crit_products_detail: [...critProds, ...highProds].slice(0, 8).map(p => ({
-            name: p.logical_product,
-            att: p.ytd_attainment_pct,
-          })),
-          healthy_products_detail: onTrackProds.slice(0, 6).map(p => ({
-            name: p.name || p.lpr || '',
-            att: p.ytd_attainment_pct,
-          })),
         },
       }
 
-      // Executive SA entries (prefixed exec-c${ci}-sa${si})
       c.solution_areas.forEach((sa, si) => {
-        // v3: collect products from sub_solution_areas
         const saProds = (sa.sub_solution_areas??[]).flatMap(sub => sub.products??[])
-        const saSignals = (cAI.key_signals ?? []).filter(s =>
-          (s.products_involved ?? []).some(pname => saProds.find(sp => sp.name === pname))
-        )
-        // v3: no risk_level on products — derive from attainment
-        const critSaProds = saProds.filter(p => (p.ytd_attainment_pct ?? 100) < 75)
         const prodSummary = saProds.length
           ? `${saProds.length} products: ${saProds.filter(p=>p.ytd_attainment_pct!=null).slice().sort((a,b)=>(a.ytd_attainment_pct??999)-(b.ytd_attainment_pct??999)).slice(0,3).map(p=>`${p.name??p.lpr??''} ${pct(p.ytd_attainment_pct)}`).join(', ')}${saProds.length>3?'…':''}`
           : ''
         data[`exec-c${ci}-sa${si}`] = {
           title: sa.name,
           subtitle: c.customer_name,
-          observation: saSignals.length ? saSignals[0].pattern : prodSummary,
-          signals: saSignals.map(s => ({ type: s.signal_type, title: s.title, products: s.products_involved ?? [], pattern: s.pattern, action: s.action })),
+          observation: prodSummary,
           actions: [],
-          exec: {
-            crit_products: critSaProds.map(p => p.name??p.lpr??'').join(', '),
-            product_summary: prodSummary,
-          },
+          exec: { product_summary: prodSummary },
         }
       })
     })
@@ -769,9 +669,9 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
     const oppItems  = execAI.portfolio_opportunities ?? []
 
     // ── Helpers ──────────────────────────────────────────────────────────────
-    const healthColor = h => ({ STRONG:'#16a34a', STABLE:'#1a6fb3', AT_RISK:'#d97706', CRITICAL:'#dc2626' }[h] ?? '#6c757d')
+    const healthColor = h => C_TEXT
     const healthLabel = h => ({ STRONG:'Strong', STABLE:'Stable', AT_RISK:'At Risk', CRITICAL:'Critical' }[h] ?? h ?? '—')
-    const healthBg    = h => ({ STRONG:'#f0fdf4', STABLE:'#eff6ff', AT_RISK:'#fffbeb', CRITICAL:'#fff1f2' }[h] ?? '#f8f9fa')
+    const healthBg    = h => '#f8f9fa'
 
     // ── Industry aggregation ──────────────────────────────────────────────────
     const industryMap = new Map()
@@ -788,30 +688,29 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
 
     // ── Portfolio pulse strip ─────────────────────────────────────────────────
     const attPct = s.overall_attainment_pct
-    const attColor = rc(attPct)
     const gap = s.total_ytd_target - s.total_ytd_actuals
     const portfolioStrip = `
       <div class="ep-pulse" data-key="exec-portfolio" onclick="selectRow(this,'exec-portfolio')">
         <div class="ep-kpis">
           <div class="ep-kpi">
-            <div class="ep-kval" style="color:${attColor}">${pct(attPct)}</div>
+            <div class="ep-kval" style="color:${C_PCT}">${pct(attPct)}</div>
             <div class="ep-klbl">YTD Attainment</div>
           </div>
           <div class="ep-kpi">
-            <div class="ep-kval" style="color:#1a6fb3">${usd(s.total_ytd_actuals)}</div>
-            <div class="ep-klbl">Consumed cACV</div>
+            <div class="ep-kval" style="color:${C_CACV}">${usd(s.total_ytd_actuals)}</div>
+            <div class="ep-klbl">cACV</div>
           </div>
           <div class="ep-kpi">
-            <div class="ep-kval" style="color:#6c757d">${usd(s.total_ytd_target)}</div>
-            <div class="ep-klbl">Budget cACV</div>
+            <div class="ep-kval" style="color:${C_TARGET}">${usd(s.total_ytd_target)}</div>
+            <div class="ep-klbl">Target</div>
           </div>
           <div class="ep-kpi">
             <div class="ep-kval" style="color:${C_ACV}">${usd(totalAcv)}</div>
-            <div class="ep-klbl">Contracted ACV</div>
+            <div class="ep-klbl">ACV</div>
           </div>
           ${gap > 0 ? `<div class="ep-kpi">
-            <div class="ep-kval" style="color:#dc2626">${usd(gap)}</div>
-            <div class="ep-klbl">Budget Gap</div>
+            <div class="ep-kval" style="color:${C_TEXT}">${usd(gap)}</div>
+            <div class="ep-klbl">Gap</div>
           </div>` : ''}
         </div>
         ${execAI.opening ? `<div class="ep-narrative">${esc(execAI.opening)}</div>` : ''}
@@ -830,38 +729,29 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
         </div>` : ''}
       </div>` : ''
 
-    // Color key criteria (shown once at top of customer grid)
-    const colorKey = `<div class="ep-color-key">
-      <span class="ep-ck-label">Attainment</span>
-      <span class="ep-ck-item"><span class="ep-ck-dot" style="background:#16a34a"></span>≥ 90% on track</span>
-      <span class="ep-ck-item"><span class="ep-ck-dot" style="background:#d97706"></span>75–89% watch</span>
-      <span class="ep-ck-item"><span class="ep-ck-dot" style="background:#dc2626"></span>&lt; 75% action needed</span>
-    </div>`
+    const colorKey = ''
 
     // ── Customer cards ────────────────────────────────────────────────────────
     const custCards = customers.map((c, ci) => {
       const custKey = `exec-c${ci}`
       const execH   = custHealthMap[c.customer_name] ?? {}
       const cp      = c.summary?.overall_attainment_pct
-      const cardColor = rc(cp)
       const custAcv = custAllProds(c).reduce((s,p) => s+(p.ytd_acv_act??0), 0)
 
-      // Solution area rows — color-coded by attainment
       const saRows = (c.solution_areas ?? []).map(sa => {
-        const saColor = rc(sa.attainment_pct)
         return `<div class="ec-sa-row">
-          <span class="ec-sa-dot" style="background:${saColor}"></span>
+          <span class="ec-sa-dot" style="background:${C_CACV}"></span>
           <span class="ec-sa-name">${esc(sa.name)}</span>
           <span class="ec-sa-nums">
-            <span style="color:${saColor};font-weight:700">${usd(sa.ytd_actuals)}</span>
-            <span class="ec-sa-sep">/</span>
-            <span style="color:#6c757d">${usd(sa.ytd_target)}</span>
-            <span class="ec-sa-att" style="color:${saColor}">${pct(sa.attainment_pct)}</span>
+            <span style="color:${C_CACV};font-weight:700">${usd(sa.ytd_actuals)} cACV</span>
+            <span class="ec-sa-sep">|</span>
+            <span style="color:${C_TARGET}">${usd(sa.ytd_target)} Target</span>
+            <span class="ec-sa-att" style="color:${C_PCT}">${pct(sa.attainment_pct)}</span>
           </span>
         </div>`
       }).join('')
 
-      return `<div class="ec-card" data-key="${custKey}" onclick="selectRow(this,'${custKey}')" style="border-top:3px solid ${cardColor}">
+      return `<div class="ec-card" data-key="${custKey}" onclick="selectRow(this,'${custKey}')" style="border-top:3px solid ${C_CACV}">
         <div class="ec-card-header">
           <div>
             <div class="ec-card-name">${esc(c.customer_name)}</div>
@@ -870,11 +760,11 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
             </div>
           </div>
           <div class="ec-card-totals">
-            <div class="ec-card-act" style="color:${cardColor}">${usd(c.summary?.total_ytd_actuals)}</div>
+            <div class="ec-card-act" style="color:${C_CACV}">${usd(c.summary?.total_ytd_actuals)} <span style="font-size:11px">cACV</span></div>
             <div class="ec-card-subvals">
-              <span style="color:#6c757d">${usd(c.summary?.total_ytd_target)} bud</span>
+              <span style="color:${C_TARGET}">${usd(c.summary?.total_ytd_target)} Target</span>
               <span style="color:${C_ACV}">${usd(custAcv)} ACV</span>
-              <span style="color:${cardColor};font-weight:800">${pct(cp)}</span>
+              <span style="color:${C_PCT};font-weight:800">${pct(cp)}</span>
             </div>
           </div>
         </div>
@@ -885,41 +775,39 @@ function buildHtml(portfolio, chartjsScript, bootstrapCss, bootstrapIconsCss) {
     }).join('')
 
     // ── Industry section ─────────────────────────────────────────────────────
-    const industrySection = industryMap.size > 1 ? `
+    const industryPersp = ai.industry_perspectives ?? []
+    const industrySection = industryPersp.length > 0 ? `
       <div class="ep-industry">
         <div class="ep-section-hdr">Industry Perspective</div>
         <div class="ep-industry-grid">
-          ${[...industryMap.entries()].map(([ind, g]) => {
-            const att = g.target > 0 ? g.actuals/g.target*100 : null
-            const iColor = rc(att)
-            const custInsights = g.custObjs.map(c => {
-              const cAI = (perCust ?? {})[c.customer_name] ?? {}
-              return { summary: cAI.architectural_summary || '', signals: cAI.key_signals ?? [], actions: cAI.ea_recommended_actions ?? [] }
-            }).filter(ci => ci.summary)
-            const topInsight = custInsights[0]?.summary?.split('.')[0] + '.' ?? ''
-            const allSignalTypes = custInsights.flatMap(ci => ci.signals.map(s => s.signal_type))
-            const signalFreq = allSignalTypes.reduce((m, t) => { m[t]=(m[t]||0)+1; return m }, {})
-            const topSignal = Object.entries(signalFreq).sort((a,b)=>b[1]-a[1])[0]
-            const topAction = custInsights.flatMap(ci => ci.actions)[0] || ''
-            return `<div class="ep-ind-card" style="border-left:3px solid ${iColor}">
+          ${industryPersp.map(ip => {
+            const ind = ip.industry || ''
+            const g   = industryMap.get(ind) ?? {}
+            const att = g.target > 0 ? g.actuals / g.target * 100 : null
+            const iColor = C_CACV
+            return `<div class="ep-ind-card" style="border-left:3px solid ${C_CACV}">
               <div class="ep-ind-header">
                 <div>
                   <div class="ep-ind-name">${esc(ind)}</div>
-                  <div class="ep-ind-custs">${g.customers.map(n=>n.split(' ')[0]).join(' · ')}</div>
+                  <div class="ep-ind-custs">${(ip.customers ?? []).map(n => n.split(' ')[0]).join(' · ')}</div>
                 </div>
-                <div class="ep-ind-kpis">
-                  <span style="font-size:18px;font-weight:900;color:${iColor}">${usd(g.actuals)}</span>
-                  <span style="font-size:12px;color:#6c757d">/ ${usd(g.target)}</span>
-                  <span style="font-size:13px;font-weight:700;color:${iColor}">${pct(att)}</span>
-                </div>
+                ${g.actuals != null ? `<div class="ep-ind-kpis">
+                  <span style="font-size:18px;font-weight:900;color:${C_CACV}">${usd(g.actuals)} cACV</span>
+                  <span style="font-size:12px;color:${C_TARGET}"> / ${usd(g.target)} Target</span>
+                  <span style="font-size:13px;font-weight:700;color:${C_PCT}">${pct(att)}</span>
+                </div>` : ''}
               </div>
-              ${topSignal ? `<div class="ep-ind-signal" style="color:${siColor(topSignal[0])};background:${siColor(topSignal[0])}15">${esc(topSignal[0].replace(/_/g,' '))} across ${topSignal[1]} customer${topSignal[1]>1?'s':''}</div>` : ''}
-              ${topInsight ? `<div class="ep-ind-insight">${esc(topInsight.slice(0,140))}${topInsight.length>140?'…':''}</div>` : ''}
-              ${topAction ? `<div class="ep-ind-action">${esc(topAction.slice(0,110))}${topAction.length>110?'…':''}</div>` : ''}
+              ${ip.architectural_theme ? `<div class="ep-ind-insight" style="margin-bottom:6px">${esc(ip.architectural_theme)}</div>` : ''}
+              ${ip.cohort_narrative   ? `<div class="ep-ind-insight" style="color:#495057">${esc(ip.cohort_narrative)}</div>` : ''}
+              ${ip.exec_recommendation ? `<div class="ep-ind-action">${BI.arrowRight} ${esc(ip.exec_recommendation)}</div>` : ''}
             </div>`
           }).join('')}
         </div>
-      </div>` : ''
+      </div>` : (industryMap.size > 1 ? `
+      <div class="ep-industry">
+        <div class="ep-section-hdr">Industry Perspective</div>
+        <div style="font-size:13px;color:#6c757d;padding:12px 0">Re-run analysis to generate industry perspectives.</div>
+      </div>` : '')
 
     return `${portfolioStrip}${riskOppBar}${colorKey}<div class="ep-cust-grid">${custCards}</div>${industrySection}`
   }
@@ -990,6 +878,7 @@ p { margin: 0 0 .4rem; } ul { padding-left: 1.3em; margin-bottom: .4rem; } li { 
 .rail-item { display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #495057; cursor: pointer; border-left: 3px solid transparent; transition: all .1s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rail-item:hover { background: #f8f9fa; color: #212529; }
 .rail-item.active { background: #e7f5ff; color: #1971c2; border-left-color: #1971c2; font-weight: 600; }
+.rail-signal { white-space: normal; line-height: 1.45; align-items: flex-start; border-bottom: 1px solid #e9ecef !important; padding-bottom: 8px; }
 .rail-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .rail-pct { margin-left: auto; font-size: 12px; font-weight: 700; flex-shrink: 0; }
 
@@ -1296,38 +1185,35 @@ p { margin: 0 0 .4rem; } ul { padding-left: 1.3em; margin-bottom: .4rem; } li { 
       ${customers.map((c, ci) => {
         const cp = c.summary?.overall_attainment_pct
         const execH = custHealthMap[c.customer_name] ?? {}
-        const hColor = { STRONG:'#198754', STABLE:'#0d6efd', AT_RISK:'#fd7e14', CRITICAL:'#dc3545' }[execH.health ?? rl(cp)] ?? rc(cp)
+        const hColor = C_TEXT
         return `<div class="rail-item" data-ci="${ci}" onclick="scrollToRow(currentRole+'-c${ci}')">
-          <span class="rail-dot" style="background:${hColor}"></span>
+          <span class="rail-dot" style="background:${C_CACV}"></span>
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.customer_name.split(' ')[0])}</span>
-          <span class="rail-pct" style="color:${hColor}">${pct(cp)}</span>
+          <span class="rail-pct" style="color:${C_PCT}">${pct(cp)}</span>
         </div>`
       }).join('')}
     </div>
-    ${signals.length ? `<div class="rail-section">
-      <div class="rail-hdr">Signals (${signals.length})</div>
-      ${signals.map((sig, si) => {
-        const color = siColor(sig.signal_type)
-        return `<div class="rail-item" style="border-left-color:${color}" onclick="showSignalPopup(${si})">
-          <span style="color:${color};flex-shrink:0">${biSignal(sig.signal_type)}</span>
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${esc(sig.title)}</span>
-        </div>`
-      }).join('')}
-    </div>` : ''}
+    <div class="rail-section">
+      <div class="rail-hdr">Architectural Signals${signals.length ? ` (${signals.length})` : ''}</div>
+      ${signals.length ? signals.map((sig, si) => `<div class="rail-item rail-signal" onclick="showSignalPopup(${si})">
+        <span style="flex-shrink:0;margin-top:1px;color:#ea580c">${BI.warning}</span>
+        <span style="font-size:12px;color:#212529;line-height:1.45">${esc(sig.title)}</span>
+      </div>`).join('') : `<div style="padding:8px 12px;font-size:12px;color:#9ca3af;font-style:italic">Run --analyze to generate signals</div>`}
+    </div>
     <div class="rail-section">
       <div class="rail-hdr">Portfolio KPIs</div>
       <div style="padding: 8px 12px; display:flex; flex-direction:column; gap:8px">
         <div>
-          <div style="font-size:18px;font-weight:800;color:${rc(s.overall_attainment_pct)}">${pct(s.overall_attainment_pct)}</div>
+          <div style="font-size:18px;font-weight:800;color:${C_PCT}">${pct(s.overall_attainment_pct)}</div>
           <div style="font-size:11px;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Attainment</div>
         </div>
         <div>
-          <div style="font-size:16px;font-weight:700;color:#212529">${usd(s.total_ytd_actuals)}</div>
-          <div style="font-size:11px;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.06em">YTD Actuals</div>
+          <div style="font-size:16px;font-weight:700;color:${C_CACV}">${usd(s.total_ytd_actuals)}</div>
+          <div style="font-size:11px;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.06em">cACV</div>
         </div>
         <div>
-          <div style="font-size:16px;font-weight:700;color:#212529">${usd(s.total_ytd_target)}</div>
-          <div style="font-size:11px;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.06em">YTD Budget</div>
+          <div style="font-size:16px;font-weight:700;color:${C_TARGET}">${usd(s.total_ytd_target)}</div>
+          <div style="font-size:11px;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Target</div>
         </div>
         <canvas id="exec-donut" width="80" height="80" style="margin-top:4px"></canvas>
       </div>
@@ -1341,7 +1227,7 @@ p { margin: 0 0 .4rem; } ul { padding-left: 1.3em; margin-bottom: .4rem; } li { 
       <div class="center-header">
         <div class="center-title">Enterprise Architect View — Customer · SA · Sub-SA · Product</div>
       </div>
-      <div class="tree-legend">${ACV_LEGEND_ROW}</div>
+      <div class="tree-legend">${acvLegendRow()}</div>
       <div class="tree-section">${treeRowsEA}</div>
     </div>
     <!-- Exec view -->
@@ -1349,9 +1235,9 @@ p { margin: 0 0 .4rem; } ul { padding-left: 1.3em; margin-bottom: .4rem; } li { 
       <div class="center-header">
         <div class="center-title">Executive View</div>
         <div class="center-kpis">
-          <div class="kpi-item"><div class="kpi-val" style="color:${rc(s.overall_attainment_pct)}">${pct(s.overall_attainment_pct)}</div><div class="kpi-lbl">Attainment thru ${esc(rm)}</div></div>
-          <div class="kpi-item"><div class="kpi-val" style="color:#1971c2">${usd(s.total_ytd_actuals)}</div><div class="kpi-lbl">YTD Actuals</div></div>
-          <div class="kpi-item"><div class="kpi-val" style="color:${C_ACV}">${usd(customers.reduce((t,c)=>t+custAllProds(c).reduce((s,p)=>s+(p.ytd_acv_act||0),0),0))}</div><div class="kpi-lbl">Portfolio ACV</div></div>
+          <div class="kpi-item"><div class="kpi-val" style="color:${C_PCT}">${pct(s.overall_attainment_pct)}</div><div class="kpi-lbl">Attainment thru ${esc(rm)}</div></div>
+          <div class="kpi-item"><div class="kpi-val" style="color:${C_CACV}">${usd(s.total_ytd_actuals)}</div><div class="kpi-lbl">cACV</div></div>
+          <div class="kpi-item"><div class="kpi-val" style="color:${C_ACV}">${usd(customers.reduce((t,c)=>t+custAllProds(c).reduce((s,p)=>s+(p.ytd_acv_act||0),0),0))}</div><div class="kpi-lbl">ACV</div></div>
         </div>
       </div>
       <div class="exec-center">${execCenter}</div>
@@ -1365,7 +1251,7 @@ p { margin: 0 0 .4rem; } ul { padding-left: 1.3em; margin-bottom: .4rem; } li { 
       <div class="companion-subtitle" id="companion-subtitle"></div>
     </div>
     <div class="companion-body" id="companion-body">
-      <div class="companion-empty">Click any customer, solution area, or product in the left panel to see architectural analysis, signals, and EA priority actions.</div>
+      <div class="companion-empty">Click any customer, solution area, or product to see architectural analysis and EA actions.</div>
     </div>
   </aside>
 </div>
@@ -1376,10 +1262,6 @@ const P = ${portfolioJson};
 const COMPANION = ${companionData};
 const CR = {};
 let currentRole = 'ea';
-const SIG_COLORS = {
-  INTEGRATION_GAP:'#7c3aed', DEPENDENCY_BLOCK:'#dc3545', ADOPTION_PLATEAU:'#fd7e14',
-  RENEWAL_RISK:'#dc3545', EXPANSION_OPPORTUNITY:'#198754'
-};
 
 // ── Role switching ─────────────────────────────────────────────────────────
 function setRole(role) {
@@ -1483,55 +1365,68 @@ function buildCompanionHtml(key, data) {
 
   // ── Executive portfolio ───────────────────────────────────────────────────
   if (isExecPortfolio) {
-    // Risks and opportunities are shown inline in the banner — right panel shows cross-customer signals only
-    if (data.signals?.length) {
-      html += '<div class="companion-section"><div class="companion-section-label">Cross-Customer Architectural Signals</div>'
-      data.signals.forEach(sig => {
-        const color = SIG_COLORS[sig.type] || '#6c757d';
-        html += '<div class="signal-block" style="border-left-color:' + color + '">'
-        html += '<div class="signal-block-type" style="color:' + color + '">' + escH((sig.type||'').replace(/_/g,' ')) + '</div>'
-        html += '<div class="signal-block-title">' + escH(sig.title) + '</div>'
-        if (sig.products?.length) {
-          html += '<div class="signal-block-prods">' + sig.products.map(p => '<span class="signal-prod-chip">' + escH(p) + '</span>').join('') + '</div>'
-        }
-        if (sig.pattern) html += '<div class="signal-block-text">' + escH(sig.pattern) + '</div>'
-        if (sig.action && !isExec) html += '<div class="signal-block-action">EA: ' + escH(sig.action) + '</div>'
-        html += '</div>'
-      })
-      html += '</div>'
+    if (data.observation) {
+      html += '<div class="companion-section"><div class="companion-section-label">Portfolio Summary</div>'
+      html += '<div class="companion-observation">' + escH(data.observation) + '</div></div>'
     } else {
-      html += '<div class="companion-empty">No cross-customer signals available. Run --analyze to generate insights.</div>'
+      html += '<div class="companion-empty">No portfolio analysis available. Run --analyze to generate insights.</div>'
     }
     return html
   }
 
   // ── Executive customer ────────────────────────────────────────────────────
   if (isExecCustomer && data.exec) {
-    // Situation
     if (data.observation) {
       html += '<div class="companion-section"><div class="companion-section-label">Strategic Situation</div>'
       html += '<div class="companion-observation">' + escH(data.observation) + '</div></div>'
+    } else {
+      html += '<div class="companion-empty" style="margin-bottom:10px">Run --analyze to generate strategic summary.</div>'
     }
-    // Recommended ask
     if (data.exec.recommended_ask) {
       html += '<div class="companion-section">'
+      if (data.exec.recommended_ask_rationale) {
+        html += '<div style="font-size:12px;color:#6c757d;line-height:1.5;margin-bottom:8px">' + escH(data.exec.recommended_ask_rationale) + '</div>'
+      }
       html += '<div class="exec-ask" style="margin:0"><strong>Ask:</strong> ' + escH(data.exec.recommended_ask) + '</div>'
       html += '</div>'
     }
-    // Solution area breakdown — color-coded, actuals + budget + attainment
+    // Renewal risks for this customer
+    if (data.exec.renewal_risks?.length) {
+      html += '<div class="companion-section"><div class="companion-section-label">Renewal Risks</div>'
+      data.exec.renewal_risks.forEach(r => {
+        html += '<div style="margin-bottom:10px;padding:8px 10px;background:#f8f9fa;border-radius:6px;border-left:3px solid #9ca3af">'
+        html += '<div style="font-size:13px;font-weight:600;color:#212529;margin-bottom:4px">' + escH(r.product) + '</div>'
+        if (r.risk_narrative) html += '<div style="font-size:12px;color:#495057;line-height:1.5;margin-bottom:4px">' + escH(r.risk_narrative) + '</div>'
+        if (r.recommended_engagement) html += '<div style="font-size:12px;color:#212529;font-style:italic">' + escH(r.recommended_engagement) + '</div>'
+        html += '</div>'
+      })
+      html += '</div>'
+    }
+    // Momentum items
+    if (data.exec.momentum?.length) {
+      html += '<div class="companion-section"><div class="companion-section-label">Momentum</div>'
+      data.exec.momentum.forEach(m => {
+        html += '<div style="margin-bottom:10px;padding:8px 10px;background:#f8f9fa;border-radius:6px;border-left:3px solid #9ca3af">'
+        html += '<div style="font-size:13px;font-weight:600;color:#212529;margin-bottom:4px">' + escH(m.title || m.product) + '</div>'
+        if (m.why_architecturally) html += '<div style="font-size:12px;color:#495057;line-height:1.5;margin-bottom:4px">' + escH(m.why_architecturally) + '</div>'
+        if (m.expand_opportunity) html += '<div style="font-size:12px;color:#212529;font-style:italic">' + escH(m.expand_opportunity) + '</div>'
+        html += '</div>'
+      })
+      html += '</div>'
+    }
+    // Solution area breakdown
     if (data.exec.sa_breakdown && data.exec.sa_breakdown.length) {
       html += '<div class="companion-section"><div class="companion-section-label">By Solution Area</div>'
       data.exec.sa_breakdown.forEach(sa => {
-        const color = sa.att >= 90 ? '#16a34a' : sa.att >= 75 ? '#d97706' : '#dc2626'
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f3f5">'
         html += '<div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">'
-        html += '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0"></span>'
+        html += '<span style="width:8px;height:8px;border-radius:50%;background:#ea580c;flex-shrink:0"></span>'
         html += '<span style="font-size:13px;font-weight:600;color:#343a40;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sa.name) + '</span>'
         html += '</div>'
         html += '<div style="text-align:right;flex-shrink:0;margin-left:10px">'
-        html += '<span style="font-size:14px;font-weight:800;color:' + color + '">' + fmtUSD(sa.actuals) + '</span>'
-        html += '<span style="font-size:11px;color:#6c757d;margin-left:4px">/ ' + fmtUSD(sa.budget) + '</span>'
-        html += '<div style="font-size:11px;font-weight:700;color:' + color + '">' + (sa.att != null ? sa.att.toFixed(0)+'%' : '—') + ' att</div>'
+        html += '<span style="font-size:14px;font-weight:800;color:#ea580c">' + fmtUSD(sa.actuals) + ' cACV</span>'
+        html += '<span style="font-size:11px;color:#16a34a;margin-left:4px"> | ' + fmtUSD(sa.budget) + ' Target</span>'
+        html += '<div style="font-size:11px;font-weight:700;color:#1d4ed8">' + (sa.att != null ? sa.att.toFixed(0)+'%' : '—') + '</div>'
         html += '</div></div>'
       })
       html += '</div>'
@@ -1550,14 +1445,16 @@ function buildCompanionHtml(key, data) {
         html += '<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#adb5bd;margin-bottom:8px">Questions They Will Ask</div>'
         data.exec.qbr_questions.forEach(q => {
           html += '<div style="margin-bottom:10px;border-radius:6px;overflow:hidden">'
-          html += '<div style="padding:7px 10px;font-size:13px;font-weight:600;background:#fff5f5;border-left:3px solid #dc3545">' + escH(q.question) + '</div>'
-          html += '<div style="padding:7px 10px;font-size:13px;color:#1971c2;background:#e7f5ff;line-height:1.55">' + escH(q.suggested_answer) + '</div>'
+          html += '<div style="padding:7px 10px;font-size:13px;font-weight:600;background:#f8f9fa;border-left:3px solid #adb5bd">' + escH(q.question) + '</div>'
+          html += '<div style="padding:7px 10px;font-size:13px;color:#212529;background:#f1f5f9;line-height:1.55">' + escH(q.suggested_answer) + '</div>'
           html += '</div>'
         })
       }
       html += '</div>'
+    } else {
+      html += '<div class="companion-section"><div class="companion-section-label">QBR Preparation</div><div class="companion-empty">Run --analyze to generate QBR content.</div></div>'
     }
-    return html || '<div class="companion-empty">No executive data for this customer.</div>'
+    return html || '<div class="companion-empty">Run --analyze to generate executive data for this customer.</div>'
   }
 
   // ── Executive SA ──────────────────────────────────────────────────────────
@@ -1566,23 +1463,9 @@ function buildCompanionHtml(key, data) {
       html += '<div class="companion-section"><div class="companion-section-label">Summary</div>'
       html += '<div class="companion-observation">' + escH(data.observation) + '</div></div>'
     }
-    if (data.exec?.crit_products) {
-      html += '<div style="font-size:13px;color:#dc3545;padding:8px 12px;background:#fff5f5;border-left:3px solid #dc3545;border-radius:0 6px 6px 0;margin-bottom:12px">'
-      html += '<strong>Critical products:</strong> ' + escH(data.exec.crit_products) + '</div>'
-    }
     if (data.exec?.product_summary) {
       html += '<div class="companion-section"><div class="companion-section-label">Products</div>'
       html += '<div style="font-size:13px;color:#495057;line-height:1.6">' + escH(data.exec.product_summary) + '</div></div>'
-    }
-    if (data.signals?.length) {
-      html += '<div class="companion-section"><div class="companion-section-label">Signals</div>'
-      data.signals.forEach(sig => {
-        const color = SIG_COLORS[sig.type] || '#6c757d';
-        html += '<div class="signal-block" style="border-left-color:' + color + '"><div class="signal-block-title">' + escH(sig.title) + '</div>'
-        if (sig.pattern) html += '<div class="signal-block-text">' + escH(sig.pattern) + '</div>'
-        html += '</div>'
-      })
-      html += '</div>'
     }
     return html || '<div class="companion-empty">No data for this solution area.</div>'
   }
@@ -1607,26 +1490,6 @@ function buildCompanionHtml(key, data) {
     html += '<div class="companion-observation">' + escH(data.observation) + '</div></div>'
   }
 
-  // Consumption section removed — data is already shown inline in the LPR row (stacked bar + line chart + table)
-
-  // Signals
-  if (data.signals && data.signals.length) {
-    html += '<div class="companion-section"><div class="companion-section-label">Architectural Signals</div>'
-    data.signals.forEach(sig => {
-      const color = SIG_COLORS[sig.type] || '#6c757d';
-      html += '<div class="signal-block" style="border-left-color:' + color + '">'
-      html += '<div class="signal-block-type" style="color:' + color + '">' + escH((sig.type||'').replace(/_/g,' ')) + '</div>'
-      html += '<div class="signal-block-title">' + escH(sig.title) + '</div>'
-      if (sig.products && sig.products.length) {
-        html += '<div class="signal-block-prods">' + sig.products.map(p => '<span class="signal-prod-chip">' + escH(p) + '</span>').join('') + '</div>'
-      }
-      if (sig.pattern) html += '<div class="signal-block-text">' + escH(sig.pattern) + '</div>'
-      if (sig.action && !isExec) html += '<div class="signal-block-action">EA: ' + escH(sig.action) + '</div>'
-      html += '</div>'
-    })
-    html += '</div>'
-  }
-
   // EA actions
   if (data.actions && data.actions.length) {
     html += '<div class="companion-section"><div class="companion-section-label">EA Priority Actions</div>'
@@ -1634,6 +1497,8 @@ function buildCompanionHtml(key, data) {
       html += '<div class="action-item-comp"><span class="action-num-comp">' + (i+1) + '</span><span class="action-text-comp">' + escH(a) + '</span></div>'
     })
     html += '</div>'
+  } else if (!isLPR) {
+    html += '<div class="companion-section"><div class="companion-section-label">EA Priority Actions</div><div class="companion-empty">Run --analyze to generate actions.</div></div>'
   }
 
   // Exec content (customer level)
@@ -1655,7 +1520,11 @@ function buildAcvWaterfallHtml(actuals, budget, acv) {
   const cap = Math.max(acv, actuals || 0, budget)
   const budPct = Math.min(100, budget / cap * 100)
   const actPct = Math.min(100, (actuals || 0) / cap * 100)
-  const attColor = rcJs(budget > 0 ? (actuals || 0) / budget * 100 : null)
+  const C_CACV_JS   = '#ea580c'
+  const C_TARGET_JS = '#16a34a'
+  const C_ACV_JS    = '#9ca3af'
+  const C_PCT_JS    = '#1d4ed8'
+  const attColor = C_CACV_JS
   const budOfAcv = (budget / acv * 100).toFixed(0)
   const actOfAcv = acv > 0 ? ((actuals || 0) / acv * 100).toFixed(0) : 0
 
@@ -1668,25 +1537,29 @@ function buildAcvWaterfallHtml(actuals, budget, acv) {
     '<div style="width:64px;text-align:right;font-size:13px;font-weight:' + (bold?'800':'600') + ';color:' + color + ';flex-shrink:0">' + fmtUSD(val) + '</div>' +
     '</div>'
 
-  let insight = actOfAcv < 10
-    ? '<div style="font-size:13px;color:#dc3545;margin-top:10px;padding:8px;background:#fff5f5;border-radius:6px;border-left:3px solid #dc3545">Only ' + actOfAcv + '% of contracted ACV consumed — high renewal risk.</div>'
-    : '<div style="font-size:13px;color:#495057;margin-top:10px;padding:8px;background:#f8f9fa;border-radius:6px">' + actOfAcv + '% of contract consumed. Budget is ' + budOfAcv + '% of ACV.</div>'
+  const attOfBudJs = budget > 0 ? (actuals || 0) / budget * 100 : null
+  let insight = '<div style="font-size:13px;color:' + C_PCT_JS + ';font-weight:700;margin-top:10px;padding:8px;background:#eff6ff;border-radius:6px">' + (attOfBudJs != null ? 'Budget attainment ' + attOfBudJs.toFixed(0) + '%.' : '') + '</div>'
 
-  return row('Contracted', acv, 100, '#dee2e6', false) + row('YTD Budget', budget, budPct, '#adb5bd', false) + row('YTD Actual', actuals || 0, actPct, attColor, true) + insight
+  return row('ACV',    acv,          100,    C_ACV_JS,    false) +
+         row('Target', budget,        budPct, C_TARGET_JS, false) +
+         row('cACV',   actuals || 0,  actPct, C_CACV_JS,   true) + insight
 }
 
-// ── Signal popup from rail ────────────────────────────────────────────────
+// ── Signal popup ──────────────────────────────────────────────────────────
 function showSignalPopup(idx) {
   const sigs = P.ai_insights?.architectural_signals || [];
   const sig = sigs[idx]; if (!sig) return;
   document.getElementById('popup-title').textContent = sig.title || 'Signal';
   const body = document.getElementById('popup-body');
-  const color = SIG_COLORS[sig.signal_type] || '#6c757d';
-  let html = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:' + color + ';margin-bottom:10px">' + escH((sig.signal_type||'').replace(/_/g,' ')) + '</div>'
-  if ((sig.customers_affected||[]).length) html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + (sig.customers_affected||[]).map(c=>'<span style="font-size:12px;font-weight:600;background:#e9ecef;padding:2px 8px;border-radius:4px">'+escH(c)+'</span>').join('') + '</div>'
-  if (sig.pattern) html += '<p style="font-size:14px;line-height:1.6;color:#343a40">' + escH(sig.pattern) + '</p>'
-  if (sig.explanation) html += '<p style="font-size:14px;line-height:1.6;color:#495057;background:#f8f9fa;padding:10px;border-radius:6px">' + escH(sig.explanation) + '</p>'
-  if (sig.action_for_ea && currentRole !== 'exec') html += '<div style="font-size:14px;color:#1971c2;background:#e7f5ff;padding:10px;border-radius:6px;border-left:3px solid #339af0;margin-top:10px">EA: ' + escH(sig.action_for_ea) + '</div>'
+  let html = ''
+  if ((sig.customers_affected||[]).length) {
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
+      sig.customers_affected.map(c => '<span style="font-size:12px;font-weight:600;background:#f1f3f5;padding:2px 8px;border-radius:4px;color:#212529">' + escH(c) + '</span>').join('') +
+      '</div>'
+  }
+  if (sig.pattern)      html += '<p style="font-size:14px;line-height:1.6;color:#212529;margin-bottom:10px">' + escH(sig.pattern) + '</p>'
+  if (sig.explanation)  html += '<p style="font-size:13px;line-height:1.6;color:#495057;background:#f8f9fa;padding:10px;border-radius:6px;margin-bottom:10px">' + escH(sig.explanation) + '</p>'
+  if (sig.action_for_ea) html += '<div style="font-size:13px;color:#212529;background:#f1f5f9;padding:10px;border-radius:6px;border-left:3px solid #9ca3af">EA: ' + escH(sig.action_for_ea) + '</div>'
   body.innerHTML = html;
   document.getElementById('popup-overlay').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -1738,7 +1611,6 @@ function initDonut() {
 function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtUSD(n) { if(n==null||isNaN(n)) return '—'; const a=Math.abs(n); return a>=1e6?'$'+(n/1e6).toFixed(1)+'M':a>=1e3?'$'+(n/1e3).toFixed(0)+'K':'$'+Math.round(n).toLocaleString(); }
 function pctJs(n) { return n==null||isNaN(n)?'—':Number(n).toFixed(1)+'%'; }
-function rcJs(p) { if(p==null||isNaN(p)) return '#6c757d'; return p>=90?'#198754':p>=75?'#fd7e14':'#dc3545'; }
 
 // ── Init ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

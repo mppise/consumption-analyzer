@@ -1,5 +1,5 @@
 #!/bin/bash
-# SpecGantry deploy script — Release 3.2.0 — 2026-06-27
+# SpecGantry deploy script — Release 3.3.0 — 2026-06-27
 # Target: local-npm (CLI binary installed via npm link)
 #
 # Usage:
@@ -23,14 +23,29 @@
 #   2. Run: bash specs/deploy.sh --dry-run   (verify install without linking)
 #   3. Run: bash specs/deploy.sh             (full install + npm link)
 #
-# v3.2.0 changes verified by this script:
+# v3.3.0 changes verified by this script:
+#   - STORY-003: full deployment of AI-powered cACV analysis (--analyze) 3-level pipeline
+#                L1 haiku per sub-SA, L2 product field distribution, L3 opus portfolio narrative
+#                stripCodeFences() fallback regex handles preamble text before JSON fence
+#                AIClient falls back to direct Anthropic SDK when AI_BASE_URL is unset
+#                action_for_csm removed from prompt templates and response shapes
+#                Graceful degradation: L1 failure warns to stderr, continues with null AI fields
+#   - STORY-005: full deployment of HTML dashboard generation (--dashboard)
+#                traverses c.solution_areas[].sub_solution_areas[].products[] (v3 data model)
+#                product.name used as display name (product.lpr as fallback)
+#                risk_level/risk_reason display removed; RAG coloring is attainment-pct only
+#                product.insight/recommendation/ea_action shown in companion panel
+#                customer.industry displayed as small tag on customer rows
+#                custTrend() and custAllProds() helpers for nested hierarchy traversal
+#                Output: <source-basename>-dashboard.html in same directory as input
+#
+# v3.2.0 changes (still verified):
 #   - STORY-003: stripCodeFences() fallback regex handles preamble text before JSON fence
-#                (fixes L1 haiku parse failures on sub-SAs with many products)
 #   - STORY-004: portfolio.json products have NO forecast fields
 #                (fy_target_total, year_end_forecast, year_end_attainment_pct, forecast_confidence ABSENT)
 #   - STORY-004: portfolio.json customers have NO risk classification fields
 #                (risk_level, risk_reason, risk_items[] ABSENT from customer objects)
-#   - STORY-005: dashboard companion panel shows NO forecast fields (year_end_attainment_pct, forecast_confidence)
+#   - STORY-005: dashboard companion panel shows NO forecast fields
 #   - STORY-005: ea_action surfaces only via "EA Priority Actions" list — no standalone EA Action block
 #
 # v3.0.0 changes (still verified):
@@ -63,7 +78,7 @@ if [[ -f "$PROJECT_ROOT/.env" ]]; then
   set +a
 fi
 
-VERSION="3.2.0"
+VERSION="3.3.0"
 
 # Per-step verification with actionable diagnostics
 run_step() {

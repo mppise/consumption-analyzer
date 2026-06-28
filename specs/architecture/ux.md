@@ -8,12 +8,13 @@ Entry points (CLI):
 - `consumption-analyzer --help` — built-in commander help, lists all available flags
 
 Entry points (generated HTML dashboard):
-- Four role-based tabs rendered by Bootstrap tab component: Executive | MU Lead | CSM | EA
-- Navigation pattern: `central-dashboard` with role-filtered tabs — all four audiences view the same file, each tab shows their relevant data slice
-- Default tab on open: Executive (first tab)
-- No URL routing — tab state is in-memory only (Bootstrap tab JS)
+- Two role-based tabs rendered via custom CSS tab bar + vanilla JS: EA | Executive
+- Navigation pattern: `central-dashboard` with role-filtered tabs — EA and Executive views; each tab shows their relevant data slice
+- Left rail: role-switcher tabs + collapsible navigation tree; sections in order: Customers → Architectural Signals (warning icon, clickable to popup) → Portfolio KPIs
+- Default tab on open: EA (first tab)
+- No URL routing — tab state is in-memory only (vanilla JS)
 
-Shared shell: the `src/cli.js` commander program is the shared CLI shell. The generated HTML dashboard has its own shared shell (Bootstrap navbar + tab bar).
+Shared shell: the `src/cli.js` commander program is the shared CLI shell. The generated HTML dashboard has its own shared shell (custom CSS navbar + tab bar + left rail).
 
 Actor routing: CLI has no role-based routing (single operator). Dashboard tabs are role-implicit — no login, no access control; each tab is self-selecting by audience.
 
@@ -28,14 +29,24 @@ CLI:
 - output-stream: stdout for data, stderr for status/errors/warnings
 
 Generated HTML dashboard:
-- css-framework: Bootstrap 5 (inlined in generated HTML — no CDN dependency)
-- icon-set: Bootstrap Icons (inlined SVG or font, embedded in HTML)
-- component-framework: vanilla JS + Bootstrap JS (inlined) — no React/Vue/Angular; Chart.js for charts
+- css-framework: pure CSS (no Bootstrap — inlined in generated HTML)
+- icon-set: inline SVG or Unicode — no external icon font
+- component-framework: vanilla JS — no React/Vue/Angular; Chart.js for charts
 - chart-library: Chart.js (latest stable, inlined in generated HTML)
-- theme-primary: #0070F3 (SAP blue — overridable at story-spec time) # inferred
-- theme-secondary: #FF6600 (warning/risk accent) # inferred
-- font-family: system-ui, -apple-system, sans-serif (Bootstrap default)
-- spacing: Bootstrap default spacing scale
+- font-family: system-ui, -apple-system, sans-serif
+- spacing: custom CSS variables
+
+Color scheme constants (semantic, not RAG/threshold-based):
+- C_CACV:   #ea580c — orange; cACV actuals values and dots
+- C_TARGET: #16a34a — green; Target values
+- C_ACV:    #9ca3af — grey; ACV ceiling values
+- C_PCT:    #1d4ed8 — royal blue; all percentage values
+
+Language standards (enforced throughout all dashboard output):
+- "cACV" — not "Actual", "actuals", or "cACV Consumed"
+- "Target" — not "Budget", "budget", or "YTD Budget"
+- "ACV" — not "Contracted ACV"
+- Dollar+label pairs: value and label rendered in same semantic color (e.g. `$1.2M cACV` all orange)
 
 ---
 
@@ -49,20 +60,18 @@ CLI conventions (unchanged):
 - No interactive prompts; no color by default
 
 Dashboard conventions (generated HTML):
-- Risk level color coding:
-  - Critical: Bootstrap `danger` (red, `#dc3545`)
-  - High: Bootstrap `warning` (amber, `#ffc107`)
-  - Medium: Bootstrap `info` (blue, `#0dcaf0`) # inferred
-  - Low: Bootstrap `secondary` (grey)
-  - OnTrack: Bootstrap `success` (green, `#198754`)
-  - NoData: Bootstrap `light` (light grey)
-- Trend arrows: Unicode arrows (↑ ↓ →) or Bootstrap Icons chevrons — one per product row
-- Tables: Bootstrap `.table .table-hover .table-striped` — sortable by column headers where feasible
-- Cards: Bootstrap `.card` for KPI widgets — value large, label small, trend badge top-right
-- Tabs: Bootstrap `.nav-tabs` with `.tab-pane` content — one pane per role
-- Charts: Chart.js bar charts for attainment by solution area; heatmap via Chart.js matrix plugin or CSS grid # inferred
-- Modals: not used in v1 dashboard
-- Toast/alerts: not used (static file, no server)
+- No RAG/threshold color coding — all color derives from semantic color constants (C_CACV, C_TARGET, C_ACV, C_PCT); `rc()`, `rb()`, `rl()` helpers render fixed semantic colors, not green/amber/red status
+- Trend arrows: Unicode arrows (↑ ↓ →) — one per product row
+- Tables: custom CSS table styling — hover and stripe via CSS only
+- Cards: custom CSS card for KPI widgets — value large, label small
+- Tabs: custom CSS tab bar with vanilla JS switching — one pane per role
+- Charts:
+  - Waterfall SVG bar: 3 rows (ACV / Target / cACV), scaled to ACV ceiling, inline USD labels, ghost gap fill — used in EA view LPR rows
+  - Monthly attainment line chart: SVG with dots per month (C_CACV colored), att% labels in C_PCT above dots, dashed 100% reference line, month labels — rendered below waterfall in EA view
+  - Chart.js bar charts: SA-level attainment summary
+- Modals: popup for architectural signals — shows customers affected, pattern, explanation, EA action; opened via `showSignalPopup()`; no signal type label
+- Fallback messages: all companion sections that depend on AI data display "Run --analyze" message when fields are null
+- Percentage alignment: right-aligned in all scoped elements (flex row with justify-content:space-between for LPR left column; margin-left:auto for SA header; flex-shrink:0 for customer money line)
 - Max widgets per tab: 6 sections — enforced at story-spec time
 
 ---
@@ -81,17 +90,27 @@ On error:
 [exit 1 or 2]
 ```
 
-Dashboard tab template (all four tabs follow this structure):
+Dashboard layout template:
 ```
-[Bootstrap navbar]  consumption-analyzer · <fiscal year> · Generated: <timestamp>
-[Tab bar]           Executive | MU Lead | CSM | EA
-[Active tab pane]
-  [Page header]     <Tab title> · <subtitle / scope>
-  [KPI row]         2–4 Bootstrap card widgets (key numbers at a glance)
-  [Primary widget]  Chart or table (largest section)
-  [Secondary widgets] 1–3 supporting charts or lists
-  [Risk / action section] At-risk items with recommendations (where relevant)
-[Footer]            Source: <csv filename> · <product count> products · <solution area count> areas
+[Navbar]      consumption-analyzer · <fiscal year> · Generated: <timestamp>
+[Tab bar]     EA | Executive
+[Left rail]   Role-switcher tabs · Customers nav tree · Architectural Signals · Portfolio KPIs
+[Center panel] View-specific content (EA hierarchy or Executive cards)
+[Right companion panel] AI insights for selected item — "Run --analyze" fallback if null
+```
+
+EA view center pane structure:
+```
+[Customer → SA → Sub-SA → LPR rows]
+  Each LPR row:
+    [Waterfall SVG] 3 bars: ACV / Target / cACV (scaled to ACV ceiling, inline USD labels, ghost gap fill)
+    [Monthly attainment line chart] dots per month (C_CACV), att% labels (C_PCT), dashed 100% reference, month labels
+```
+
+Executive view center pane structure:
+```
+[Portfolio KPI banner] overall_attainment_pct · total_ytd_actuals · total_ytd_target · portfolio ACV
+[Per-customer health cards] attainment % · customer_name · industry · SA-level attainment only
 ```
 
 No tab has more than 6 content sections. Every risk item in any tab includes the recommended action inline — no separate "recommendations page."

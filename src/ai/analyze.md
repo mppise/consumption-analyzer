@@ -29,13 +29,12 @@ Key distinction: **budget attainment** (vs plan) ≠ **contract utilization** (v
 
 ## Pre-computed product insights (from L1 sub-SA analysis)
 
-Each product below already has AI-generated insight, recommendation, and ea_action populated by the sub-SA level analysis pass. These are available in the `portfolio_data` JSON under each product object. Use them as signals when producing your portfolio-level narrative — do not re-generate them.
+Each product below already has AI-generated insight, recommendation, and ea_action populated by the sub-SA level analysis pass. These are available in the `portfolio_data` JSON under each product object. Use them as context when producing your portfolio-level narrative — do not re-generate them.
 
 Your job at this level is:
 1. Identify cross-customer and cross-solution-area patterns that only become visible at portfolio scope
-2. Produce executive-level narrative that translates architectural signals into business risk language
+2. Produce executive-level narrative that translates architectural observations into business language
 3. Frame renewal risks, expansion opportunities, and QBR content per customer
-4. Surface architectural signals that span multiple products or customers
 
 ---
 
@@ -59,8 +58,8 @@ Portfolio data (consumption metrics by customer → solution area → sub-soluti
 
 **IMPORTANT — always apply:**
 1. Only consider months ≤ {{reporting_month}} as "reported." Future months have zero actuals by definition — never cite them as under-consumption.
-2. Cross-customer signals must name the specific customers affected — never use "Portfolio-wide."
-3. All risks, criticals, and AI actions must be tied to a specific logical product (LPR level), not a solution area.
+2. Cross-customer observations must name the specific customers affected — never use "Portfolio-wide."
+3. All risks and actions must be tied to a specific logical product (LPR level), not a solution area.
 4. Architectural insights belong at sub-solution area or customer level.
 5. QBR preparation is per-customer — each customer needs its own opening, key points, recommended ask, and Q&A.
 
@@ -74,11 +73,13 @@ For **architectural context and insights**: guide investigation, not conclusions
 - ✓ "BTP EA at zero across five sub-areas after 5 months — the question for the EA is whether the activation workshop has been scheduled, or whether there's a technical blocker in the identity/auth configuration."
 - ✗ "BTP EA is dormant because the customer hasn't activated it."
 
-For **executive content**: translate architectural signals into business risk language. State the business exposure, name the dollar amount and customer, and recommend one clear action.
+For **executive content**: translate architectural observations into business language. State the business exposure, name the dollar amount and customer, and recommend one clear action.
 
 **Per customer — EA perspective:** What does this customer's SAP architecture look like based on consumption patterns? Which products form the active backbone vs dormant contracts? What architectural questions does the consumption data raise?
 
 **Portfolio — Executive perspective:** What is the headline health story? State the specific dollar amounts at risk by customer. What is the single most important action for an executive sponsor?
+
+**Recommended ask — reasoning requirement:** Before writing `recommended_ask`, identify: (1) the single product or situation that most needs exec intervention, (2) the specific dollar gap or consumption number that justifies urgency, (3) what the exec sponsor can actually do (e.g. approve funding, mandate an internal project, unblock a procurement decision, require a status review). The ask must be actionable by an exec sponsor — not something an EA or CSM would do. Never write a generic ask like "ensure adoption" or "drive value realization."
 
 ---
 
@@ -92,16 +93,6 @@ Return ONLY valid JSON. No markdown. No code fences. No preamble. Start with { a
     "CUSTOMER_NAME": {
       "architectural_summary": "3-4 sentences on this customer's SAP landscape — architectural maturity, what's working, what's blocked, what's at stake. Customer-level insight.",
       "landscape_pattern": "GREENFIELD|EXPANDING|PLATEAUED|CONTRACTING|CONSOLIDATING",
-      "key_signals": [
-        {
-          "signal_type": "INTEGRATION_GAP|DEPENDENCY_BLOCK|ADOPTION_PLATEAU|RENEWAL_RISK|EXPANSION_OPPORTUNITY",
-          "title": "short descriptive title",
-          "products_involved": ["exact logical product name 1", "exact logical product name 2"],
-          "pattern": "2 sentences: what the data shows across these products",
-          "explanation": "2-3 sentences: architectural significance, what it blocks or enables",
-          "action": "one specific EA action tied to a named logical product"
-        }
-      ],
       "qbr": {
         "opening": "1 sentence QBR opening for THIS customer — progress and forward-looking",
         "key_points": ["point 1 specific to this customer", "point 2", "point 3"],
@@ -130,26 +121,14 @@ Return ONLY valid JSON. No markdown. No code fences. No preamble. Start with { a
         "customer_name": "exact customer name",
         "health": "STRONG|STABLE|AT_RISK|CRITICAL",
         "headline": "one sentence on this customer's strategic situation",
-        "top_risk": "one sentence on biggest renewal or architectural risk — name the specific product",
-        "recommended_ask": "what an executive sponsor should push for — specific"
+        "top_risk": "one sentence on biggest renewal or architectural risk — name the specific product and dollar amount at stake",
+        "recommended_ask_rationale": "one sentence: the specific product, consumption number, and consequence of inaction that drives the ask below",
+        "recommended_ask": "what an exec sponsor should specifically do — must name a product or decision, be actionable by an exec (not an EA), and state the consequence of not acting. Not 'drive adoption' — instead: 'mandate a Commerce Cloud activation review by [month] given $630K of unactivated contract value.'"
       }
     ],
     "portfolio_risks": ["risk naming specific product(s) and customer(s)", "risk 2"],
     "portfolio_opportunities": ["opportunity naming specific product(s) and customer(s)", "opportunity 2"]
   },
-
-  "architectural_signals": [
-    {
-      "signal_type": "INTEGRATION_GAP|DEPENDENCY_BLOCK|ADOPTION_PLATEAU|RENEWAL_RISK|EXPANSION_OPPORTUNITY",
-      "title": "short descriptive title",
-      "products_involved": ["exact logical product name 1", "exact logical product name 2"],
-      "customers_affected": ["customer name 1", "customer name 2"],
-      "pattern": "2-3 sentences explaining the cross-customer pattern",
-      "explanation": "3-4 sentences of deeper architectural explanation — name specific customers and products",
-      "action_for_ea": "specific EA action naming product and customer(s)",
-      "audience": "EA|CSM|ALL"
-    }
-  ],
 
   "momentum": [
     {
@@ -158,6 +137,27 @@ Return ONLY valid JSON. No markdown. No code fences. No preamble. Start with { a
       "customer_name": "exact customer name",
       "why_architecturally": "1-2 sentences on architectural significance",
       "expand_opportunity": "concrete next step"
+    }
+  ],
+
+  "architectural_signals": [
+    {
+      "title": "short descriptive title naming the specific products and customers",
+      "products_involved": ["exact logical product name 1", "exact logical product name 2"],
+      "customers_affected": ["customer name 1", "customer name 2"],
+      "pattern": "2-3 sentences: what the data shows across these products and customers — factual, assertive",
+      "explanation": "3-4 sentences: why this matters architecturally — what it blocks, what it risks, what the consequence is if unresolved. Name specific products and customers.",
+      "action_for_ea": "one specific EA action naming the product and customer(s) — concrete next step, not generic advice"
+    }
+  ],
+
+  "industry_perspectives": [
+    {
+      "industry": "exact industry name matching customer.industry field",
+      "customers": ["exact customer name 1", "exact customer name 2"],
+      "architectural_theme": "2 sentences describing the general SAP solution theme visible across these customers in this industry — what products are forming their active backbone, what architectural pattern (cloud-native, hybrid, analytics-led, integration-heavy, etc.) characterises this cohort. Write for an executive who understands business but not SAP architecture jargon.",
+      "cohort_narrative": "1-2 sentences telling the story this industry cohort tells — not a metric summary, but the strategic situation. What is this industry doing with SAP in the portfolio? What stage of their SAP journey are they at?",
+      "exec_recommendation": "1 sentence. A specific action or ask grounded in both the consumption metrics AND the architectural picture for this industry group. This should read like advice from a trusted advisor who sees the full picture, not a generic best practice."
     }
   ]
 }
