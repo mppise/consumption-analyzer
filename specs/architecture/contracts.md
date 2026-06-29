@@ -93,7 +93,7 @@ Fields:
 - reporting_month: string (YYYYMM) — latest month with non-zero actuals
 - fiscal_year: string — e.g. "FY2026"
 - customer_count: integer — number of distinct customers in the dataset
-- industry_insights: contract:industry-insight-shape[] — one entry per distinct industry; populated by --analyze Step 5; empty array before --analyze runs
+- industry_insights: contract:industry-insight-shape[] — one entry per distinct industry; populated by --analyze Step 4; empty array before --analyze runs
 - customers: contract:customer-shape[] — one entry per distinct customer
 
 ---
@@ -103,7 +103,7 @@ One industry-level insight block within contract:portfolio-json.industry_insight
 
 Fields:
 - industry: string — unique industry name (e.g. "Pharma/Life Sciences", "Manufacturing")
-- summary: string[] — array of paragraph strings from --analyze Step 5 (opus model); empty array until --analyze has run
+- summary: string[] — array of paragraph strings from --analyze Step 4 (opus model); empty array until --analyze has run
 - aggregated_contracts: object — financial roll-up:
   - annual_contract_value: number
   - budget_contract_value: number
@@ -118,7 +118,10 @@ Fields:
 - customer_id: string | null — parsed from combined "Name (ID)" field; null in single-customer CSVs
 - customer: string — display name
 - industry: string — inferred industry vertical; matches contract:industry-insight-shape.industry
-- account_insights: string[] — paragraph strings from --analyze Step 4 (opus); empty array until --analyze has run
+- enterprise_architecture_insights: string[] — paragraph strings from --analyze Step 3 (sonnet); cross-domain EA patterns and actions for this customer; empty array until --analyze has run
+- annual_contract_values: object — per-year full-year financial rollup across all L3 contracts for this customer (keyed by year string e.g. "2026"):
+  - annual_annual_contract_value: number — sum of all months' ytd_annual_contract_value for that year across all L3 products (full-year ACV)
+  - annual_budget_contract_value: number — sum of all months' ytd_budget_contract_value for that year across all L3 products (full-year budget)
 - solutions_l1: contract:solutions-l1-shape[]
 
 ---
@@ -128,7 +131,7 @@ One L1 solution area entry within contract:customer-shape.solutions_l1[].
 
 Fields:
 - name: string — e.g. "Finance and Spend Management"
-- enterprise_architecture_insights: string[] — paragraph strings from --analyze Step 3 (sonnet); empty array until --analyze has run
+- solution_architecture_insights: string[] — paragraph strings from --analyze Step 2 (sonnet); functional architecture observations across all L2 areas in this L1 domain; empty array until --analyze has run
 - solutions_l2: contract:solutions-l2-shape[]
 
 ---
@@ -148,7 +151,6 @@ One L3 product entry within contract:solutions-l2-shape.solutions_l3[]. Leaf lev
 Fields:
 - lpr_id: string — LPR product code (e.g. "LPR868")
 - lpr_name: string — logical product name (e.g. "Ariba Buying and Invoicing")
-- solution_architecture_insights: string[] — paragraph strings from --analyze Step 2 (sonnet); empty array until --analyze has run
 - contract: contract:contract-block-shape — the full contract data for this product
 
 ---
@@ -157,7 +159,7 @@ Fields:
 The contract data object nested inside contract:solutions-l3-shape.contract.
 
 Fields:
-- ai_insights: string[] — paragraph strings from --analyze Step 1 (sonnet); raw financial/consumption signal; empty array until --analyze has run
+- contract_insights: string[] — paragraph strings from --analyze Step 1 (sonnet); raw financial/consumption signal; empty array until --analyze has run
 - [year]: contract:contract-month-shape[] — one key per fiscal year in the data (e.g. "2026"); value is an array of monthly records for that year
 
 ---
@@ -167,12 +169,12 @@ One month record within contract:contract-block-shape.[year][].
 
 Fields:
 - month: string — month name or abbreviation matching source CSV (e.g. "Jan", "Feb")
-- annual_contract_value: number — ACV actuals for this month
-- budget_contract_value: number — budgeted value for this month
-- consumed_contract_value: number — actual consumption for this month
+- ytd_annual_contract_value: number — ACV actuals YTD for this month
+- ytd_budget_contract_value: number — budgeted YTD value for this month
+- ytd_consumed_contract_value: number — actual YTD consumption for this month
 - variances: object — computed variance metrics:
-  - acv_gap: number — annual_contract_value - consumed_contract_value
-  - budget_gap: number — budget_contract_value - consumed_contract_value
+  - acv_gap: number — ytd_annual_contract_value - ytd_consumed_contract_value
+  - budget_gap: number — ytd_budget_contract_value - ytd_consumed_contract_value
   - budget_attainment: number | null — (consumed / budget) * 100 as percentage; null if budget = 0
 
 ---

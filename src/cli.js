@@ -28,6 +28,7 @@ program
   .option('--pdf2csv <file>', 'Extract tables from a PDF file and write CSV to <file>.csv in the data directory')
   .option('--analyze <file>', 'Send a CSV file to the AI model and print a cACV-domain narrative to stdout')
   .option('--transform <file>', 'Parse a cACV CSV and write a structured portfolio JSON to the data directory')
+  .option('--verify <file>', 'Verify financial accuracy of a portfolio JSON — re-derives all rollup values and checks for inconsistencies')
   .option('--dashboard <file>', 'Generate a self-contained HTML dashboard from a portfolio JSON file')
   .option('--serve <file>', 'Generate dashboard and serve it over HTTP (avoids file:// restrictions)')
   .option('--output <file>', 'Optional output path (used with --transform and --dashboard)')
@@ -131,6 +132,19 @@ async function main() {
     // Keep alive until Ctrl+C
     process.on('SIGINT', () => { server.close(); process.exit(0) })
     await new Promise(() => {})
+    return
+  }
+
+  // --verify <file>
+  // @entry consumption-analyzer --verify <file> | dispatches to src/tools/verify.js
+  if (opts.verify !== undefined) {
+    const { run, UserError, ProcessingError } = await import('./tools/verify.js')
+    try {
+      await run([opts.verify], opts)
+    } catch (err) {
+      process.stderr.write(`error: ${err.message ?? String(err)}\n`)
+      process.exit(err instanceof UserError ? 1 : 2)
+    }
     return
   }
 
@@ -244,6 +258,17 @@ async function runPipeline(inputFile) {
   } catch (err) {
     process.stderr.write(`error: ${err.message ?? String(err)}\n`)
     process.exit(err.exitCode ?? (err.name === 'UserError' ? 1 : 2))
+  }
+
+  // ---- Step 2b: Verify financial accuracy of portfolio.json ----
+  process.stderr.write(`info: verifying financial accuracy...\n`)
+  const { run: runVerify } = await import('./tools/verify.js')
+  try {
+    await runVerify([portfolioPath], {})
+  } catch (err) {
+    // Fatal — bad numbers must not flow into AI steps
+    process.stderr.write(`error: ${err.message ?? String(err)}\n`)
+    process.exit(err.exitCode ?? 2)
   }
 
   // ---- Step 3: AI narrative (only if AI_API_KEY is set) ----

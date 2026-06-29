@@ -73,7 +73,7 @@ Fields:
 - reporting_month: string, required — latest month with non-zero actuals (YYYYMM)
 - fiscal_year: string, required — e.g. "FY2026"
 - customer_count: integer, required — number of distinct customers in the dataset
-- industry_insights: entity:industry_insight[], required — one entry per distinct industry identified across all customers; populated by --analyze Step 5
+- industry_insights: entity:industry_insight[], required — one entry per distinct industry identified across all customers; populated by --analyze Step 4
 - customers: entity:customer[], required — one entry per distinct customer
 
 State machine:
@@ -85,11 +85,11 @@ owned-by: actor:operator
 ---
 
 ## entity:industry_insight
-One industry-level insight block within entity:portfolio.industry_insights[]. Produced by --analyze Step 5 (opus model). Groups all customers in a given industry and provides a cross-customer narrative.
+One industry-level insight block within entity:portfolio.industry_insights[]. Produced by --analyze Step 4 (opus model). Groups all customers in a given industry and provides a cross-customer narrative.
 
 Fields:
 - industry: string, required — unique industry name inferred from the customer list (e.g. "Pharma/Life Sciences", "Manufacturing", "Healthcare")
-- summary: string[], required — array of paragraph strings; cross-customer industry narrative and action items written by Step 5 (opus); empty array until --analyze has run
+- summary: string[], required — array of paragraph strings; cross-customer industry narrative and action items written by Step 4 (opus); empty array until --analyze has run
 - aggregated_contracts: object, required — financial roll-up across all customers in this industry:
   - annual_contract_value: number — sum of annual_contract_value across all contract months for customers in this industry
   - budget_contract_value: number — sum of budget_contract_value across all contract months
@@ -106,7 +106,11 @@ Fields:
 - customer_id: string, required — parsed from combined "Name (ID)" field via parseCustomerRaw(); null in single-customer CSVs
 - customer: string, required — display name parsed from the same combined field
 - industry: string, required — determined by STORY-006 industry inference; matches entity:industry_insight.industry
-- account_insights: string[], required — array of paragraph strings; executive-facing summary and prioritised action items written by --analyze Step 4 (opus); empty array until --analyze has run
+- enterprise_architecture_insights: string[], required — array of paragraph strings; cross-domain EA patterns, integration dependencies, and strategic actions written by --analyze Step 3 (sonnet); empty array until --analyze has run
+- annual_contract_values: object, required — per-year full-year financial rollup across all L3 contracts for this customer (keyed by year string e.g. "2026"):
+  - annual_annual_contract_value: number — intSum of all months' ytd_annual_contract_value for that year (full-year ACV)
+  - annual_budget_contract_value: number — intSum of all months' ytd_budget_contract_value for that year (full-year budget)
+  - both fields verified by reconcilePortfolio() Check 3 before portfolio.json is written
 - solutions_l1: entity:solutions_l1[], required — top-level solution area groupings for this customer
 
 owned-by: actor:operator
@@ -118,7 +122,7 @@ One L1 solution area within entity:customer.solutions_l1[]. Corresponds to a top
 
 Fields:
 - name: string, required — e.g. "Finance and Spend Management"
-- enterprise_architecture_insights: string[], required — array of paragraph strings; EA-level action items, patterns, and risks written by --analyze Step 3 (sonnet); empty array until --analyze has run
+- solution_architecture_insights: string[], required — array of paragraph strings; functional architecture observations across all L2/L3 areas in this L1 domain written by --analyze Step 2 (sonnet); empty array until --analyze has run
 - solutions_l2: entity:solutions_l2[], required
 
 owned-by: actor:operator
@@ -142,7 +146,6 @@ One L3 product entry within entity:solutions_l2.solutions_l3[]. This is the leaf
 Fields:
 - lpr_id: string, required — LPR product code (e.g. "LPR868"); canonical product identifier
 - lpr_name: string, required — logical product name (e.g. "Ariba Buying and Invoicing")
-- solution_architecture_insights: string[], required — array of paragraph strings; functional architecture observations written by --analyze Step 2 (sonnet) across L2 products; empty array until --analyze has run
 - contract: entity:contract, required — the contract data block for this product
 
 owned-by: actor:operator
@@ -153,7 +156,7 @@ owned-by: actor:operator
 The contract data block for one entity:solutions_l3 product. Contains per-year monthly series and AI-generated financial signal insights.
 
 Fields:
-- ai_insights: string[], required — array of paragraph strings; raw financial/consumption signal written by --analyze Step 1 (sonnet); empty array until --analyze has run
+- contract_insights: string[], required — array of paragraph strings; raw financial/consumption signal written by --analyze Step 1 (sonnet); empty array until --analyze has run
 - [year]: entity:contract_month[], required — one key per fiscal year present in the data (e.g. "2026"); value is an array of monthly records for that year
 
 owned-by: actor:operator
@@ -165,17 +168,18 @@ One month's contract record within entity:contract.[year][]. The fundamental uni
 
 Fields:
 - month: string, required — month name or abbreviation (e.g. "Jan", "Feb") matching source CSV
-- annual_contract_value: number, required — ACV actuals figure for this month (renamed from ytd_acv_act)
-- budget_contract_value: number, required — budgeted contract value for this month (renamed from ytd_target)
-- consumed_contract_value: number, required — actual consumption for this month (renamed from ytd_actuals)
+- ytd_annual_contract_value: number, required — ACV actuals figure YTD for this month (renamed from annual_contract_value)
+- ytd_budget_contract_value: number, required — budgeted YTD contract value for this month (renamed from budget_contract_value)
+- ytd_consumed_contract_value: number, required — actual YTD consumption for this month (renamed from consumed_contract_value)
 - variances: object, required — computed variance metrics:
-  - acv_gap: number — annual_contract_value - consumed_contract_value
-  - budget_gap: number — budget_contract_value - consumed_contract_value
-  - budget_attainment: number — (consumed_contract_value / budget_contract_value) * 100 as a percentage; null if budget_contract_value = 0
+  - acv_gap: number — ytd_annual_contract_value - ytd_consumed_contract_value
+  - budget_gap: number — ytd_budget_contract_value - ytd_consumed_contract_value
+  - budget_attainment: number — (ytd_consumed / ytd_budget) * 100 as a percentage; null if ytd_budget = 0
 
 Computation precision rules (enforced by --transform):
 - All summations use integer-safe arithmetic: Math.round(val * 100) per value, sum as integers, divide by 100
 - budget_attainment: Math.round((consumed / budget) * 1000) / 10 (1 decimal precision; null if budget = 0)
+- annual_contract_values rollup uses intSum() over all months in year — verified by reconcilePortfolio() before write
 
 State machine: none (read-only computed record per --transform run)
 

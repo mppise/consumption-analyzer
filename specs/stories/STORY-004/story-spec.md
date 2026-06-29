@@ -11,13 +11,14 @@ reads:
 
 ## Criteria
 1. `consumption-analyzer --transform <file.csv>` writes `data/<basename>-portfolio.json`; output path printed to stdout on success.
-2. Output conforms to contract:portfolio-json: generated_at (ISO 8601), reporting_month (YYYYMM — latest month with consumed_contract_value > 0), fiscal_year, customer_count, industry_insights: [], customers[].
-3. Each customer entry conforms to contract:customer-shape: customer_id (null for single-customer CSVs), customer, industry: string (inferred by `inferIndustry()` from src/lib/industry.js — see STORY-006), account_insights: [], solutions_l1[].
-4. L1 → L2 → L3 nesting is preserved: every L3 product carries lpr_id, lpr_name, solution_architecture_insights: [], contract per contract:contract-block-shape (ai_insights: [], year-keyed monthly arrays).
-5. Each contract_month conforms to contract:contract-month-shape with computed variances: acv_gap, budget_gap, budget_attainment (null if budget = 0) — integer-safe arithmetic per entity:contract_month rules.
-6. Historical actuals fallback: when consumed_contract_value = 0 AND budget_contract_value = 0 AND delta_cacv > 0 → use delta_cacv as consumed_contract_value (FY2024/FY2025 CACV_CROSS_FC_OPS_DIBO_REPORT rows).
-7. Missing/unreadable file → exit 1 + contract:error-envelope; empty CSV after header skip → exit 2; any reconciliation check failure → exit 2 + contract:reconciler-error.
-8. Warnings (e.g. unmapped columns, skipped rows) written to stderr via contract:warn-envelope; do not suppress or mix with stdout.
+2. Output conforms to contract:portfolio-json: generated_at (ISO 8601), reporting_month (YYYYMM — latest month with ytd_consumed_contract_value > 0), fiscal_year, customer_count, industry_insights: [], customers[].
+3. Each customer entry conforms to contract:customer-shape: customer_id (null for single-customer CSVs), customer, industry (inferred by `inferIndustry()` from src/lib/industry.js — see STORY-006), enterprise_architecture_insights: [], annual_contract_values (per-year rollup), solutions_l1[].
+4. L1 → L2 → L3 nesting is preserved: every L1 carries solution_architecture_insights: []; every L3 product carries lpr_id, lpr_name, contract per contract:contract-block-shape (contract_insights: [], year-keyed monthly arrays with ytd_* fields — no annual_contract_values on L3).
+5. Each contract_month conforms to contract:contract-month-shape: ytd_annual_contract_value, ytd_budget_contract_value, ytd_consumed_contract_value, and computed variances acv_gap, budget_gap, budget_attainment (null if budget = 0) — integer-safe arithmetic per entity:contract_month rules.
+6. Historical actuals fallback: when ytd_consumed_contract_value = 0 AND ytd_budget_contract_value = 0 AND delta_cacv > 0 → use delta_cacv as consumed proxy (FY2024/FY2025 CACV_CROSS_FC_OPS_DIBO_REPORT rows).
+7. `--verify` runs automatically after `--transform` completes; exits 2 on any of 6 financial integrity checks (annual rollup, variance consistency, industry aggregation, NaN guard, future-month actuals, anomaly threshold); fatal failure prevents portfolio.json from being used downstream.
+8. Missing/unreadable file → exit 1 + contract:error-envelope; empty CSV after header skip → exit 2; any reconciliation check failure → exit 2 + contract:reconciler-error.
+9. Warnings (unmapped columns, skipped rows) written to stderr via contract:warn-envelope; do not suppress or mix with stdout.
 
 ## Interfaces
 `consumption-analyzer --transform <file.csv>`
@@ -43,3 +44,5 @@ reads:
 |---------|------------|---------|--------|
 | 3.3.0   | 2026-06-28 | Full rewrite for new portfolio schema (L1/L2/L3 hierarchy, renamed metrics, 5-step AI field stubs) | re-spec |
 | 3.4.0   | 2026-06-28 | Gap merged: Criterion 3 updated — industry field now inferred by inferIndustry() from src/lib/industry.js rather than left as empty string placeholder | gap-merge |
+| 4.1.3   | 2026-06-29 | Schema restructure: solution_architecture_insights stub moved to L1 objects; enterprise_architecture_insights stub moved to customer objects; account_insights stub removed | gap-merge |
+| 4.1.3   | 2026-06-29 | Gap merged: ytd_* field renames in contract_month criteria; annual_contract_values added to customer criterion; --verify auto-run criterion added (6 checks, exit 2 on failure) | gap-merge |

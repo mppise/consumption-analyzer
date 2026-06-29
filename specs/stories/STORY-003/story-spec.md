@@ -11,11 +11,11 @@ reads:
 
 ## Criteria
 1. `--analyze <file.json>` reads a portfolio JSON produced by --transform; exits 0 on success.
-2. Executes pattern:bottom-up-ai-pipeline in order: Step 1 (contract ai_insights per L3, sonnet), Step 2 (solution_architecture_insights per L2, sonnet), Step 3 (enterprise_architecture_insights per L1, sonnet), Step 4 (account_insights per customer, opus), Step 5 (industry_insights summary per industry, opus).
-3. After completion, every contract:contract-block-shape.ai_insights[] is non-empty, every contract:solutions-l3-shape.solution_architecture_insights[] is non-empty, every contract:solutions-l1-shape.enterprise_architecture_insights[] is non-empty, every contract:customer-shape.account_insights[] is non-empty, and every contract:industry-insight-shape.summary[] is non-empty.
+2. Executes pattern:bottom-up-ai-pipeline in order: Step 1 (contract_insights per L3, sonnet), Step 2 (solution_architecture_insights per L1, sonnet), Step 3 (enterprise_architecture_insights per customer, sonnet), Step 4 (industry_insights summary per industry, opus).
+3. After completion, every contract:contract-block-shape.contract_insights[] is non-empty, every contract:solutions-l1-shape.solution_architecture_insights[] is non-empty, every contract:customer-shape.enterprise_architecture_insights[] is non-empty, and every contract:industry-insight-shape.summary[] is non-empty.
 4. Portfolio JSON is written back to disk after each step completes — a crash loses at most one step's computation.
 5. Prompt templates are `.md` files in `/src/ai/`; sole product knowledge source is `src/ai/sap-product-catalog.json`; no inline prompt strings in source code.
-6. Steps 1–3 use `AI_MODEL` env var (sonnet); Steps 4–5 use `AI_MODEL_SENIOR` env var (opus); both must be set.
+6. Steps 1–3 use `AI_MODEL` env var (sonnet); Step 4 uses `AI_MODEL_SENIOR` env var (opus); both must be set.
 7. Missing argument: `error: --analyze requires a filename argument`; exits 1.
 8. File not found: `error: file not found: <path>`; exits 1.
 9. `AI_API_KEY` not set: `error: AI_API_KEY is not set`; exits 1.
@@ -36,13 +36,12 @@ reads:
 - produced → enriched: trigger: --analyze completes all 5 steps · guard: all AI fields non-empty
 
 ## Data
-- owns: data:portfolio (enriches in-place — populates all AI insight fields across all 5 levels)
+- owns: data:portfolio (enriches in-place — populates all AI insight fields across all 4 levels)
 - reads: data:contract (Step 1 input: year/month series + variances per L3 product)
-- reads: data:solutions_l2 (Step 2 scope: one call per L2 grouping per customer)
-- reads: data:solutions_l1 (Step 3 scope: one call per L1 per customer)
-- reads: data:customer (Step 4 scope: one call per customer)
-- reads: data:industry_insight (Step 5 scope: one call per distinct industry)
-- new fields: none (all AI fields defined in contract:contract-block-shape, contract:solutions-l3-shape, contract:solutions-l1-shape, contract:customer-shape, contract:industry-insight-shape)
+- reads: data:solutions_l1 (Step 2 scope: one call per L1 per customer; reads all L3 contract_insights aggregated)
+- reads: data:customer (Step 3 scope: one call per customer; reads all L1 solution_architecture_insights)
+- reads: data:industry_insight (Step 4 scope: one call per distinct industry; reads customer enterprise_architecture_insights)
+- new fields: none (all AI fields defined in contract:contract-block-shape, contract:solutions-l1-shape, contract:customer-shape, contract:industry-insight-shape)
 
 ## Change history
 | Release | Date       | Summary                                                                                                    | Source     |
@@ -54,3 +53,4 @@ reads:
 | 3.0.1   | 2026-06-27 | Gap merged: stripCodeFences() fallback regex handles preamble text before JSON code fence | gap-merge |
 | 3.1.0   | 2026-06-27 | Gap merged: L3 schema expanded; key_signals and signal_type removed; L3 per-field count logging added | gap-merge |
 | 4.0.0   | 2026-06-28 | Rewritten for 5-step bottom-up pipeline; supersedes 3-level pipeline; new entity hierarchy and metric names | rewrite |
+| 4.1.3   | 2026-06-29 | Schema restructure: solution_architecture_insights moved to L1, enterprise_architecture_insights moved to customer, Step 4 (account_insights) removed; pipeline is now 4 steps | gap-merge |

@@ -1,5 +1,5 @@
 // @story STORY-003 | analyze
-// @intent runs the 5-step bottom-up AI pipeline on a portfolio.json: Step 1 (contract_insights per L3, sonnet), Step 2 (solution_architecture_insights per L2, sonnet), Step 3 (enterprise_architecture_insights per L1, sonnet), Step 4 (account_insights per customer, opus), Step 5 (industry_insights summary per industry, opus) — writes each step's output back to disk after completion
+// @intent runs the 4-step bottom-up AI pipeline on a portfolio.json: Step 1 (contract_insights per L3, sonnet), Step 2 (solution_architecture_insights per L1, sonnet), Step 3 (enterprise_architecture_insights per customer, sonnet), Step 4 (industry_insights summary per industry, opus) — writes each step's output back to disk after completion
 
 import fs from 'node:fs'
 import path from 'node:path'
@@ -257,21 +257,29 @@ function savePortfolio(portfolio, resolvedPath) {
  * @returns {string}
  */
 function formatContractData(contractBlock) {
-  const years = Object.keys(contractBlock).filter(k => k !== 'contract_insights')
+  const years = Object.keys(contractBlock).filter(k => k !== 'contract_insights' && k !== 'annual_contract_values')
   if (!years.length) return '(No contract data available)'
 
   const lines = []
+  const annualRollup = contractBlock.annual_contract_values ?? {}
   for (const year of years.sort()) {
     const months = contractBlock[year]
     if (!Array.isArray(months) || !months.length) continue
-    lines.push(`### FY${year}`)
+    const rollup = annualRollup[year]
+    if (rollup) {
+      const annBudget   = typeof rollup.annual_budget_contract_value   === 'number' ? rollup.annual_budget_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const annConsumed = typeof rollup.annual_consumed_contract_value === 'number' ? rollup.annual_consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      lines.push(`### FY${year} — Full-year budget: ${annBudget} | Full-year consumed: ${annConsumed}`)
+    } else {
+      lines.push(`### FY${year}`)
+    }
     for (const m of months) {
-      const acv = typeof m.annual_contract_value === 'number' ? m.annual_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const budget = typeof m.budget_contract_value === 'number' ? m.budget_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const consumed = typeof m.consumed_contract_value === 'number' ? m.consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const acv      = typeof m.ytd_annual_contract_value   === 'number' ? m.ytd_annual_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const budget   = typeof m.ytd_budget_contract_value   === 'number' ? m.ytd_budget_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const consumed = typeof m.ytd_consumed_contract_value === 'number' ? m.ytd_consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       const attainment = m.variances?.budget_attainment != null ? `${m.variances.budget_attainment.toFixed(1)}%` : 'N/A'
-      const acvGap = m.variances?.acv_gap != null ? m.variances.acv_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const budgetGap = m.variances?.budget_gap != null ? m.variances.budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const acvGap     = m.variances?.acv_gap  != null ? m.variances.acv_gap.toLocaleString('en-US',  { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const budgetGap  = m.variances?.budget_gap != null ? m.variances.budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       lines.push(`- **${m.month}**: ACV=${acv} | Budget=${budget} | Consumed=${consumed} | Attainment=${attainment} | ACV Gap=${acvGap} | Budget Gap=${budgetGap}`)
     }
   }
@@ -279,32 +287,6 @@ function formatContractData(contractBlock) {
 }
 
 // ─── Financial roll-up helpers ────────────────────────────────────────────────
-
-/**
- * Sum all contract values across a customer's full hierarchy.
- * Returns { annual_contract_value, budget_contract_value, consumed_contract_value }.
- */
-function sumCustomerContractValues(customer) {
-  let acv = 0, budget = 0, consumed = 0
-  for (const l1 of customer.solutions_l1 ?? []) {
-    for (const l2 of l1.solutions_l2 ?? []) {
-      for (const l3 of l2.solutions_l3 ?? []) {
-        const contract = l3.contract ?? {}
-        for (const key of Object.keys(contract)) {
-          if (key === 'contract_insights') continue
-          const months = contract[key]
-          if (!Array.isArray(months)) continue
-          for (const m of months) {
-            acv     += m.annual_contract_value     ?? 0
-            budget  += m.budget_contract_value     ?? 0
-            consumed+= m.consumed_contract_value   ?? 0
-          }
-        }
-      }
-    }
-  }
-  return { annual_contract_value: acv, budget_contract_value: budget, consumed_contract_value: consumed }
-}
 
 /**
  * Format a currency number as "$X,XXX" for prompt injection.
@@ -377,37 +359,38 @@ async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
   process.stderr.write(`info: Step 1 complete — ${doneCount} succeeded${failCount ? `, ${failCount} failed` : ''}\n`)
 }
 
-// @entry runStep2 | Step 2 — solution_architecture_insights per L2 grouping (sonnet)
-// @contract input: portfolio with Step 1 complete → output: every solutions_l3[].solution_architecture_insights[] populated | errors: warn on individual API failure
+// @entry runStep2 | Step 2 — solution_architecture_insights per L1 solution area (sonnet)
+// @contract input: portfolio with Step 1 complete → output: every solutions_l1[].solution_architecture_insights[] populated | errors: warn on individual API failure
 async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
-  process.stderr.write('info: Step 2 — solution_architecture_insights per L2 grouping (sonnet)\n')
+  process.stderr.write('info: Step 2 — solution_architecture_insights per L1 solution area (sonnet)\n')
 
   const tasks = []
   for (const customer of portfolio.customers ?? []) {
     for (const l1 of customer.solutions_l1 ?? []) {
-      for (const l2 of l1.solutions_l2 ?? []) {
-        tasks.push({ customer, l1, l2 })
-      }
+      tasks.push({ customer, l1 })
     }
   }
-  process.stderr.write(`info: Step 2 — ${tasks.length} L2 grouping(s)\n`)
+  process.stderr.write(`info: Step 2 — ${tasks.length} L1 solution area(s)\n`)
 
-  const results = await Promise.allSettled(tasks.map(async ({ customer, l2 }) => {
-    const l3List = l2.solutions_l3 ?? []
-    if (!l3List.length) return
+  const results = await Promise.allSettled(tasks.map(async ({ customer, l1 }) => {
+    const l2List = l1.solutions_l2 ?? []
+    if (!l2List.length) return
 
-    // Build l3_contract_insights from Step 1 output
-    const l3InsightsText = l3List.map(l3 => {
-      const insights = (l3.contract?.contract_insights ?? []).join(' ')
-      return `**${l3.lpr_name}** (${l3.lpr_id}): ${insights || '(no contract insights available)'}`
-    }).join('\n\n')
+    // Build l3_contract_insights aggregated across all L2/L3 under this L1
+    const l3InsightsText = l2List.flatMap(l2 =>
+      (l2.solutions_l3 ?? []).map(l3 => {
+        const insights = (l3.contract?.contract_insights ?? []).join(' ')
+        return `**${l3.lpr_name}** (${l3.lpr_id}) [${l2.name}]: ${insights || '(no contract insights available)'}`
+      })
+    ).join('\n\n')
 
-    // Catalog context for all L3 products in this L2
-    const lprNames = l3List.map(l3 => l3.lpr_name).filter(Boolean)
-    const catalogContext = buildCatalogContext(lprNames, catalog)
+    // Catalog context for all L3 products in this L1
+    const lprNames = l2List.flatMap(l2 => (l2.solutions_l3 ?? []).map(l3 => l3.lpr_name)).filter(Boolean)
+    const uniqueNames = [...new Set(lprNames)]
+    const catalogContext = buildCatalogContext(uniqueNames, catalog)
 
     const prompt = renderPrompt('step2-solution-arch.md', {
-      l2_name:                l2.name ?? '(unknown L2)',
+      l2_name:                l1.name ?? '(unknown L1)',
       customer_name:          customer.customer ?? customer.customer_id ?? 'Unknown',
       current_date:           promptVars.current_date,
       fiscal_year:            promptVars.fiscal_year,
@@ -424,13 +407,9 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
       throw new Error(`AI API error: ${err.message ?? String(err)}`)
     }
 
-    const parsed = parseStringArray(rawText, `Step 2 / ${customer.customer ?? customer.customer_id} / ${l2.name}`)
-
-    // Write to ALL L3 products under this L2 (per spec: solutions_l3[].solution_architecture_insights[])
-    for (const l3 of l3List) {
-      l3.solution_architecture_insights = parsed
-    }
-    process.stderr.write(`info:   Step 2 done — ${customer.customer ?? customer.customer_id} / ${l2.name} (${parsed.length} insight(s))\n`)
+    const parsed = parseStringArray(rawText, `Step 2 / ${customer.customer ?? customer.customer_id} / ${l1.name}`)
+    l1.solution_architecture_insights = parsed
+    process.stderr.write(`info:   Step 2 done — ${customer.customer ?? customer.customer_id} / ${l1.name} (${parsed.length} insight(s))\n`)
   }))
 
   let failCount = 0
@@ -443,44 +422,37 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
   process.stderr.write(`info: Step 2 complete — ${tasks.length - failCount} succeeded${failCount ? `, ${failCount} failed` : ''}\n`)
 }
 
-// @entry runStep3 | Step 3 — enterprise_architecture_insights per L1 solution area (sonnet)
-// @contract input: portfolio with Steps 1+2 complete → output: every solutions_l1[].enterprise_architecture_insights[] populated
+// @entry runStep3 | Step 3 — enterprise_architecture_insights per customer (sonnet)
+// @contract input: portfolio with Steps 1+2 complete → output: every customer.enterprise_architecture_insights[] populated
 async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
-  process.stderr.write('info: Step 3 — enterprise_architecture_insights per L1 solution area (sonnet)\n')
+  process.stderr.write('info: Step 3 — enterprise_architecture_insights per customer (sonnet)\n')
+  process.stderr.write(`info: Step 3 — ${portfolio.customers?.length ?? 0} customer(s)\n`)
 
-  const tasks = []
-  for (const customer of portfolio.customers ?? []) {
-    for (const l1 of customer.solutions_l1 ?? []) {
-      tasks.push({ customer, l1 })
-    }
-  }
-  process.stderr.write(`info: Step 3 — ${tasks.length} L1 solution area(s)\n`)
+  const results = await Promise.allSettled((portfolio.customers ?? []).map(async (customer) => {
+    const l1List = customer.solutions_l1 ?? []
+    if (!l1List.length) return
 
-  const results = await Promise.allSettled(tasks.map(async ({ customer, l1 }) => {
-    const l2List = l1.solutions_l2 ?? []
-    if (!l2List.length) return
-
-    // Build l2_solution_arch_insights from Step 2 output
-    const l2InsightsText = l2List.map(l2 => {
-      // Collect unique solution_architecture_insights from L3 products (all L3 under this L2 share the same insights)
-      const firstL3 = (l2.solutions_l3 ?? [])[0]
-      const insights = (firstL3?.solution_architecture_insights ?? []).join(' ')
-      return `**${l2.name}**: ${insights || '(no solution-architecture insights available)'}`
+    // Build l1_solution_arch_insights from Step 2 output
+    const l1InsightsText = l1List.map(l1 => {
+      const insights = (l1.solution_architecture_insights ?? []).join(' ')
+      return `**${l1.name}**: ${insights || '(no solution-architecture insights available)'}`
     }).join('\n\n')
 
-    // Catalog context for ALL L3 products in this L1
-    const lprNames = l2List.flatMap(l2 => (l2.solutions_l3 ?? []).map(l3 => l3.lpr_name)).filter(Boolean)
+    // Catalog context for ALL L3 products across this customer
+    const lprNames = l1List.flatMap(l1 =>
+      (l1.solutions_l2 ?? []).flatMap(l2 => (l2.solutions_l3 ?? []).map(l3 => l3.lpr_name))
+    ).filter(Boolean)
     const uniqueNames = [...new Set(lprNames)]
     const catalogContext = buildCatalogContext(uniqueNames, catalog)
 
     const prompt = renderPrompt('step3-enterprise-arch.md', {
-      l1_name:                  l1.name ?? '(unknown L1)',
+      l1_name:                  customer.customer ?? customer.customer_id ?? 'Unknown',
       customer_name:            customer.customer ?? customer.customer_id ?? 'Unknown',
       current_date:             promptVars.current_date,
       fiscal_year:              promptVars.fiscal_year,
       reporting_month:          promptVars.reporting_month,
       months_remaining:         String(promptVars.months_remaining),
-      l2_solution_arch_insights: l2InsightsText,
+      l1_solution_arch_insights: l1InsightsText,
       product_catalog_context:  catalogContext,
     })
 
@@ -491,9 +463,9 @@ async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
       throw new Error(`AI API error: ${err.message ?? String(err)}`)
     }
 
-    const parsed = parseStringArray(rawText, `Step 3 / ${customer.customer ?? customer.customer_id} / ${l1.name}`)
-    l1.enterprise_architecture_insights = parsed
-    process.stderr.write(`info:   Step 3 done — ${customer.customer ?? customer.customer_id} / ${l1.name} (${parsed.length} insight(s))\n`)
+    const parsed = parseStringArray(rawText, `Step 3 / ${customer.customer ?? customer.customer_id}`)
+    customer.enterprise_architecture_insights = parsed
+    process.stderr.write(`info:   Step 3 done — ${customer.customer ?? customer.customer_id} (${parsed.length} insight(s))\n`)
   }))
 
   let failCount = 0
@@ -503,65 +475,21 @@ async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
       process.stderr.write(`warn: Step 3 task failed: ${r.reason}\n`)
     }
   }
-  process.stderr.write(`info: Step 3 complete — ${tasks.length - failCount} succeeded${failCount ? `, ${failCount} failed` : ''}\n`)
+  process.stderr.write(`info: Step 3 complete — ${(portfolio.customers?.length ?? 0) - failCount} succeeded${failCount ? `, ${failCount} failed` : ''}\n`)
 }
 
-// @entry runStep4 | Step 4 — account_insights per customer (opus)
-// @contract input: portfolio with Steps 1+2+3 complete → output: every customer.account_insights[] populated
+// @entry runStep4 | Step 4 — industry_insights summary per industry (opus)
+// @contract input: portfolio with Steps 1+2+3 complete + industry_insights[] stubs → output: every industry_insights[].summary[] populated
 async function runStep4(portfolio, chatOpus, promptVars) {
-  process.stderr.write('info: Step 4 — account_insights per customer (opus)\n')
-  process.stderr.write(`info: Step 4 — ${portfolio.customers?.length ?? 0} customer(s)\n`)
-
-  // Run customers sequentially (opus model — rate limit caution, and these are large contexts)
-  for (const customer of portfolio.customers ?? []) {
-    const { annual_contract_value, budget_contract_value, consumed_contract_value } = sumCustomerContractValues(customer)
-
-    // Build l1_ea_insights from Step 3 output
-    const l1InsightsText = (customer.solutions_l1 ?? []).map(l1 => {
-      const insights = (l1.enterprise_architecture_insights ?? []).join(' ')
-      return `**${l1.name}**: ${insights || '(no EA insights available)'}`
-    }).join('\n\n')
-
-    const prompt = renderPrompt('step4-account.md', {
-      customer_name:    customer.customer ?? customer.customer_id ?? 'Unknown',
-      industry:         customer.industry ?? 'Unknown',
-      current_date:     promptVars.current_date,
-      fiscal_year:      promptVars.fiscal_year,
-      reporting_month:  promptVars.reporting_month,
-      months_remaining: String(promptVars.months_remaining),
-      total_acv:        fmt(annual_contract_value),
-      total_budget:     fmt(budget_contract_value),
-      total_consumed:   fmt(consumed_contract_value),
-      l1_ea_insights:   l1InsightsText,
-    })
-
-    let rawText
-    try {
-      rawText = await chatOpus(prompt)
-    } catch (err) {
-      throw new ProcessingError(`AI API error: ${err.message ?? String(err)}`)
-    }
-
-    const parsed = parseStringArray(rawText, `Step 4 / ${customer.customer ?? customer.customer_id}`)
-    customer.account_insights = parsed
-    process.stderr.write(`info:   Step 4 done — ${customer.customer ?? customer.customer_id} (${parsed.length} insight(s))\n`)
-  }
-
-  process.stderr.write('info: Step 4 complete\n')
-}
-
-// @entry runStep5 | Step 5 — industry_insights summary per industry (opus)
-// @contract input: portfolio with Steps 1+2+3+4 complete + industry_insights[] stubs → output: every industry_insights[].summary[] populated
-async function runStep5(portfolio, chatOpus, promptVars) {
-  process.stderr.write('info: Step 5 — industry_insights summary per industry (opus)\n')
+  process.stderr.write('info: Step 4 — industry_insights summary per industry (opus)\n')
 
   const industryInsights = portfolio.industry_insights ?? []
   if (!industryInsights.length) {
-    process.stderr.write('warn: Step 5 — no industry_insights[] found in portfolio; skipping\n')
+    process.stderr.write('warn: Step 4 — no industry_insights[] found in portfolio; skipping\n')
     return
   }
 
-  process.stderr.write(`info: Step 5 — ${industryInsights.length} industry group(s)\n`)
+  process.stderr.write(`info: Step 4 — ${industryInsights.length} industry group(s)\n`)
 
   // Build a map from industry name → customers
   const industryCustomerMap = new Map()
@@ -575,16 +503,16 @@ async function runStep5(portfolio, chatOpus, promptVars) {
     const industryName = industryBlock.industry ?? 'Unknown'
     const customers = industryCustomerMap.get(industryName) ?? []
 
-    // Build customer_account_insights from Step 4 output
+    // Build customer EA insights from Step 3 output
     const customerInsightsText = customers.map(c => {
-      const insights = (c.account_insights ?? []).join(' ')
-      return `**${c.customer ?? c.customer_id ?? 'Unknown'}**: ${insights || '(no account insights available)'}`
+      const insights = (c.enterprise_architecture_insights ?? []).join(' ')
+      return `**${c.customer ?? c.customer_id ?? 'Unknown'}**: ${insights || '(no EA insights available)'}`
     }).join('\n\n')
 
     const customerList = customers.map(c => c.customer ?? c.customer_id ?? 'Unknown').join(', ')
     const agg = industryBlock.aggregated_contracts ?? { annual_contract_value: 0, budget_contract_value: 0, consumed_contract_value: 0 }
 
-    const prompt = renderPrompt('step5-industry.md', {
+    const prompt = renderPrompt('step4-industry.md', {
       industry:                industryName,
       customer_list:           customerList || '(no customers)',
       current_date:            promptVars.current_date,
@@ -593,7 +521,7 @@ async function runStep5(portfolio, chatOpus, promptVars) {
       total_acv:               fmt(agg.annual_contract_value),
       total_budget:            fmt(agg.budget_contract_value),
       total_consumed:          fmt(agg.consumed_contract_value),
-      customer_account_insights: customerInsightsText,
+      customer_ea_insights:    customerInsightsText,
     })
 
     let rawText
@@ -603,12 +531,12 @@ async function runStep5(portfolio, chatOpus, promptVars) {
       throw new ProcessingError(`AI API error: ${err.message ?? String(err)}`)
     }
 
-    const parsed = parseStringArray(rawText, `Step 5 / ${industryName}`)
+    const parsed = parseStringArray(rawText, `Step 4 / ${industryName}`)
     industryBlock.summary = parsed
-    process.stderr.write(`info:   Step 5 done — ${industryName} (${parsed.length} insight(s))\n`)
+    process.stderr.write(`info:   Step 4 done — ${industryName} (${parsed.length} insight(s))\n`)
   }
 
-  process.stderr.write('info: Step 5 complete\n')
+  process.stderr.write('info: Step 4 complete\n')
 }
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
@@ -682,27 +610,23 @@ export async function run(args, _options) {
   const chatSonnet = buildChatFn(config.aiModel,       config.aiMaxTokens, config.aiApiKey, config.aiBaseUrl)
   const chatOpus   = buildChatFn(config.aiModelSenior, config.aiMaxTokens, config.aiApiKey, config.aiBaseUrl)
 
-  process.stderr.write(`info: models — sonnet (Steps 1–3): ${config.aiModel} | opus (Steps 4–5): ${config.aiModelSenior}\n`)
+  process.stderr.write(`info: models — sonnet (Steps 1–3): ${config.aiModel} | opus (Step 4): ${config.aiModelSenior}\n`)
 
   // ── Step 1: contract_insights per L3 ──────────────────────────────────
   await runStep1(portfolio, chatSonnet, catalog, promptVars)
   savePortfolio(portfolio, resolvedPath)
 
-  // ── Step 2: solution_architecture_insights per L2 ────────────────────────
+  // ── Step 2: solution_architecture_insights per L1 ────────────────────────
   await runStep2(portfolio, chatSonnet, catalog, promptVars)
   savePortfolio(portfolio, resolvedPath)
 
-  // ── Step 3: enterprise_architecture_insights per L1 ──────────────────────
+  // ── Step 3: enterprise_architecture_insights per customer ─────────────────
   await runStep3(portfolio, chatSonnet, catalog, promptVars)
   savePortfolio(portfolio, resolvedPath)
 
-  // ── Step 4: account_insights per customer ────────────────────────────────
+  // ── Step 4: industry_insights summary per industry ────────────────────────
   await runStep4(portfolio, chatOpus, promptVars)
   savePortfolio(portfolio, resolvedPath)
 
-  // ── Step 5: industry_insights summary per industry ────────────────────────
-  await runStep5(portfolio, chatOpus, promptVars)
-  savePortfolio(portfolio, resolvedPath)
-
-  process.stderr.write(`info: --analyze complete — all 5 steps done — ${resolvedPath}\n`)
+  process.stderr.write(`info: --analyze complete — all 4 steps done — ${resolvedPath}\n`)
 }

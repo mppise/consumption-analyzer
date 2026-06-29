@@ -1,6 +1,6 @@
 // @story STORY-005 | dashboard
-// @intent generates "The Signal Board" — a self-contained single-file HTML dashboard with sticky top nav,
-//         three views (Signals, Accounts, Industry), an L1/L2/L3 drill drawer, and zero internet dependency;
+// @intent generates a self-contained single-file HTML dashboard with sticky top nav,
+//         two views (Industry, Accounts), an L1/L2/L3 drill drawer, and zero internet dependency;
 //         Bootstrap CSS/JS/Icons + Chart.js inlined from node_modules
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
@@ -23,15 +23,6 @@ const C_ACV      = '#9ca3af'
 const C_BUDGET   = '#16a34a'
 const C_CONSUMED = '#ea580c'
 const C_PCT      = '#1d4ed8'
-
-// ── Level accent colours ───────────────────────────────────────────────────────
-const LEVEL_COLOR = {
-  INDUSTRY: '#a78bfa',
-  ACCOUNT:  '#f472b6',
-  EA:       '#34d399',
-  SOLUTION: '#fb923c',
-  CONTRACT: '#94a3b8',
-}
 
 // ── Asset paths (node_modules) ────────────────────────────────────────────────
 const NM = path.join(__dirname, '..', '..', 'node_modules')
@@ -61,6 +52,30 @@ function usd(n) {
   if (a >= 1_000_000) return (n < 0 ? '-' : '') + '$' + (Math.abs(n) / 1_000_000).toFixed(1) + 'M'
   if (a >= 1_000) return (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n) / 1_000) + 'K'
   return '$' + Math.round(n).toLocaleString('en-US')
+}
+
+// ── Insight prefix parser ─────────────────────────────────────────────────────
+// Strips leading [insight] or [action] prefix and returns { type, text, html }
+// type: 'insight' | 'action' | 'unknown'
+// html: ready-to-embed span with icon badge + text
+const INSIGHT_ICON = 'bi-lightbulb'
+const ACTION_ICON  = 'bi-lightning-charge-fill'
+const INSIGHT_COLOR = '#3b82f6'
+const ACTION_COLOR  = '#f59e0b'
+
+function parseInsight(raw) {
+  if (!raw) return { type: 'unknown', text: '', html: '' }
+  const s = String(raw)
+  let type = 'unknown', text = s
+  if (s.startsWith('[insight]')) { type = 'insight'; text = s.slice(9).trimStart() }
+  else if (s.startsWith('[action]')) { type = 'action';  text = s.slice(8).trimStart() }
+  const icon  = type === 'action' ? ACTION_ICON  : type === 'insight' ? INSIGHT_ICON  : 'bi-info-circle'
+  const color = type === 'action' ? ACTION_COLOR : type === 'insight' ? INSIGHT_COLOR : '#94a3b8'
+  const badge = type !== 'unknown'
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${color};background:${color}18;padding:1px 5px;margin-right:6px;vertical-align:middle;flex-shrink:0"><i class="bi ${icon}" style="font-size:10px"></i>${type}</span>`
+    : ''
+  const html = `${badge}<span class="insight-text" style="font-size:13.5px;color:#0f172a;line-height:1.4">${esc(text)}</span>`
+  return { type, text, html }
 }
 
 // ── Percentage formatter (1 decimal) ─────────────────────────────────────────
@@ -106,42 +121,19 @@ function isYtd(year, monthAbbr) {
 }
 
 // ── Aggregation helpers ───────────────────────────────────────────────────────
-function customerTotals(customer) {
+// ytd_annual_contract_value is constant across months for a given L3+year (it's the
+// contracted ceiling, not a monthly accrual). Use max-per-L3-per-year to avoid
+// multiplying by the number of reported months.
+function l3Totals(l3) {
   let acv = 0, budget = 0, consumed = 0
-  for (const l1 of customer.solutions_l1 ?? []) {
-    for (const l2 of l1.solutions_l2 ?? []) {
-      for (const l3 of l2.solutions_l3 ?? []) {
-        const c = l3.contract ?? {}
-        for (const year of Object.keys(c)) {
-          if (year === 'contract_insights') continue
-          for (const mo of c[year] ?? []) {
-            if (!isYtd(year, mo.month)) continue
-            acv      += mo.annual_contract_value   ?? 0
-            budget   += mo.budget_contract_value   ?? 0
-            consumed += mo.consumed_contract_value ?? 0
-          }
-        }
-      }
-    }
-  }
-  return { acv, budget, consumed }
-}
-
-function l1Totals(l1) {
-  let acv = 0, budget = 0, consumed = 0
-  for (const l2 of l1.solutions_l2 ?? []) {
-    for (const l3 of l2.solutions_l3 ?? []) {
-      const c = l3.contract ?? {}
-      for (const year of Object.keys(c)) {
-        if (year === 'contract_insights') continue
-        for (const mo of c[year] ?? []) {
-          if (!isYtd(year, mo.month)) continue
-          acv      += mo.annual_contract_value   ?? 0
-          budget   += mo.budget_contract_value   ?? 0
-          consumed += mo.consumed_contract_value ?? 0
-        }
-      }
-    }
+  const c = l3.contract ?? {}
+  for (const year of Object.keys(c)) {
+    if (year === 'contract_insights' || year === 'annual_contract_values') continue
+    const ytdMonths = (c[year] ?? []).filter(mo => isYtd(year, mo.month))
+    if (!ytdMonths.length) continue
+    acv      += Math.max(...ytdMonths.map(mo => mo.ytd_annual_contract_value   ?? 0))
+    budget   += ytdMonths.reduce((s, mo) => s + (mo.ytd_budget_contract_value   ?? 0), 0)
+    consumed += ytdMonths.reduce((s, mo) => s + (mo.ytd_consumed_contract_value ?? 0), 0)
   }
   return { acv, budget, consumed }
 }
@@ -149,37 +141,62 @@ function l1Totals(l1) {
 function l2Totals(l2) {
   let acv = 0, budget = 0, consumed = 0
   for (const l3 of l2.solutions_l3 ?? []) {
-    const c = l3.contract ?? {}
-    for (const year of Object.keys(c)) {
-      if (year === 'contract_insights') continue
-      for (const mo of c[year] ?? []) {
-        if (!isYtd(year, mo.month)) continue
-        acv      += mo.annual_contract_value   ?? 0
-        budget   += mo.budget_contract_value   ?? 0
-        consumed += mo.consumed_contract_value ?? 0
-      }
-    }
+    const t = l3Totals(l3)
+    acv += t.acv; budget += t.budget; consumed += t.consumed
   }
   return { acv, budget, consumed }
 }
 
-function l3Totals(l3) {
+function l1Totals(l1) {
   let acv = 0, budget = 0, consumed = 0
-  const c = l3.contract ?? {}
-  for (const year of Object.keys(c)) {
-    if (year === 'contract_insights') continue
-    for (const mo of c[year] ?? []) {
-      if (!isYtd(year, mo.month)) continue
-      acv      += mo.annual_contract_value   ?? 0
-      budget   += mo.budget_contract_value   ?? 0
-      consumed += mo.consumed_contract_value ?? 0
-    }
+  for (const l2 of l1.solutions_l2 ?? []) {
+    const t = l2Totals(l2)
+    acv += t.acv; budget += t.budget; consumed += t.consumed
+  }
+  return { acv, budget, consumed }
+}
+
+function customerTotals(customer) {
+  let acv = 0, budget = 0, consumed = 0
+  for (const l1 of customer.solutions_l1 ?? []) {
+    const t = l1Totals(l1)
+    acv += t.acv; budget += t.budget; consumed += t.consumed
   }
   return { acv, budget, consumed }
 }
 
 function attPct(budget, consumed) {
   return budget > 0 ? (consumed / budget * 100) : null
+}
+
+// Read annual_annual_contract_value + annual_budget_contract_value from customer.annual_contract_values
+function customerAnnualBudget(customer, filterYear) {
+  let acv = 0, budget = 0
+  for (const [year, vals] of Object.entries(customer.annual_contract_values ?? {})) {
+    if (filterYear && year !== filterYear) continue
+    acv    += vals.annual_annual_contract_value ?? 0
+    budget += vals.annual_budget_contract_value ?? 0
+  }
+  return { acv: Math.round(acv * 100) / 100, budget: Math.round(budget * 100) / 100 }
+}
+
+function l1AnnualBudget(l1, filterYear) {
+  let acv = 0, budget = 0
+  for (const l2 of l1.solutions_l2 ?? []) {
+    for (const l3 of l2.solutions_l3 ?? []) {
+      const c = l3.contract ?? {}
+      for (const year of Object.keys(c)) {
+        if (year === 'contract_insights' || year === 'annual_contract_values') continue
+        if (filterYear && year !== filterYear) continue
+        const months = c[year] ?? []
+        if (!months.length) continue
+        // ACV is constant per L3+year — use max
+        acv    += Math.max(...months.map(mo => mo.ytd_annual_contract_value  ?? 0))
+        budget += months.reduce((s, mo) => s + (mo.ytd_budget_contract_value ?? 0), 0)
+      }
+    }
+  }
+  return { acv: Math.round(acv * 100) / 100, budget: Math.round(budget * 100) / 100 }
 }
 
 // ── Month string to YYYYMM integer ────────────────────────────────────────────
@@ -201,25 +218,6 @@ function reportingMonthDisplay(rm) {
   return s
 }
 
-// ── Icon rules for insight bullets ───────────────────────────────────────────
-const ICON_RULES = [
-  { keywords: ['risk', 'gap', 'critical', 'warning', 'behind', 'below', 'miss', 'dormant', 'exposure'], icon: 'bi-exclamation-triangle-fill', color: '#f59e0b' },
-  { keywords: ['opportunit', 'growth', 'expand', 'increase', 'upsell', 'accelerat'], icon: 'bi-graph-up-arrow', color: '#16a34a' },
-  { keywords: ['integrat', 'connect', 'platform', 'btp', 'suite'], icon: 'bi-diagram-3', color: '#3b82f6' },
-  { keywords: ['renew', 'contract', 'expir', 'end of'], icon: 'bi-calendar-check', color: '#0891b2' },
-  { keywords: ['action', 'recommend', 'priorit', 'next step', 'engage'], icon: 'bi-lightning-charge-fill', color: '#1d4ed8' },
-  { keywords: ['adopt', 'usage', 'consumption', 'utiliz', 'activat'], icon: 'bi-bar-chart-line', color: '#64748b' },
-]
-
-function pickIcon(text) {
-  const lower = text.toLowerCase()
-  for (const rule of ICON_RULES) {
-    for (const kw of rule.keywords) {
-      if (lower.includes(kw)) return rule
-    }
-  }
-  return { icon: 'bi-info-circle', color: '#94a3b8' }
-}
 
 // ── Health color ───────────────────────────────────────────────────────────────
 function healthColor(att) {
@@ -241,341 +239,6 @@ function jsonEmbed(v) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SERVER-SIDE BUILDERS
 // ═══════════════════════════════════════════════════════════════════════════════
-
-// ── Build flat signals array ───────────────────────────────────────────────────
-// @contract input: portfolio → output: array of signal entry objects grouped:
-//   first all INDUSTRY signals, then per-customer: ACCOUNT → EA → SOLUTION → CONTRACT
-function buildSignals(portfolio) {
-  const customers = portfolio.customers ?? []
-  const signals = []
-
-  // 1. Industry insights (first, as their own section)
-  for (const ind of portfolio.industry_insights ?? []) {
-    for (const text of ind.summary ?? []) {
-      signals.push({
-        level: 'INDUSTRY',
-        text,
-        context: esc(ind.industry),
-        custIdx: null,
-        l1Idx: null,
-        l2Idx: null,
-        l3Idx: null,
-        attainment: null,
-        industryName: ind.industry,
-      })
-    }
-  }
-
-  // 2. Per-customer: ACCOUNT → EA → SOLUTION → CONTRACT
-  customers.forEach((cust, custIdx) => {
-    const t = customerTotals(cust)
-    const att = attPct(t.budget, t.consumed)
-
-    // ACCOUNT insights for this customer
-    for (const text of cust.account_insights ?? []) {
-      signals.push({
-        level: 'ACCOUNT',
-        text,
-        context: `${esc(cust.customer)} · ${att != null ? pct(att) : '—'}`,
-        custIdx,
-        l1Idx: null,
-        l2Idx: null,
-        l3Idx: null,
-        attainment: att,
-      })
-    }
-
-    // EA insights for this customer
-    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
-      const lt = l1Totals(l1)
-      const la = attPct(lt.budget, lt.consumed)
-      for (const text of l1.enterprise_architecture_insights ?? []) {
-        signals.push({
-          level: 'EA',
-          text,
-          context: `${esc(cust.customer)} · ${esc(l1.name)} · ${la != null ? pct(la) : '—'}`,
-          custIdx,
-          l1Idx,
-          l2Idx: null,
-          l3Idx: null,
-          attainment: la,
-        })
-      }
-    })
-
-    // SOLUTION insights for this customer
-    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
-      ;(l1.solutions_l2 ?? []).forEach((l2, l2Idx) => {
-        const lt = l2Totals(l2)
-        const la = attPct(lt.budget, lt.consumed)
-        const seen = new Set()
-        for (const l3 of l2.solutions_l3 ?? []) {
-          for (const text of l3.solution_architecture_insights ?? []) {
-            if (seen.has(text)) continue
-            seen.add(text)
-            signals.push({
-              level: 'SOLUTION',
-              text,
-              context: `${esc(cust.customer)} · ${esc(l2.name)} · ${la != null ? pct(la) : '—'}`,
-              custIdx,
-              l1Idx,
-              l2Idx,
-              l3Idx: null,
-              attainment: la,
-            })
-          }
-        }
-      })
-    })
-
-    // CONTRACT insights for this customer
-    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
-      ;(l1.solutions_l2 ?? []).forEach((l2, l2Idx) => {
-        ;(l2.solutions_l3 ?? []).forEach((l3, l3Idx) => {
-          const lt = l3Totals(l3)
-          const la = attPct(lt.budget, lt.consumed)
-          for (const text of l3.contract?.contract_insights ?? []) {
-            signals.push({
-              level: 'CONTRACT',
-              text,
-              context: `${esc(cust.customer)} · ${esc(l3.lpr_name)} · ${la != null ? pct(la) : '—'}`,
-              custIdx,
-              l1Idx,
-              l2Idx,
-              l3Idx,
-              attainment: la,
-            })
-          }
-        })
-      })
-    })
-  })
-
-  return signals
-}
-
-// ── Build signal expansion HTML for a single signal ───────────────────────────
-// @contract input: signal entry, customers[] → output: HTML string for the expansion div
-function buildSignalExpansion(sig, customers) {
-  const lc = LEVEL_COLOR[sig.level]
-
-  if (sig.level === 'CONTRACT') {
-    const cust = customers[sig.custIdx]
-    const l1   = cust?.solutions_l1?.[sig.l1Idx]
-    const l2   = l1?.solutions_l2?.[sig.l2Idx]
-    const l3   = l2?.solutions_l3?.[sig.l3Idx]
-    if (!l3) return ''
-    const t = l3Totals(l3)
-    const att = attPct(t.budget, t.consumed)
-    // Build sparkline data (all months in contract, no filter)
-    const sparkLabels = [], sparkConsumed = []
-    const contract = l3.contract ?? {}
-    for (const yr of Object.keys(contract).filter(k => k !== 'contract_insights').sort()) {
-      for (const mo of contract[yr] ?? []) {
-        sparkLabels.push(`${mo.month}`)
-        sparkConsumed.push(mo.consumed_contract_value ?? 0)
-      }
-    }
-    const sparkData = JSON.stringify({ labels: sparkLabels, consumed: sparkConsumed }).replace(/"/g, '&quot;')
-    return `<div style="display:flex;gap:32px;align-items:flex-start">
-  <div>
-    <div style="font-size:11px;color:#64748b;margin-bottom:4px">LPR</div>
-    <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(l3.lpr_name)}</div>
-    <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
-    <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
-    <div style="font-size:13px;color:#64748b;margin-top:8px">Budget <span style="color:#22c55e;font-weight:600">${usd(t.budget)}</span></div>
-    <div style="font-size:13px;color:#64748b">Consumed <span style="color:#fb923c;font-weight:600">${usd(t.consumed)}</span></div>
-  </div>
-  <div style="flex:1;min-width:0">
-    <div style="font-size:13px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Consumed over time</div>
-    <canvas data-sparkline="${sparkData}" style="height:60px;width:100%;max-width:300px;display:block"></canvas>
-  </div>
-</div>`
-  }
-
-  if (sig.level === 'SOLUTION') {
-    const cust = customers[sig.custIdx]
-    const l1   = cust?.solutions_l1?.[sig.l1Idx]
-    const l2   = l1?.solutions_l2?.[sig.l2Idx]
-    if (!l2) return ''
-    const t = l2Totals(l2)
-    const att = attPct(t.budget, t.consumed)
-    const l3Names = (l2.solutions_l3 ?? []).map(l3 => esc(l3.lpr_name)).join(', ')
-    return `<div>
-  <div style="font-size:11px;color:#64748b;margin-bottom:4px">Solution Area</div>
-  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(l2.name)}</div>
-  <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
-  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
-  <div style="font-size:13px;color:#64748b;margin-top:8px">Budget <span style="color:#22c55e;font-weight:600">${usd(t.budget)}</span> · Consumed <span style="color:#fb923c;font-weight:600">${usd(t.consumed)}</span></div>
-  <div style="font-size:13px;color:#64748b;margin-top:8px">Products: ${l3Names || '—'}</div>
-</div>`
-  }
-
-  if (sig.level === 'EA') {
-    const cust = customers[sig.custIdx]
-    const l1   = cust?.solutions_l1?.[sig.l1Idx]
-    if (!l1) return ''
-    const t = l1Totals(l1)
-    const att = attPct(t.budget, t.consumed)
-    const budgetWidth = 100
-    const consumedWidth = t.budget > 0 ? Math.min(100, (t.consumed / t.budget) * 100) : 0
-    return `<div>
-  <div style="font-size:11px;color:#64748b;margin-bottom:4px">Solution Area</div>
-  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(l1.name)}</div>
-  <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
-  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
-  <div style="margin-top:16px;max-width:400px">
-    <div style="display:flex;justify-content:space-between;font-size:13px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>${usd(t.budget)}</span></div>
-    <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:${budgetWidth}%"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:13px;color:#fb923c;margin-bottom:3px;margin-top:8px"><span>Consumed</span><span>${usd(t.consumed)}</span></div>
-    <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${consumedWidth.toFixed(1)}%"></div></div>
-  </div>
-</div>`
-  }
-
-  if (sig.level === 'ACCOUNT') {
-    const cust = customers[sig.custIdx]
-    if (!cust) return ''
-    const t = customerTotals(cust)
-    const att = attPct(t.budget, t.consumed)
-    return `<div>
-  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(cust.customer)}</div>
-  <div style="font-size:11px;color:#64748b;margin-bottom:12px">${esc(cust.industry ?? '')}</div>
-  <div style="font-size:24px;font-weight:800;color:${healthColor(att)}">${att != null ? pct(att) : '—'}</div>
-  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
-  <div style="font-size:13px;color:#64748b;margin-top:8px">
-    Consumed <span style="color:#fb923c;font-weight:600">${usd(t.consumed)}</span> ·
-    Budget <span style="color:#22c55e;font-weight:600">${usd(t.budget)}</span> ·
-    ACV <span style="color:#9ca3af;font-weight:600">${usd(t.acv)}</span>
-  </div>
-  <div style="margin-top:12px">
-    <span onclick="showView('accounts');showCustomer(${sig.custIdx})" style="font-size:12px;color:#f472b6;cursor:pointer;text-decoration:underline">→ View in Accounts</span>
-  </div>
-</div>`
-  }
-
-  if (sig.level === 'INDUSTRY') {
-    // Aggregate across all customers in the same industry
-    const indName = sig.industryName
-    const indCustomers = customers.filter(c => c.industry === indName)
-    let totalBudget = 0, totalConsumed = 0
-    for (const c of indCustomers) {
-      const t = customerTotals(c)
-      totalBudget += t.budget
-      totalConsumed += t.consumed
-    }
-    const att = attPct(totalBudget, totalConsumed)
-    const custRows = indCustomers.map((c, i) => {
-      const t = customerTotals(c)
-      const ca = attPct(t.budget, t.consumed)
-      return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
-  <span style="color:#64748b">${esc(c.customer)}</span>
-  <span style="color:${healthColor(ca)};font-weight:600">${ca != null ? pct(ca) : '—'}</span>
-</div>`
-    }).join('')
-    return `<div>
-  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(indName)}</div>
-  <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
-  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Industry Attainment</div>
-  <div style="font-size:13px;color:#64748b;margin-top:8px">Budget <span style="color:#22c55e;font-weight:600">${usd(totalBudget)}</span> · Consumed <span style="color:#fb923c;font-weight:600">${usd(totalConsumed)}</span></div>
-  <div style="margin-top:16px;min-width:240px">${custRows}</div>
-</div>`
-  }
-
-  return ''
-}
-
-// ── Build SIGNALS VIEW HTML ────────────────────────────────────────────────────
-// @contract input: signals[], customers[] → output: HTML string
-// Change 3: grouped by customer with industry section header first
-function buildSignalsView(signals, customers) {
-  // Change 1: light theme colours in filter bar
-  const filterBar = `<div style="padding:12px 32px;border-bottom:1px solid #cbd5e1;display:flex;gap:8px;align-items:center;background:#ffffff">
-  <span style="font-size:13px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-right:8px">Filter:</span>
-  <button onclick="filterSignals('ALL')" class="sig-filter" data-filter="ALL" style="padding:4px 12px;background:#0f172a;color:#ffffff;border:1px solid #0f172a;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">ALL</button>
-  <button onclick="filterSignals('INDUSTRY')" class="sig-filter" data-filter="INDUSTRY" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">INDUSTRY</button>
-  <button onclick="filterSignals('ACCOUNT')" class="sig-filter" data-filter="ACCOUNT" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">ACCOUNT</button>
-  <button onclick="filterSignals('EA')" class="sig-filter" data-filter="EA" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">EA</button>
-  <button onclick="filterSignals('SOLUTION')" class="sig-filter" data-filter="SOLUTION" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">SOLUTION</button>
-  <button onclick="filterSignals('CONTRACT')" class="sig-filter" data-filter="CONTRACT" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">CONTRACT</button>
-</div>`
-
-  // Separate industry signals from customer signals
-  const industrySigs = signals.filter(s => s.level === 'INDUSTRY')
-  const customerSigs = signals.filter(s => s.level !== 'INDUSTRY')
-
-  // Build industry section
-  let html = ''
-
-  // Industry section header
-  if (industrySigs.length > 0) {
-    html += `<div class="ind-section-header" style="padding:8px 32px;background:#ede9fe;border-bottom:1px solid #c4b5fd">
-  <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6d28d9">Industry Signals</span>
-</div>`
-    for (const sig of industrySigs) {
-      const lc = LEVEL_COLOR[sig.level] ?? '#94a3b8'
-      const expandContent = buildSignalExpansion(sig, customers)
-      html += `<div class="signal-row" data-level="${sig.level}" data-cust="null" data-l1="null" data-l2="null" data-l3="null"
-  onclick="toggleSignal(this)"
-  style="border-left:3px solid ${lc};border-bottom:1px solid #f1f5f9;padding:16px 32px;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:24px;background:#ffffff">
-  <div style="display:flex;align-items:baseline;gap:16px;flex:1;min-width:0">
-    <span style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${lc};flex-shrink:0;width:72px">${sig.level}</span>
-    <span style="font-size:13.5px;font-weight:400;color:#0f172a;line-height:1.4" class="insight-text">${esc(sig.text)}</span>
-  </div>
-  <div style="font-size:11px;color:#64748b;flex-shrink:0;text-align:right;white-space:nowrap">${sig.context}</div>
-</div>
-<div class="signal-expand" data-level="${sig.level}" style="display:none;background:#f1f5f9;border-left:3px solid ${lc};border-bottom:1px solid #cbd5e1;padding:16px 32px 16px 121px">
-  ${expandContent}
-</div>`
-    }
-  }
-
-  // Group customer signals by custIdx
-  const custGroups = new Map()
-  for (const sig of customerSigs) {
-    const ci = sig.custIdx
-    if (!custGroups.has(ci)) custGroups.set(ci, [])
-    custGroups.get(ci).push(sig)
-  }
-
-  // Render per-customer groups in customer order
-  for (const [custIdx, custSignals] of custGroups) {
-    const cust = customers[custIdx]
-    if (!cust) continue
-    const t = customerTotals(cust)
-    const att = attPct(t.budget, t.consumed)
-    const attStr = att != null ? pct(att) : '—'
-    const indStr = esc(cust.industry ?? '')
-
-    html += `<div class="cust-group-header" data-cust="${custIdx}"
-  style="padding:8px 32px;background:#e2e8f0;border-bottom:1px solid #cbd5e1;border-top:1px solid #cbd5e1;display:flex;align-items:center;justify-content:space-between">
-  <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0f172a">${esc(cust.customer)}</span>
-  <span style="font-size:11px;color:#64748b">${indStr}</span>
-</div>`
-
-    for (const sig of custSignals) {
-      const lc = LEVEL_COLOR[sig.level] ?? '#94a3b8'
-      const l1Attr = sig.l1Idx != null ? sig.l1Idx : 'null'
-      const l2Attr = sig.l2Idx != null ? sig.l2Idx : 'null'
-      const l3Attr = sig.l3Idx != null ? sig.l3Idx : 'null'
-      const expandContent = buildSignalExpansion(sig, customers)
-      html += `<div class="signal-row" data-level="${sig.level}" data-cust="${custIdx}" data-l1="${l1Attr}" data-l2="${l2Attr}" data-l3="${l3Attr}"
-  onclick="toggleSignal(this)"
-  style="border-left:3px solid ${lc};border-bottom:1px solid #f1f5f9;padding:16px 32px;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:24px;background:#ffffff">
-  <div style="display:flex;align-items:baseline;gap:16px;flex:1;min-width:0">
-    <span style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${lc};flex-shrink:0;width:72px">${sig.level}</span>
-    <span style="font-size:13.5px;font-weight:400;color:#0f172a;line-height:1.4" class="insight-text">${esc(sig.text)}</span>
-  </div>
-  <div style="font-size:11px;color:#64748b;flex-shrink:0;text-align:right;white-space:nowrap">${sig.context}</div>
-</div>
-<div class="signal-expand" data-level="${sig.level}" style="display:none;background:#f1f5f9;border-left:3px solid ${lc};border-bottom:1px solid #cbd5e1;padding:16px 32px 16px 121px">
-  ${expandContent}
-</div>`
-    }
-  }
-
-  return filterBar + `<div id="signals-list">${html}</div>`
-}
 
 // ── Build ACCOUNTS VIEW HTML ───────────────────────────────────────────────────
 // @contract input: customers[] → output: HTML string
@@ -603,13 +266,15 @@ function buildAccountsView(customers) {
     const l1Tiles = (cust.solutions_l1 ?? []).map((l1, l1Idx) => {
       const lt = l1Totals(l1)
       const la = attPct(lt.budget, lt.consumed)
-      const eaInsights = (l1.enterprise_architecture_insights ?? [])
-      const eaRows = eaInsights.map(text =>
-        `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #e2e8f0">
-          <i class="bi ${pickIcon(text)}" style="font-size:11px;flex-shrink:0;margin-top:2px"></i>
-          <span style="font-size:13.5px;color:#0f172a;line-height:1.4" class="insight-text">${esc(text)}</span>
+      const saInsights = (l1.solution_architecture_insights ?? [])
+      const saRows = saInsights.map(text => {
+        const pi = parseInsight(text)
+        return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #e2e8f0">
+          <i class="bi ${pi.type === 'action' ? ACTION_ICON : INSIGHT_ICON}" style="font-size:11px;color:${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};flex-shrink:0;margin-top:2px"></i>
+          <span style="font-size:13px;color:#0f172a;line-height:1.4" class="insight-text">${esc(pi.text)}</span>
         </div>`
-      ).join('') || `<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:6px 0">No EA insights</div>`
+      }).join('') || `<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:6px 0">No solution insights</div>`
+      const l1Annual = l1AnnualBudget(l1)
 
       return `<div style="border:1px solid #e2e8f0;min-width:200px;flex:1;max-width:320px;overflow:hidden">
   <!-- Card header: bar chart style -->
@@ -617,33 +282,36 @@ function buildAccountsView(customers) {
     <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Solution Area</div>
     <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px">${esc(l1.name)}</div>
     <div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">${la != null ? pct(la) : '—'}</div>
-    <div style="font-size:11px;color:#94a3b8;margin-bottom:14px">Budget Attainment</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:14px">YTD Budget Attainment</div>
     <div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>${usd(lt.budget)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>YTD Budget</span><span>${usd(lt.budget)}</span></div>
       <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>
     </div>
     <div style="margin-bottom:4px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>Consumed</span><span>${usd(lt.consumed)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>YTD Consumed</span><span>${usd(lt.consumed)}</span></div>
       <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${la != null ? Math.min(100, la).toFixed(1) : 0}%"></div></div>
     </div>
-    <div style="font-size:12px;color:#94a3b8;margin-top:6px">ACV: ${usd(lt.acv)}</div>
+    <div style="font-size:12px;color:#94a3b8;margin-top:6px">YTD ACV: ${usd(lt.acv)}</div>
+    <div style="font-size:11px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0">Full-Year ACV: <strong style="color:#9ca3af">${usd(l1Annual.acv)}</strong> · Full-Year Budget: <strong style="color:#22c55e">${usd(l1Annual.budget)}</strong></div>
   </div>
-  <!-- Card body: EA insights -->
+  <!-- Card body: Solution insights -->
   <div style="padding:12px 14px;background:white">
-    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#34d399;margin-bottom:6px">EA Insights</div>
-    ${eaRows}
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:6px">Solution Insights</div>
+    ${saRows}
   </div>
 </div>`
     }).join('')
 
-    // Account insight rows — Change 1: light theme
-    const accountInsightRows = (cust.account_insights ?? []).map(text => {
-      return `<div style="padding:12px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #f472b6;padding-left:12px;font-size:15px;color:#0f172a;line-height:1.4" class="insight-text">${esc(text)}</div>`
+    // EA insight rows at customer level (Step 3)
+    const eaInsightRows = (cust.enterprise_architecture_insights ?? []).map(text => {
+      const pi = parseInsight(text)
+      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e2e8f0">
+        <i class="bi ${pi.type === 'action' ? ACTION_ICON : INSIGHT_ICON}" style="font-size:13px;color:${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};flex-shrink:0;margin-top:2px"></i>
+        <span style="font-size:14px;color:#0f172a;line-height:1.5" class="insight-text">${esc(pi.text)}</span>
+      </div>`
     }).join('')
+    const annual = customerAnnualBudget(cust)
 
-    // Change 2: font-size:24px for customer name heading (was 48px)
-    // Change 4: attainment inline next to name at 18px font-weight:700
-    // Change 5: canvas for account bar replacing 3 metric bars
     return `<div id="cust-panel-${custIdx}" style="display:${custIdx === 0 ? 'block' : 'none'};padding:40px 48px">
   <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
     <div style="font-size:24px;font-weight:800;color:#0f172a;line-height:1">${esc(cust.customer)}</div>
@@ -653,14 +321,18 @@ function buildAccountsView(customers) {
     <!-- Donut: 30% width -->
     <div style="flex:0 0 30%;text-align:center">
       <canvas id="acct-bar-${custIdx}" width="180" height="180" style="display:block;margin:0 auto"></canvas>
-      <div style="font-size:13px;color:#22c55e;margin-top:6px">Budget: ${usd(t.budget)}</div>
-      <div style="font-size:13px;color:#fb923c">Consumed: ${usd(t.consumed)}</div>
-      <div style="font-size:13px;color:#94a3b8">ACV: ${usd(t.acv)}</div>
+      <div style="font-size:13px;color:#22c55e;margin-top:6px">YTD Budget: ${usd(t.budget)}</div>
+      <div style="font-size:13px;color:#fb923c">YTD Consumed: ${usd(t.consumed)}</div>
+      <div style="font-size:13px;color:#9ca3af">YTD ACV: ${usd(t.acv)}</div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Full-Year ACV: <strong style="color:#9ca3af">${usd(annual.acv)}</strong></div>
+        <div style="font-size:11px;color:#64748b">Full-Year Budget: <strong style="color:#22c55e">${usd(annual.budget)}</strong></div>
+      </div>
     </div>
-    <!-- Account insights: 70% width -->
+    <!-- EA insights: 70% width -->
     <div style="flex:1;min-width:0">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#f472b6;margin-bottom:12px">Account Insights</div>
-      ${accountInsightRows || '<div style="font-size:13px;color:#94a3b8;font-style:italic">No insights available</div>'}
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#34d399;margin-bottom:12px">EA Insights</div>
+      ${eaInsightRows || '<div style="font-size:13px;color:#94a3b8;font-style:italic">No insights available</div>'}
     </div>
   </div>
   <!-- Solution area cards -->
@@ -698,35 +370,64 @@ function buildIndustryView(indInsights, customers) {
 
   const panels = indInsights.map((ind, indIdx) => {
     const indCustomers = customers.filter(c => c.industry === ind.industry)
-    let totalBudget = 0, totalConsumed = 0
-    for (const c of indCustomers) { const t = customerTotals(c); totalBudget += t.budget; totalConsumed += t.consumed }
+    let totalAcv = 0, totalBudget = 0, totalConsumed = 0
+    let totalAnnualAcv = 0, totalAnnualBudget = 0
+    for (const c of indCustomers) {
+      const t = customerTotals(c)
+      totalAcv += t.acv; totalBudget += t.budget; totalConsumed += t.consumed
+      const ann = customerAnnualBudget(c)
+      totalAnnualAcv += ann.acv; totalAnnualBudget += ann.budget
+    }
     const att = attPct(totalBudget, totalConsumed)
 
-    // Change 1: light theme insight rows
     const insightRows = (ind.summary ?? []).map(text => {
-      return `<div style="padding:12px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #a78bfa;padding-left:12px;font-size:15px;color:#0f172a;line-height:1.4" class="insight-text">${esc(text)}</div>`
+      const pi = parseInsight(text)
+      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e2e8f0">
+        <i class="bi ${pi.type === 'action' ? ACTION_ICON : INSIGHT_ICON}" style="font-size:13px;color:${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};flex-shrink:0;margin-top:2px"></i>
+        <span style="font-size:14px;color:#0f172a;line-height:1.5" class="insight-text">${esc(pi.text)}</span>
+      </div>`
     }).join('')
 
-    const ac = ind.aggregated_contracts ?? {}
-    const indAcv = ac.annual_contract_value ?? 0
-
-    // Change 2: font-size:24px for industry name heading (was 48px)
-    // Change 6: fixed-height wrapper for canvas; canvas has absolute positioning
     return `<div id="ind-panel-${indIdx}" style="display:${indIdx === 0 ? 'block' : 'none'};padding:40px 48px">
   <div style="font-size:24px;font-weight:800;color:#0f172a">${esc(ind.industry)}</div>
-  <div style="font-size:13px;color:#64748b;margin-bottom:32px">${indCustomers.length} customer${indCustomers.length !== 1 ? 's' : ''} · ACV ${usd(indAcv)}</div>
+  <div style="font-size:13px;color:#64748b;margin-bottom:8px">${indCustomers.length} customer${indCustomers.length !== 1 ? 's' : ''}</div>
+  <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:32px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0">
+    <div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD ACV</div>
+      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAcv)}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Budget</div>
+      <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalBudget)}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Consumed</div>
+      <div style="font-size:16px;font-weight:700;color:#fb923c">${usd(totalConsumed)}</div>
+    </div>
+    <div style="border-left:1px solid #e2e8f0;padding-left:32px">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Full-Year ACV</div>
+      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAnnualAcv)}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Full-Year Budget</div>
+      <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalAnnualBudget)}</div>
+    </div>
+  </div>
   <div style="margin-bottom:32px">
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:16px">Budget vs Consumed by Customer</div>
     <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;padding:0 16px">
       ${indCustomers.map((c, i) => {
         const ct = customerTotals(c)
+        const cann = customerAnnualBudget(c)
         const att = ct.budget > 0 ? (ct.consumed / ct.budget * 100) : null
         return `<div style="text-align:center;padding:0 12px">
           <canvas id="ind-donut-${indIdx}-${i}" width="160" height="160" style="display:block;margin:0 auto"></canvas>
           <div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:8px">${esc(c.customer)}</div>
-          <div style="font-size:13px;color:#22c55e">Budget: ${usd(ct.budget)}</div>
-          <div style="font-size:13px;color:#fb923c">Consumed: ${usd(ct.consumed)}</div>
-          <div style="font-size:13px;color:#94a3b8">ACV: ${usd(ct.acv)}</div>
+          <div style="font-size:12px;color:#9ca3af">YTD ACV: ${usd(ct.acv)}</div>
+          <div style="font-size:12px;color:#22c55e">YTD Budget: ${usd(ct.budget)}</div>
+          <div style="font-size:12px;color:#fb923c">YTD Consumed: ${usd(ct.consumed)}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0">Full-Year ACV: ${usd(cann.acv)}</div>
+          <div style="font-size:11px;color:#22c55e">Full-Year Budget: ${usd(cann.budget)}</div>
         </div>`
       }).join('')}
     </div>
@@ -755,20 +456,11 @@ function buildDrawerData(customers, reportingMonth) {
       const l1t = l1Totals(l1)
       const l1Att = attPct(l1t.budget, l1t.consumed)
 
-      // EA-level drawer data: L2 tiles with solution insights embedded
+      // L1 drawer data: L2 tiles (metrics only — SA insights now live at L1, shown in Accounts view)
       const l2Tiles = (l1.solutions_l2 ?? []).map((l2, l2Idx) => {
         const t = l2Totals(l2)
         const a = attPct(t.budget, t.consumed)
-        // collect unique saInsights from first L3 that has them (all L3s under an L2 share the same SA insights)
-        const saInsights = []
-        const seen = new Set()
-        for (const l3 of l2.solutions_l3 ?? []) {
-          for (const s of l3.solution_architecture_insights ?? []) {
-            if (!seen.has(s)) { seen.add(s); saInsights.push(s) }
-          }
-          if (saInsights.length > 0) break
-        }
-        return { name: l2.name, attainment: a, budget: t.budget, consumed: t.consumed, acv: t.acv, l2Idx, saInsights }
+        return { name: l2.name, attainment: a, budget: t.budget, consumed: t.consumed, acv: t.acv, l2Idx, saInsights: [] }
       })
 
       drawerData[l1Key] = {
@@ -777,21 +469,12 @@ function buildDrawerData(customers, reportingMonth) {
         l1Attainment: l1Att,
         l1Budget: l1t.budget,
         l1Consumed: l1t.consumed,
-        eaInsights: l1.enterprise_architecture_insights ?? [],
+        eaInsights: cust.enterprise_architecture_insights ?? [],
         l2Tiles,
       }
 
       ;(l1.solutions_l2 ?? []).forEach((l2, l2Idx) => {
         const l2Key = `c${custIdx}-l1${l1Idx}-l2${l2Idx}`
-
-        // Collect solution_architecture_insights from L3s (deduplicate)
-        const seenSa = new Set()
-        const saInsights = []
-        for (const l3 of l2.solutions_l3 ?? []) {
-          for (const s of l3.solution_architecture_insights ?? []) {
-            if (!seenSa.has(s)) { seenSa.add(s); saInsights.push(s) }
-          }
-        }
 
         const l3List = (l2.solutions_l3 ?? []).map((l3, l3Idx) => {
           const t = l3Totals(l3)
@@ -800,14 +483,14 @@ function buildDrawerData(customers, reportingMonth) {
           // Chart data filtered to <= reportingMonth
           const chartLabels = [], chartBudget = [], chartConsumed = [], chartAttainment = []
           const contract = l3.contract ?? {}
-          for (const yr of Object.keys(contract).filter(k => k !== 'contract_insights').sort()) {
+          for (const yr of Object.keys(contract).filter(k => k !== 'contract_insights' && k !== 'annual_contract_values').sort()) {
             for (const mo of contract[yr] ?? []) {
               const yyyymm = monthToYYYYMM(yr, mo.month)
               if (yyyymm === null) continue
               if (reportingMonth && yyyymm > reportingMonth) continue
               chartLabels.push(`${mo.month} ${yr}`)
-              chartBudget.push(mo.budget_contract_value ?? 0)
-              chartConsumed.push(mo.consumed_contract_value ?? 0)
+              chartBudget.push(mo.ytd_budget_contract_value ?? 0)
+              chartConsumed.push(mo.ytd_consumed_contract_value ?? 0)
               chartAttainment.push(mo.variances?.budget_attainment ?? null)
             }
           }
@@ -834,7 +517,7 @@ function buildDrawerData(customers, reportingMonth) {
           custName: cust.customer,
           l1Name: l1.name,
           l2Name: l2.name,
-          saInsights,
+          saInsights: [],
           l3List,
         }
       })
@@ -955,8 +638,6 @@ function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nuni
 ${nunitoCss ? `<style>${nunitoCss}</style>` : ''}
 <style>
 *, *::before, *::after { border-radius: 0 !important; box-shadow: none !important; }
-body { margin: 0; background: #ffffff; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-.signal-row:hover { background: #f1f5f9 !important; }
 </style>
 </head>
 <body>
@@ -1038,11 +719,23 @@ function trunc(s, n) {
   if (!s) return '';
   return s.length > n ? s.slice(0, n-1) + '\\u2026' : s;
 }
+function renderInsight(raw) {
+  if (!raw) return '';
+  var s = String(raw), type = 'unknown', text = s;
+  if (s.indexOf('[insight]') === 0) { type = 'insight'; text = s.slice(9).trimStart(); }
+  else if (s.indexOf('[action]') === 0) { type = 'action'; text = s.slice(8).trimStart(); }
+  var icon  = type === 'action'  ? 'bi-lightning-charge-fill' : type === 'insight' ? 'bi-lightbulb' : 'bi-info-circle';
+  var color = type === 'action'  ? '#f59e0b' : type === 'insight' ? '#3b82f6' : '#94a3b8';
+  var badge = type !== 'unknown'
+    ? '<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + color + ';background:' + color + '18;padding:1px 5px;margin-right:6px;vertical-align:middle;flex-shrink:0"><i class="bi ' + icon + '" style="font-size:10px"></i>' + type + '</span>'
+    : '';
+  return badge + '<span class="insight-text" style="font-size:13.5px;color:#0f172a;line-height:1.4">' + escHtml(text) + '</span>';
+}
 
 // ── View tabs ─────────────────────────────────────────────────────────────────
 function showView(v) {
   currentView = v;
-  ['signals','accounts','industry'].forEach(function(name) {
+  ['accounts','industry'].forEach(function(name) {
     var el = document.getElementById('view-' + name);
     if (el) el.style.display = name === v ? 'block' : 'none';
     var tab = document.getElementById('tab-' + name);
@@ -1095,54 +788,6 @@ function showIndustry(idx) {
   if (panel) panel.style.display = 'block';
   // Change 6: call renderIndChart directly — no setTimeout
   renderIndChart(idx);
-}
-
-// ── Signal filter — Change 3: handle customer group headers and industry section ──
-function filterSignals(level) {
-  // Update button styles
-  document.querySelectorAll('.sig-filter').forEach(function(b) {
-    var active = b.dataset.filter === level;
-    b.style.background = active ? '#0f172a' : 'transparent';
-    b.style.color = active ? '#ffffff' : '#64748b';
-    b.style.borderColor = active ? '#0f172a' : '#cbd5e1';
-  });
-  // Show/hide signal rows and collapse expansions
-  document.querySelectorAll('.signal-row').forEach(function(el) {
-    el.style.display = (level === 'ALL' || el.dataset.level === level) ? 'flex' : 'none';
-  });
-  document.querySelectorAll('.signal-expand').forEach(function(el) {
-    el.style.display = 'none';
-  });
-  // Show/hide customer group headers based on whether any of their signals are visible
-  document.querySelectorAll('.cust-group-header').forEach(function(header) {
-    var custIdx = header.dataset.cust;
-    var hasVisible = Array.from(document.querySelectorAll('.signal-row[data-cust="' + custIdx + '"]'))
-      .some(function(r) { return r.style.display !== 'none'; });
-    header.style.display = hasVisible ? 'flex' : 'none';
-  });
-  // Industry section header
-  var indHeader = document.querySelector('.ind-section-header');
-  if (indHeader) {
-    var hasIndVisible = Array.from(document.querySelectorAll('.signal-row[data-level="INDUSTRY"]'))
-      .some(function(r) { return r.style.display !== 'none'; });
-    indHeader.style.display = hasIndVisible ? 'block' : 'none';
-  }
-}
-
-// ── Signal toggle ─────────────────────────────────────────────────────────────
-function toggleSignal(row) {
-  var expand = row.nextElementSibling;
-  var isOpen = expand.style.display !== 'none';
-  document.querySelectorAll('.signal-expand').forEach(function(e) { e.style.display = 'none'; });
-  if (!isOpen) {
-    expand.style.display = 'block';
-    var sparkCanvas = expand.querySelector('canvas[data-sparkline]');
-    if (sparkCanvas && sparkCanvas.dataset.sparkline) {
-      try {
-        renderSparkline(sparkCanvas, JSON.parse(sparkCanvas.dataset.sparkline));
-      } catch(e) {}
-    }
-  }
 }
 
 // ── Account bar chart (Change 5) ─────────────────────────────────────────────
@@ -1278,24 +923,6 @@ function renderL3Chart(data) {
   });
 }
 
-// ── Sparkline ─────────────────────────────────────────────────────────────────
-var _sparkCharts = [];
-function renderSparkline(canvas, data) {
-  if (canvas._sparkChart) { try { canvas._sparkChart.destroy(); } catch(e){} canvas._sparkChart = null; }
-  if (!data || !data.labels || data.labels.length === 0) return;
-  canvas._sparkChart = new Chart(canvas, {
-    type: 'line',
-    data: {
-      labels: data.labels,
-      datasets: [{ data: data.consumed, borderColor: '#ea580c', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: { x: { display: false }, y: { display: false } }
-    }
-  });
-}
 
 // ── Drawer: open L1 view ──────────────────────────────────────────────────────
 function openL1(custIdx, l1Idx) {
@@ -1310,18 +937,12 @@ function openL1(custIdx, l1Idx) {
     + '<button onclick="closeDrawer()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1">×</button>'
     + '</div>';
 
-  // L2 cards: donut header (metrics) + solution insights body
+  // L2 cards: metrics only
   var l2CardHtml = data.l2Tiles.map(function(tile) {
-    var saRows = (tile.saInsights || []).map(function(s) {
-      return '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #e2e8f0">'
-        + '<span style="font-size:13.5px;color:#0f172a;line-height:1.4" class="insight-text">' + escHtml(s) + '</span>'
-        + '</div>';
-    }).join('') || '<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:5px 0">No solution insights</div>';
-
     var attPctVal = tile.budget > 0 ? (tile.consumed / tile.budget * 100) : null;
     var consumedBarW = attPctVal != null ? Math.min(100, attPctVal).toFixed(1) : 0;
     return '<div style="border:1px solid #e2e8f0;min-width:200px;flex:1;max-width:320px;overflow:hidden">'
-      + '<div onclick="openL2(' + custIdx + ',' + l1Idx + ',' + tile.l2Idx + ')" style="cursor:pointer;background:#f8fafc;padding:14px 16px;border-bottom:1px solid #e2e8f0">'
+      + '<div onclick="openL2(' + custIdx + ',' + l1Idx + ',' + tile.l2Idx + ')" style="cursor:pointer;background:#f8fafc;padding:14px 16px">'
       + '<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Sub-Solution Area</div>'
       + '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:8px">' + escHtml(tile.name) + '</div>'
       + '<div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">' + (attPctVal != null ? attPctVal.toFixed(1) + '%' : '—') + '</div>'
@@ -1335,10 +956,6 @@ function openL1(custIdx, l1Idx) {
       + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:' + consumedBarW + '%"></div></div>'
       + '</div>'
       + '<div style="font-size:12px;color:#94a3b8;margin-top:6px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
-      + '</div>'
-      + '<div style="padding:10px 14px;background:white">'
-      + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:5px">Solution Insights</div>'
-      + saRows
       + '</div>'
       + '</div>';
   }).join('');
@@ -1434,7 +1051,7 @@ function renderL3PanelContent(l3Idx, data, custIdx, l1Idx, l2Idx) {
 
   // Change 1: light theme contract insights
   var insightRows = l3.contractInsights.map(function(s) {
-    return '<div style="padding:10px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #94a3b8;padding-left:12px;font-size:13.5px;color:#0f172a;line-height:1.4" class="insight-text">' + escHtml(s) + '</div>';
+    return '<div style="padding:10px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #94a3b8;padding-left:12px;line-height:1.4">' + renderInsight(s) + '</div>';
   }).join('') || '<div style="font-size:13px;color:#94a3b8;font-style:italic;padding:8px 0">No contract insights</div>';
 
   // Change 4: metric order Consumed first, then Budget, then ACV, then Attainment
@@ -1528,7 +1145,7 @@ export async function run(args, options) {
     process.stderr.write(`warn: Nunito Sans not found: ${e.message}\n`)
   }
 
-  process.stderr.write(`warn: generating The Signal Board HTML dashboard…\n`)
+  process.stderr.write(`warn: generating HTML dashboard…\n`)
   const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss)
 
   try {

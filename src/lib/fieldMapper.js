@@ -233,7 +233,6 @@ export async function mapFields(headers, sampleRows, aiClient = null) {
   }
   if (unmatched.length > 0) {
     const warn = `warn: optional canonical fields not mapped: ${unmatched.join(', ')}`
-    process.stderr.write(warn + '\n')
     warnings.push(warn)
   }
 

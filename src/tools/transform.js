@@ -300,11 +300,11 @@ async function parseCsvFile(filePath, aiClient = null) {
  * @returns {{ acv_gap: number, budget_gap: number, budget_attainment: number|null }}
  */
 // @contract input: annual_contract_value, budget_contract_value, consumed_contract_value → output: variances object
-function computeVariances(annual_contract_value, budget_contract_value, consumed_contract_value) {
-  const acv_gap = Math.round((annual_contract_value - consumed_contract_value) * 100) / 100
-  const budget_gap = Math.round((budget_contract_value - consumed_contract_value) * 100) / 100
-  const budget_attainment = budget_contract_value > 0
-    ? Math.round((consumed_contract_value / budget_contract_value) * 1000) / 10
+function computeVariances(ytd_annual_contract_value, ytd_budget_contract_value, ytd_consumed_contract_value) {
+  const acv_gap = Math.round((ytd_annual_contract_value - ytd_consumed_contract_value) * 100) / 100
+  const budget_gap = Math.round((ytd_budget_contract_value - ytd_consumed_contract_value) * 100) / 100
+  const budget_attainment = ytd_budget_contract_value > 0
+    ? Math.round((ytd_consumed_contract_value / ytd_budget_contract_value) * 1000) / 10
     : null
   return { acv_gap, budget_gap, budget_attainment }
 }
@@ -385,9 +385,9 @@ function buildL1Hierarchy(records) {
             const { yyyymm, budget_contract_value, consumed_contract_value, annual_contract_value } = entry
             return {
               month: yyyymmToMonthName(yyyymm),
-              annual_contract_value,
-              budget_contract_value,
-              consumed_contract_value,
+              ytd_annual_contract_value:   annual_contract_value,
+              ytd_budget_contract_value:   budget_contract_value,
+              ytd_consumed_contract_value: consumed_contract_value,
               variances: computeVariances(annual_contract_value, budget_contract_value, consumed_contract_value),
             }
           })
@@ -396,7 +396,6 @@ function buildL1Hierarchy(records) {
         l3Array.push({
           lpr_id: prod.lpr_id,
           lpr_name: prod.lpr_name,
-          solution_architecture_insights: [],
           contract: contractBlock,
         })
       }
@@ -415,7 +414,7 @@ function buildL1Hierarchy(records) {
 
     l1Array.push({
       name: l1Name,
-      enterprise_architecture_insights: [],
+      solution_architecture_insights: [],
       solutions_l2: l2Array,
     })
   }
@@ -424,6 +423,47 @@ function buildL1Hierarchy(records) {
   l1Array.sort((a, b) => a.name.localeCompare(b.name))
 
   return l1Array
+}
+
+// ─── Customer annual contract values ──────────────────────────────────────────
+
+/**
+ * Roll up annual ACV and budget totals per year across all L3 contracts for a customer.
+ * Uses intSum for integer-safe arithmetic.
+ * @param {object[]} solutions_l1
+ * @returns {object} year-keyed { annual_annual_contract_value, annual_budget_contract_value }
+ */
+function buildCustomerAnnualContractValues(solutions_l1) {
+  const yearMap = new Map()
+  for (const l1 of solutions_l1 ?? []) {
+    for (const l2 of l1.solutions_l2 ?? []) {
+      for (const l3 of l2.solutions_l3 ?? []) {
+        const contract = l3.contract ?? {}
+        for (const key of Object.keys(contract)) {
+          if (key === 'contract_insights') continue
+          const months = contract[key]
+          if (!Array.isArray(months) || !months.length) continue
+          if (!yearMap.has(key)) yearMap.set(key, { acv: [], budget: [] })
+          const agg = yearMap.get(key)
+          // ytd_annual_contract_value is constant across months for this L3+year — take the max
+          // ytd_budget_contract_value accrues monthly — sum all months
+          const maxAcv = Math.max(...months.map(m => m.ytd_annual_contract_value ?? 0))
+          agg.acv.push(maxAcv)
+          for (const m of months) {
+            agg.budget.push(m.ytd_budget_contract_value ?? 0)
+          }
+        }
+      }
+    }
+  }
+  const result = {}
+  for (const [year, agg] of yearMap) {
+    result[year] = {
+      annual_annual_contract_value: intSum(agg.acv),
+      annual_budget_contract_value: intSum(agg.budget),
+    }
+  }
+  return result
 }
 
 // ─── Reporting month detection ────────────────────────────────────────────────
@@ -473,20 +513,18 @@ function buildIndustryInsights(customers, reportingMonth) {
           for (const key of Object.keys(contract)) {
             if (key === 'contract_insights') continue
             const months = contract[key]
-            if (!Array.isArray(months)) continue
-            for (const m of months) {
-              // Only include months up to reporting_month (YTD)
-              if (rmInt) {
-                const moNum = MONTH_ABBR_TO_NUM[m.month]
-                if (moNum) {
-                  const yyyymm = parseInt(`${key}${moNum}`, 10)
-                  if (yyyymm > rmInt) continue
-                }
-              }
-              agg.acv      += m.annual_contract_value     ?? 0
-              agg.budget   += m.budget_contract_value     ?? 0
-              agg.consumed += m.consumed_contract_value   ?? 0
-            }
+            if (!Array.isArray(months) || !months.length) continue
+            const ytdMonths = months.filter(m => {
+              if (!rmInt) return true
+              const moNum = MONTH_ABBR_TO_NUM[m.month]
+              if (!moNum) return true
+              return parseInt(`${key}${moNum}`, 10) <= rmInt
+            })
+            if (!ytdMonths.length) continue
+            // ACV is constant per L3+year — use max to avoid multiplying by month count
+            agg.acv      += Math.max(...ytdMonths.map(m => m.ytd_annual_contract_value   ?? 0))
+            agg.budget   += ytdMonths.reduce((s, m) => s + (m.ytd_budget_contract_value   ?? 0), 0)
+            agg.consumed += ytdMonths.reduce((s, m) => s + (m.ytd_consumed_contract_value ?? 0), 0)
           }
         }
       }
@@ -518,6 +556,7 @@ function buildIndustryInsights(customers, reportingMonth) {
  * Checks:
  *   1. No NaN/null/non-finite values in any contract_month
  *   2. No duplicate (lpr_id, month, year) entries within a customer
+ *   3. annual_contract_values rollup matches sum of monthly ytd fields per year
  *
  * Non-fatal warnings emitted via stderr; fatal issues throw ProcessingError.
  *
@@ -542,7 +581,7 @@ function reconcilePortfolio(customers) {
             if (!Array.isArray(months)) continue
             for (const m of months) {
               // Check 1: finite values
-              for (const field of ['annual_contract_value', 'budget_contract_value', 'consumed_contract_value']) {
+              for (const field of ['ytd_annual_contract_value', 'ytd_budget_contract_value', 'ytd_consumed_contract_value']) {
                 if (!isFinite(m[field])) {
                   failures.push(`${customerName} / ${l2.name} / ${l3.lpr_id} / ${key}/${m.month}: ${field} is NaN/Infinity`)
                 }
@@ -556,6 +595,24 @@ function reconcilePortfolio(customers) {
             }
           }
         }
+      }
+    }
+    // Check 3: customer-level annual rollup integrity — recompute from all L3 months
+    const customerRollup = customer.annual_contract_values ?? {}
+    const recomputedRollup = buildCustomerAnnualContractValues(customer.solutions_l1)
+    for (const year of Object.keys(recomputedRollup)) {
+      const stored = customerRollup[year]
+      const expected = recomputedRollup[year]
+      const tol = 0.02
+      if (!stored) {
+        failures.push(`${customerName}: missing annual_contract_values entry for year ${year}`)
+        continue
+      }
+      if (Math.abs((stored.annual_annual_contract_value ?? 0) - expected.annual_annual_contract_value) > tol) {
+        failures.push(`${customerName} / ${year}: annual_annual_contract_value stored=${stored.annual_annual_contract_value} recomputed=${expected.annual_annual_contract_value}`)
+      }
+      if (Math.abs((stored.annual_budget_contract_value ?? 0) - expected.annual_budget_contract_value) > tol) {
+        failures.push(`${customerName} / ${year}: annual_budget_contract_value stored=${stored.annual_budget_contract_value} recomputed=${expected.annual_budget_contract_value}`)
       }
     }
   }
@@ -690,7 +747,8 @@ export async function run(args, options) {
     customer_id: cb.customer_id,
     customer: cb.customer_name || cb.customer_id || 'Unknown',
     industry: industryMap.get(cb.customer_name) ?? 'Professional services',
-    account_insights: [],
+    enterprise_architecture_insights: [],
+    annual_contract_values: buildCustomerAnnualContractValues(cb.solutions_l1),
     solutions_l1: cb.solutions_l1,
   }))
 
