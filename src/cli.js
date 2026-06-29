@@ -265,7 +265,7 @@ async function runPipeline(inputFile) {
 
   // ---- Step 4: portfolio.json → dashboard.html ----
   process.stderr.write(`info: building dashboard...\n`)
-  const dashboardPath = path.join(outputDir, 'dashboard.html')
+  const dashboardPath = path.join(outputDir, 'portfolio-dashboard.html')
   const { run: runDashboard, UserError: UED, ProcessingError: PED } = await import('./tools/dashboard.js')
   try {
     await runDashboard([portfolioPath], { output: dashboardPath })

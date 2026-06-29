@@ -104,6 +104,11 @@ function yyyymmToMonthName(yyyymm) {
   return MONTH_NAMES[mm - 1] ?? yyyymm
 }
 
+const MONTH_ABBR_TO_NUM = {
+  Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+  Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+}
+
 /**
  * Extract 4-digit year from YYYYMM string.
  * @param {string} yyyymm
@@ -449,9 +454,10 @@ function detectReportingMonth(records) {
  * @param {object[]} customers - built customer objects (new schema)
  * @returns {object[]} industry_insights[] conforming to contract:industry-insight-shape
  */
-// @contract input: customers[] → output: industry_insights[] with aggregated_contracts | errors: none
-function buildIndustryInsights(customers) {
-  const industryMap = new Map() // industry → { acv, budget, consumed }
+// @contract input: customers[], reportingMonth string YYYYMM → output: industry_insights[] with YTD aggregated_contracts
+function buildIndustryInsights(customers, reportingMonth) {
+  const rmInt = reportingMonth ? parseInt(reportingMonth, 10) : null
+  const industryMap = new Map()
 
   for (const customer of customers) {
     const industry = customer.industry || 'Unknown'
@@ -469,6 +475,14 @@ function buildIndustryInsights(customers) {
             const months = contract[key]
             if (!Array.isArray(months)) continue
             for (const m of months) {
+              // Only include months up to reporting_month (YTD)
+              if (rmInt) {
+                const moNum = MONTH_ABBR_TO_NUM[m.month]
+                if (moNum) {
+                  const yyyymm = parseInt(`${key}${moNum}`, 10)
+                  if (yyyymm > rmInt) continue
+                }
+              }
               agg.acv      += m.annual_contract_value     ?? 0
               agg.budget   += m.budget_contract_value     ?? 0
               agg.consumed += m.consumed_contract_value   ?? 0
@@ -689,7 +703,7 @@ export async function run(args, options) {
   }
 
   // ── Build industry_insights stubs ──────────────────────────────────────────
-  const industry_insights = buildIndustryInsights(customers)
+  const industry_insights = buildIndustryInsights(customers, reportingMonth)
 
   // ── Assemble portfolio JSON ────────────────────────────────────────────────
   const portfolio = {

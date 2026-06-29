@@ -1,6 +1,6 @@
 // @story STORY-005 | dashboard
-// @intent generates "The Briefing" — a self-contained single-file HTML dashboard with sticky portfolio header,
-//         industry filter strip, customer card grid (exec/EA modes), and L3 detail drawer; zero internet dependency;
+// @intent generates "The Signal Board" — a self-contained single-file HTML dashboard with sticky top nav,
+//         three views (Signals, Accounts, Industry), an L1/L2/L3 drill drawer, and zero internet dependency;
 //         Bootstrap CSS/JS/Icons + Chart.js inlined from node_modules
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
@@ -18,11 +18,20 @@ export class ProcessingError extends Error {
   constructor(msg) { super(msg); this.name = 'ProcessingError'; this.exitCode = 2 }
 }
 
-// ── Semantic color constants (ux:visual-system) ───────────────────────────────
-const C_ACV      = '#9ca3af'  // grey       — annual_contract_value
-const C_BUDGET   = '#16a34a'  // green      — budget_contract_value
-const C_CONSUMED = '#ea580c'  // orange     — consumed_contract_value
-const C_PCT      = '#1d4ed8'  // royal blue — percentages / budget_attainment
+// ── Semantic color constants ───────────────────────────────────────────────────
+const C_ACV      = '#9ca3af'
+const C_BUDGET   = '#16a34a'
+const C_CONSUMED = '#ea580c'
+const C_PCT      = '#1d4ed8'
+
+// ── Level accent colours ───────────────────────────────────────────────────────
+const LEVEL_COLOR = {
+  INDUSTRY: '#a78bfa',
+  ACCOUNT:  '#f472b6',
+  EA:       '#34d399',
+  SOLUTION: '#fb923c',
+  CONTRACT: '#94a3b8',
+}
 
 // ── Asset paths (node_modules) ────────────────────────────────────────────────
 const NM = path.join(__dirname, '..', '..', 'node_modules')
@@ -31,6 +40,9 @@ const BOOTSTRAP_JS_PATH   = path.join(NM, 'bootstrap', 'dist', 'js', 'bootstrap.
 const BOOTSTRAP_ICONS_CSS = path.join(NM, 'bootstrap-icons', 'font', 'bootstrap-icons.min.css')
 const BOOTSTRAP_ICONS_WOFF2 = path.join(NM, 'bootstrap-icons', 'font', 'fonts', 'bootstrap-icons.woff2')
 const CHARTJS_PATH        = path.join(NM, 'chart.js', 'dist', 'chart.umd.js')
+const NUNITO_400 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-400-normal.woff2')
+const NUNITO_600 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-600-normal.woff2')
+const NUNITO_700 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-700-normal.woff2')
 
 // ── HTML escape ───────────────────────────────────────────────────────────────
 function esc(s) {
@@ -70,8 +82,30 @@ function loadIconsCss() {
   return css
 }
 
-// ── Aggregation helpers ───────────────────────────────────────────────────────
+function loadNunitoCss() {
+  const b400 = readFileSync(NUNITO_400).toString('base64')
+  const b600 = readFileSync(NUNITO_600).toString('base64')
+  const b700 = readFileSync(NUNITO_700).toString('base64')
+  return `
+@font-face { font-family:'Nunito Sans'; font-weight:400; font-style:normal; src:url("data:font/woff2;base64,${b400}") format("woff2"); }
+@font-face { font-family:'Nunito Sans'; font-weight:600; font-style:normal; src:url("data:font/woff2;base64,${b600}") format("woff2"); }
+@font-face { font-family:'Nunito Sans'; font-weight:700; font-style:normal; src:url("data:font/woff2;base64,${b700}") format("woff2"); }
+.insight-text { font-family:'Nunito Sans',sans-serif; font-size:13.5px; letter-spacing:0.01em; line-height:1.55; }
+`
+}
 
+// ── YTD filter — set once at build time from portfolio.reporting_month ────────
+// All aggregation helpers use this to exclude future months from totals.
+let _reportingMonth = null  // YYYYMM integer, e.g. 202605
+
+function isYtd(year, monthAbbr) {
+  if (!_reportingMonth) return true  // no filter if not set
+  const m = MONTH_ABBR_TO_NUM[monthAbbr]
+  if (!m) return true
+  return parseInt(`${year}${m}`, 10) <= _reportingMonth
+}
+
+// ── Aggregation helpers ───────────────────────────────────────────────────────
 function customerTotals(customer) {
   let acv = 0, budget = 0, consumed = 0
   for (const l1 of customer.solutions_l1 ?? []) {
@@ -81,6 +115,7 @@ function customerTotals(customer) {
         for (const year of Object.keys(c)) {
           if (year === 'contract_insights') continue
           for (const mo of c[year] ?? []) {
+            if (!isYtd(year, mo.month)) continue
             acv      += mo.annual_contract_value   ?? 0
             budget   += mo.budget_contract_value   ?? 0
             consumed += mo.consumed_contract_value ?? 0
@@ -100,6 +135,7 @@ function l1Totals(l1) {
       for (const year of Object.keys(c)) {
         if (year === 'contract_insights') continue
         for (const mo of c[year] ?? []) {
+          if (!isYtd(year, mo.month)) continue
           acv      += mo.annual_contract_value   ?? 0
           budget   += mo.budget_contract_value   ?? 0
           consumed += mo.consumed_contract_value ?? 0
@@ -117,6 +153,7 @@ function l2Totals(l2) {
     for (const year of Object.keys(c)) {
       if (year === 'contract_insights') continue
       for (const mo of c[year] ?? []) {
+        if (!isYtd(year, mo.month)) continue
         acv      += mo.annual_contract_value   ?? 0
         budget   += mo.budget_contract_value   ?? 0
         consumed += mo.consumed_contract_value ?? 0
@@ -124,6 +161,25 @@ function l2Totals(l2) {
     }
   }
   return { acv, budget, consumed }
+}
+
+function l3Totals(l3) {
+  let acv = 0, budget = 0, consumed = 0
+  const c = l3.contract ?? {}
+  for (const year of Object.keys(c)) {
+    if (year === 'contract_insights') continue
+    for (const mo of c[year] ?? []) {
+      if (!isYtd(year, mo.month)) continue
+      acv      += mo.annual_contract_value   ?? 0
+      budget   += mo.budget_contract_value   ?? 0
+      consumed += mo.consumed_contract_value ?? 0
+    }
+  }
+  return { acv, budget, consumed }
+}
+
+function attPct(budget, consumed) {
+  return budget > 0 ? (consumed / budget * 100) : null
 }
 
 // ── Month string to YYYYMM integer ────────────────────────────────────────────
@@ -137,7 +193,6 @@ function monthToYYYYMM(year, monthAbbr) {
   return parseInt(`${year}${m}`, 10)
 }
 
-// ── Reporting month to display string ────────────────────────────────────────
 function reportingMonthDisplay(rm) {
   if (!rm) return '—'
   const s = String(rm)
@@ -166,298 +221,587 @@ function pickIcon(text) {
   return { icon: 'bi-info-circle', color: '#94a3b8' }
 }
 
-// ── Icon legend HTML (shared across all insight section headers) ──────────
-const ICON_LEGEND_HTML = `<div class="ins-legend" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #f1f5f9">
-  <span style="font-size:9px;color:#94a3b8"><i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b"></i> Risk</span>
-  <span style="font-size:9px;color:#94a3b8"><i class="bi bi-graph-up-arrow" style="color:#16a34a"></i> Growth</span>
-  <span style="font-size:9px;color:#94a3b8"><i class="bi bi-diagram-3" style="color:#2563eb"></i> Integration</span>
-  <span style="font-size:9px;color:#94a3b8"><i class="bi bi-calendar-check" style="color:#0891b2"></i> Renewal</span>
-  <span style="font-size:9px;color:#94a3b8"><i class="bi bi-lightning-charge-fill" style="color:#2563eb"></i> Action</span>
-  <span style="font-size:9px;color:#94a3b8"><i class="bi bi-bar-chart-line" style="color:#64748b"></i> Adoption</span>
-  <span style="font-size:9px;color:#94a3b8"><i class="bi bi-info-circle" style="color:#94a3b8"></i> Info</span>
-</div>`
+// ── Health color ───────────────────────────────────────────────────────────────
+function healthColor(att) {
+  if (att == null) return '#64748b'
+  return att >= 80 ? '#22c55e' : att >= 50 ? '#f59e0b' : '#ef4444'
+}
 
-// ── Server-side insight bullets renderer (for pre-rendered HTML) ───────────
-function renderInsightBullets(insights) {
-  if (!insights || insights.length === 0) {
-    return `<div class="ins-body" style="display:none"><div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0">
-  <i class="bi bi-dash-circle" style="color:#94a3b8;flex-shrink:0;font-size:12px;margin-top:1px"></i>
-  <span style="font-size:11px;color:#94a3b8;font-style:italic">Run --analyze to generate insights</span>
-</div></div>`
+// ── Truncate string ───────────────────────────────────────────────────────────
+function trunc(s, n) {
+  if (!s) return ''
+  return s.length > n ? s.slice(0, n - 1) + '…' : s
+}
+
+// ── JSON embed helper — escapes </script> ────────────────────────────────────
+function jsonEmbed(v) {
+  return JSON.stringify(v).replace(/<\/script>/gi, '<\\/script>')
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SERVER-SIDE BUILDERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Build flat signals array ───────────────────────────────────────────────────
+// @contract input: portfolio → output: array of signal entry objects grouped:
+//   first all INDUSTRY signals, then per-customer: ACCOUNT → EA → SOLUTION → CONTRACT
+function buildSignals(portfolio) {
+  const customers = portfolio.customers ?? []
+  const signals = []
+
+  // 1. Industry insights (first, as their own section)
+  for (const ind of portfolio.industry_insights ?? []) {
+    for (const text of ind.summary ?? []) {
+      signals.push({
+        level: 'INDUSTRY',
+        text,
+        context: esc(ind.industry),
+        custIdx: null,
+        l1Idx: null,
+        l2Idx: null,
+        l3Idx: null,
+        attainment: null,
+        industryName: ind.industry,
+      })
+    }
   }
-  const bullets = insights.map((p, i) => {
-    const rule = pickIcon(p)
-    const sep = i < insights.length - 1 ? ';border-bottom:1px solid #f1f5f9' : ''
-    return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0${sep}">
-  <i class="bi ${rule.icon}" style="color:${rule.color};flex-shrink:0;font-size:12px;margin-top:1px"></i>
-  <span style="font-size:11px;color:#475569;line-height:1.5">${esc(p)}</span>
-</div>`
-  }).join('')
-  return `<div class="ins-body" style="display:none">${bullets}</div>`
-}
 
-// ── ZONE 1: Portfolio header bar ──────────────────────────────────────────────
-// @contract input: portfolio object, totals {acv,budget,consumed} → output: HTML string
-function buildPortfolioHeader(portfolio, totals) {
-  const fy  = portfolio.fiscal_year ?? 'FY—'
-  const rm  = reportingMonthDisplay(portfolio.reporting_month)
-  const attainment = totals.budget > 0 ? (totals.consumed / totals.budget * 100) : null
-
-  return `<div style="position:sticky;top:0;z-index:100;background:#1e293b;padding:10px 24px;display:flex;align-items:center;justify-content:space-between">
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-    <span style="color:white;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">SAP Portfolio Briefing</span>
-    <span style="color:#64748b">·</span>
-    <span style="color:#94a3b8;font-size:13px">${esc(rm)}</span>
-    <span style="color:#64748b">·</span>
-    <span style="color:#94a3b8;font-size:13px">${esc(fy)}</span>
-  </div>
-  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-    <span style="font-size:11px"><span style="color:#94a3b8">ACV </span><span style="color:${C_ACV};font-weight:600">${usd(totals.acv)}</span></span>
-    <span style="font-size:11px"><span style="color:#94a3b8">Budget </span><span style="color:${C_BUDGET};font-weight:600">${usd(totals.budget)}</span></span>
-    <span style="font-size:11px"><span style="color:#94a3b8">Consumed </span><span style="color:${C_CONSUMED};font-weight:600">${usd(totals.consumed)}</span></span>
-    <span style="color:${C_PCT};font-size:18px;font-weight:700">${pct(attainment)}</span>
-  </div>
-</div>`
-}
-
-// ── ZONE 2: Industry strip ─────────────────────────────────────────────────────
-// @contract input: industry_insights[] → output: HTML string
-function buildIndustryStrip(indInsights) {
-  const cards = indInsights.map((ind, idx) => {
-    const ac = ind.aggregated_contracts ?? {}
-    const indAcv      = ac.annual_contract_value   ?? 0
-    const indBudget   = ac.budget_contract_value   ?? 0
-    const indConsumed = ac.consumed_contract_value ?? 0
-    const indAtt      = indBudget > 0 ? (indConsumed / indBudget * 100) : null
-    const summaryInsights = ind.summary ?? []
-    const insightBullets = summaryInsights.length > 0
-      ? summaryInsights.map((p, i) => {
-          const rule = pickIcon(p)
-          const sep = i < summaryInsights.length - 1 ? ';border-bottom:1px solid #f1f5f9' : ''
-          return `<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 0${sep}">
-  <i class="bi ${rule.icon}" style="color:${rule.color};flex-shrink:0;font-size:11px;margin-top:1px"></i>
-  <span style="font-size:10px;color:#475569;line-height:1.4">${esc(p)}</span>
-</div>`
-        }).join('')
-      : `<div style="font-size:10px;color:#94a3b8;font-style:italic">No insights available</div>`
-
-    return `<div class="industry-card" data-industry-idx="${idx}" onclick="filterByIndustry(${idx})"
-  style="cursor:pointer;padding:12px 16px;background:white;border:1px solid #e2e8f0;min-width:260px;flex-shrink:0">
-  <div style="font-size:13px;font-weight:600;color:#1e293b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">${esc(ind.industry)}</div>
-  <div style="font-size:11px;color:${C_ACV};margin-bottom:2px">ACV ${usd(indAcv)}</div>
-  <div style="font-size:11px;color:${C_BUDGET};margin-bottom:2px">Budget ${usd(indBudget)}</div>
-  <div style="font-size:11px;color:${C_CONSUMED};margin-bottom:4px">Consumed ${usd(indConsumed)}</div>
-  <div style="font-size:16px;font-weight:700;color:${C_PCT};margin-bottom:4px">${pct(indAtt)}</div>
-  <div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px">${insightBullets}</div>
-</div>`
-  }).join('')
-
-  const showAll = `<div id="industry-all" onclick="filterByIndustry(null)"
-  style="cursor:pointer;padding:8px 14px;background:white;border:2px solid #1e293b;font-size:11px;font-weight:600;letter-spacing:0.05em;color:#1e293b;display:flex;align-items:center;flex-shrink:0">
-  SHOW ALL
-</div>`
-
-  return `<div style="background:#f8fafc;border-bottom:2px solid #e2e8f0;padding:12px 24px;display:flex;gap:12px;overflow-x:auto;align-items:flex-start">
-  ${showAll}
-  ${cards}
-</div>`
-}
-
-// ── Customer card body — executive mode ───────────────────────────────────────
-// @contract input: cust object, custIdx int → output: HTML string (card body only)
-function buildCustomerCardExec(cust, custIdx) {
-  const totals = customerTotals(cust)
-  const attainment = totals.budget > 0 ? (totals.consumed / totals.budget * 100) : null
-
-  // L1 chips (exec mode — no action on click)
-  const l1Chips = (cust.solutions_l1 ?? []).map((l1, l1Idx) => {
-    const t = l1Totals(l1)
-    const att = t.budget > 0 ? (t.consumed / t.budget * 100) : null
-    return `<span class="l1-chip" style="padding:4px 8px;border:1px solid #e2e8f0;font-size:11px;cursor:default;background:white;display:inline-block">
-  ${esc(l1.name)} <span style="color:${C_PCT}">${pct(att)}</span>
-</span>`
-  }).join('')
-
-  return `<div style="padding:0;overflow:hidden">
-  <!-- Card header -->
-  <div style="background:#1e293b;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
-    <div>
-      <div style="color:white;font-size:14px;font-weight:600">${esc(cust.customer)}</div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-top:2px">${esc(cust.industry ?? '')}</div>
-    </div>
-    <div style="text-align:right">
-      <div style="color:${C_PCT};font-size:22px;font-weight:700">${pct(attainment)}</div>
-      <div style="color:#64748b;font-size:9px">budget attainment</div>
-    </div>
-  </div>
-  <!-- Card body -->
-  <div style="padding:16px">
-    <!-- Mini chart (HL contract numbers) -->
-    <div style="height:56px;position:relative">
-      <canvas id="minichart-${custIdx}" style="height:56px;width:100%"></canvas>
-    </div>
-    <!-- Metric pills (HL contract numbers) -->
-    <div style="font-size:11px;margin-top:8px">
-      <span style="color:${C_ACV}">ACV: ${usd(totals.acv)}</span>
-      <span style="color:#94a3b8"> · </span>
-      <span style="color:${C_BUDGET}">Budget: ${usd(totals.budget)}</span>
-      <span style="color:#94a3b8"> · </span>
-      <span style="color:${C_CONSUMED}">Consumed: ${usd(totals.consumed)}</span>
-    </div>
-    <!-- L1 chips (solution areas with attainment %) -->
-    <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
-      ${l1Chips}
-    </div>
-    <!-- Account insights (collapsed, last) -->
-    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">
-      <div onclick="toggleInsights(this)" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:8px">
-        <span>Account Insights</span>
-        <span class="ins-toggle" style="font-size:12px;color:#94a3b8">&#9654;</span>
-      </div>
-      ${ICON_LEGEND_HTML}
-      ${renderInsightBullets(cust.account_insights)}
-    </div>
-  </div>
-</div>`
-}
-
-// ── L1 detail block (EA mode inline expansion) ────────────────────────────────
-// @contract input: cust object, custIdx int, l1 object, l1Idx int → output: HTML string
-function buildL1DetailBlock(cust, custIdx, l1, l1Idx) {
-  const l2Chips = (l1.solutions_l2 ?? []).map((l2, l2Idx) => {
-    const t = l2Totals(l2)
-    const att = t.budget > 0 ? (t.consumed / t.budget * 100) : null
-    return `<span class="l2-chip" onclick="openDrawer(${custIdx},${l1Idx},${l2Idx})"
-  style="padding:3px 8px;border:1px solid #cbd5e1;font-size:10px;cursor:pointer;background:white;display:inline-block">
-  ${esc(l2.name)} <span style="color:${C_PCT}">${pct(att)}</span>
-</span>`
-  }).join('')
-
-  const t = l1Totals(l1)
-  const l1Att = t.budget > 0 ? (t.consumed / t.budget * 100) : null
-
-  return `<div id="l1detail-${custIdx}-${l1Idx}" style="display:none;margin-top:12px;padding:12px;background:#f8fafc;border-top:2px solid #1e293b">
-  <!-- L1 name + contract totals -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-    <div style="font-size:12px;font-weight:600;color:#1e293b;text-transform:uppercase">${esc(l1.name)}</div>
-    <div style="font-size:10px;color:#64748b">
-      <span style="color:${C_BUDGET}">Budget: ${usd(t.budget)}</span>
-      <span style="color:#94a3b8"> · </span>
-      <span style="color:${C_CONSUMED}">Consumed: ${usd(t.consumed)}</span>
-      <span style="color:#94a3b8"> · </span>
-      <span style="color:${C_PCT}">${pct(l1Att)}</span>
-    </div>
-  </div>
-  <!-- L2 chips (solution sub-areas) -->
-  <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
-    ${l2Chips}
-  </div>
-  <!-- EA insights (collapsed, last) -->
-  <div onclick="toggleInsights(this)" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:8px">
-    <span>EA Insights</span>
-    <span class="ins-toggle" style="font-size:12px;color:#94a3b8">&#9654;</span>
-  </div>
-  ${ICON_LEGEND_HTML}
-  ${renderInsightBullets(l1.enterprise_architecture_insights)}
-</div>`
-}
-
-// ── Customer card body — EA mode ──────────────────────────────────────────────
-// @contract input: cust object, custIdx int → output: HTML string (card body only)
-function buildCustomerCardEA(cust, custIdx) {
-  const totals = customerTotals(cust)
-  const attainment = totals.budget > 0 ? (totals.consumed / totals.budget * 100) : null
-
-  // L1 chips with toggleL1 onclick + l1 detail blocks
-  const l1Section = (cust.solutions_l1 ?? []).map((l1, l1Idx) => {
-    const t = l1Totals(l1)
-    const att = t.budget > 0 ? (t.consumed / t.budget * 100) : null
-    const chip = `<span class="l1-chip" data-l1chip="${custIdx}" data-l1idx="${l1Idx}"
-  onclick="toggleL1(${custIdx},${l1Idx},event)"
-  style="padding:4px 8px;border:1px solid #e2e8f0;font-size:11px;cursor:pointer;background:white;display:inline-block">
-  ${esc(l1.name)} <span style="color:${C_PCT}">${pct(att)}</span>
-</span>`
-    const detail = buildL1DetailBlock(cust, custIdx, l1, l1Idx)
-    return chip + detail
-  }).join('')
-
-  return `<div style="padding:0;overflow:hidden">
-  <!-- Card header -->
-  <div style="background:#1e293b;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
-    <div>
-      <div style="color:white;font-size:14px;font-weight:600">${esc(cust.customer)}</div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-top:2px">${esc(cust.industry ?? '')}</div>
-    </div>
-    <div style="text-align:right">
-      <div style="color:${C_PCT};font-size:22px;font-weight:700">${pct(attainment)}</div>
-      <div style="color:#64748b;font-size:9px">budget attainment</div>
-    </div>
-  </div>
-  <!-- Card body -->
-  <div style="padding:16px">
-    <!-- Mini chart (HL contract numbers) -->
-    <div style="height:56px;position:relative">
-      <canvas id="minichart-${custIdx}" style="height:56px;width:100%"></canvas>
-    </div>
-    <!-- Metric pills (HL contract numbers) -->
-    <div style="font-size:11px;margin-top:8px">
-      <span style="color:${C_ACV}">ACV: ${usd(totals.acv)}</span>
-      <span style="color:#94a3b8"> · </span>
-      <span style="color:${C_BUDGET}">Budget: ${usd(totals.budget)}</span>
-      <span style="color:#94a3b8"> · </span>
-      <span style="color:${C_CONSUMED}">Consumed: ${usd(totals.consumed)}</span>
-    </div>
-    <!-- L1 chips + detail blocks (solution areas with attainment %) -->
-    <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
-      ${l1Section}
-    </div>
-    <!-- Account insights (collapsed, last) -->
-    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">
-      <div onclick="toggleInsights(this)" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:8px">
-        <span>Account Insights</span>
-        <span class="ins-toggle" style="font-size:12px;color:#94a3b8">&#9654;</span>
-      </div>
-      ${ICON_LEGEND_HTML}
-      ${renderInsightBullets(cust.account_insights)}
-    </div>
-  </div>
-</div>`
-}
-
-// ── ZONE 4: Drawer data builder ───────────────────────────────────────────────
-// @contract input: customers[], reportingMonth int → output: { drawerData, miniChartData }
-function buildDrawerData(customers, reportingMonth) {
-  const drawerData = {}    // keyed "c{custIdx}-l1{l1Idx}-l2{l2Idx}"
-  const miniChartData = [] // indexed by custIdx
-
+  // 2. Per-customer: ACCOUNT → EA → SOLUTION → CONTRACT
   customers.forEach((cust, custIdx) => {
-    const totals = customerTotals(cust)
-    miniChartData.push({ acv: totals.acv, budget: totals.budget, consumed: totals.consumed })
+    const t = customerTotals(cust)
+    const att = attPct(t.budget, t.consumed)
 
+    // ACCOUNT insights for this customer
+    for (const text of cust.account_insights ?? []) {
+      signals.push({
+        level: 'ACCOUNT',
+        text,
+        context: `${esc(cust.customer)} · ${att != null ? pct(att) : '—'}`,
+        custIdx,
+        l1Idx: null,
+        l2Idx: null,
+        l3Idx: null,
+        attainment: att,
+      })
+    }
+
+    // EA insights for this customer
+    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
+      const lt = l1Totals(l1)
+      const la = attPct(lt.budget, lt.consumed)
+      for (const text of l1.enterprise_architecture_insights ?? []) {
+        signals.push({
+          level: 'EA',
+          text,
+          context: `${esc(cust.customer)} · ${esc(l1.name)} · ${la != null ? pct(la) : '—'}`,
+          custIdx,
+          l1Idx,
+          l2Idx: null,
+          l3Idx: null,
+          attainment: la,
+        })
+      }
+    })
+
+    // SOLUTION insights for this customer
     ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
       ;(l1.solutions_l2 ?? []).forEach((l2, l2Idx) => {
-        const key = `c${custIdx}-l1${l1Idx}-l2${l2Idx}`
-
-        // Collect saInsights at L2 level from first L3 that has them
-        let l2SaInsights = []
+        const lt = l2Totals(l2)
+        const la = attPct(lt.budget, lt.consumed)
+        const seen = new Set()
         for (const l3 of l2.solutions_l3 ?? []) {
-          const sa = l3.solution_architecture_insights ?? []
-          if (sa.length > 0) { l2SaInsights = sa; break }
+          for (const text of l3.solution_architecture_insights ?? []) {
+            if (seen.has(text)) continue
+            seen.add(text)
+            signals.push({
+              level: 'SOLUTION',
+              text,
+              context: `${esc(cust.customer)} · ${esc(l2.name)} · ${la != null ? pct(la) : '—'}`,
+              custIdx,
+              l1Idx,
+              l2Idx,
+              l3Idx: null,
+              attainment: la,
+            })
+          }
+        }
+      })
+    })
+
+    // CONTRACT insights for this customer
+    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
+      ;(l1.solutions_l2 ?? []).forEach((l2, l2Idx) => {
+        ;(l2.solutions_l3 ?? []).forEach((l3, l3Idx) => {
+          const lt = l3Totals(l3)
+          const la = attPct(lt.budget, lt.consumed)
+          for (const text of l3.contract?.contract_insights ?? []) {
+            signals.push({
+              level: 'CONTRACT',
+              text,
+              context: `${esc(cust.customer)} · ${esc(l3.lpr_name)} · ${la != null ? pct(la) : '—'}`,
+              custIdx,
+              l1Idx,
+              l2Idx,
+              l3Idx,
+              attainment: la,
+            })
+          }
+        })
+      })
+    })
+  })
+
+  return signals
+}
+
+// ── Build signal expansion HTML for a single signal ───────────────────────────
+// @contract input: signal entry, customers[] → output: HTML string for the expansion div
+function buildSignalExpansion(sig, customers) {
+  const lc = LEVEL_COLOR[sig.level]
+
+  if (sig.level === 'CONTRACT') {
+    const cust = customers[sig.custIdx]
+    const l1   = cust?.solutions_l1?.[sig.l1Idx]
+    const l2   = l1?.solutions_l2?.[sig.l2Idx]
+    const l3   = l2?.solutions_l3?.[sig.l3Idx]
+    if (!l3) return ''
+    const t = l3Totals(l3)
+    const att = attPct(t.budget, t.consumed)
+    // Build sparkline data (all months in contract, no filter)
+    const sparkLabels = [], sparkConsumed = []
+    const contract = l3.contract ?? {}
+    for (const yr of Object.keys(contract).filter(k => k !== 'contract_insights').sort()) {
+      for (const mo of contract[yr] ?? []) {
+        sparkLabels.push(`${mo.month}`)
+        sparkConsumed.push(mo.consumed_contract_value ?? 0)
+      }
+    }
+    const sparkData = JSON.stringify({ labels: sparkLabels, consumed: sparkConsumed }).replace(/"/g, '&quot;')
+    return `<div style="display:flex;gap:32px;align-items:flex-start">
+  <div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px">LPR</div>
+    <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(l3.lpr_name)}</div>
+    <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
+    <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
+    <div style="font-size:13px;color:#64748b;margin-top:8px">Budget <span style="color:#22c55e;font-weight:600">${usd(t.budget)}</span></div>
+    <div style="font-size:13px;color:#64748b">Consumed <span style="color:#fb923c;font-weight:600">${usd(t.consumed)}</span></div>
+  </div>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Consumed over time</div>
+    <canvas data-sparkline="${sparkData}" style="height:60px;width:100%;max-width:300px;display:block"></canvas>
+  </div>
+</div>`
+  }
+
+  if (sig.level === 'SOLUTION') {
+    const cust = customers[sig.custIdx]
+    const l1   = cust?.solutions_l1?.[sig.l1Idx]
+    const l2   = l1?.solutions_l2?.[sig.l2Idx]
+    if (!l2) return ''
+    const t = l2Totals(l2)
+    const att = attPct(t.budget, t.consumed)
+    const l3Names = (l2.solutions_l3 ?? []).map(l3 => esc(l3.lpr_name)).join(', ')
+    return `<div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:4px">Solution Area</div>
+  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(l2.name)}</div>
+  <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
+  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
+  <div style="font-size:13px;color:#64748b;margin-top:8px">Budget <span style="color:#22c55e;font-weight:600">${usd(t.budget)}</span> · Consumed <span style="color:#fb923c;font-weight:600">${usd(t.consumed)}</span></div>
+  <div style="font-size:13px;color:#64748b;margin-top:8px">Products: ${l3Names || '—'}</div>
+</div>`
+  }
+
+  if (sig.level === 'EA') {
+    const cust = customers[sig.custIdx]
+    const l1   = cust?.solutions_l1?.[sig.l1Idx]
+    if (!l1) return ''
+    const t = l1Totals(l1)
+    const att = attPct(t.budget, t.consumed)
+    const budgetWidth = 100
+    const consumedWidth = t.budget > 0 ? Math.min(100, (t.consumed / t.budget) * 100) : 0
+    return `<div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:4px">Solution Area</div>
+  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(l1.name)}</div>
+  <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
+  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
+  <div style="margin-top:16px;max-width:400px">
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>${usd(t.budget)}</span></div>
+    <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:${budgetWidth}%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#fb923c;margin-bottom:3px;margin-top:8px"><span>Consumed</span><span>${usd(t.consumed)}</span></div>
+    <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${consumedWidth.toFixed(1)}%"></div></div>
+  </div>
+</div>`
+  }
+
+  if (sig.level === 'ACCOUNT') {
+    const cust = customers[sig.custIdx]
+    if (!cust) return ''
+    const t = customerTotals(cust)
+    const att = attPct(t.budget, t.consumed)
+    return `<div>
+  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(cust.customer)}</div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:12px">${esc(cust.industry ?? '')}</div>
+  <div style="font-size:24px;font-weight:800;color:${healthColor(att)}">${att != null ? pct(att) : '—'}</div>
+  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Budget Attainment</div>
+  <div style="font-size:13px;color:#64748b;margin-top:8px">
+    Consumed <span style="color:#fb923c;font-weight:600">${usd(t.consumed)}</span> ·
+    Budget <span style="color:#22c55e;font-weight:600">${usd(t.budget)}</span> ·
+    ACV <span style="color:#9ca3af;font-weight:600">${usd(t.acv)}</span>
+  </div>
+  <div style="margin-top:12px">
+    <span onclick="showView('accounts');showCustomer(${sig.custIdx})" style="font-size:12px;color:#f472b6;cursor:pointer;text-decoration:underline">→ View in Accounts</span>
+  </div>
+</div>`
+  }
+
+  if (sig.level === 'INDUSTRY') {
+    // Aggregate across all customers in the same industry
+    const indName = sig.industryName
+    const indCustomers = customers.filter(c => c.industry === indName)
+    let totalBudget = 0, totalConsumed = 0
+    for (const c of indCustomers) {
+      const t = customerTotals(c)
+      totalBudget += t.budget
+      totalConsumed += t.consumed
+    }
+    const att = attPct(totalBudget, totalConsumed)
+    const custRows = indCustomers.map((c, i) => {
+      const t = customerTotals(c)
+      const ca = attPct(t.budget, t.consumed)
+      return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
+  <span style="color:#64748b">${esc(c.customer)}</span>
+  <span style="color:${healthColor(ca)};font-weight:600">${ca != null ? pct(ca) : '—'}</span>
+</div>`
+    }).join('')
+    return `<div>
+  <div style="font-size:14px;font-weight:600;color:#0f172a">${esc(indName)}</div>
+  <div style="font-size:24px;font-weight:800;color:${healthColor(att)};margin-top:8px">${att != null ? pct(att) : '—'}</div>
+  <div style="font-size:13px;color:#94a3b8;margin-top:2px">Industry Attainment</div>
+  <div style="font-size:13px;color:#64748b;margin-top:8px">Budget <span style="color:#22c55e;font-weight:600">${usd(totalBudget)}</span> · Consumed <span style="color:#fb923c;font-weight:600">${usd(totalConsumed)}</span></div>
+  <div style="margin-top:16px;min-width:240px">${custRows}</div>
+</div>`
+  }
+
+  return ''
+}
+
+// ── Build SIGNALS VIEW HTML ────────────────────────────────────────────────────
+// @contract input: signals[], customers[] → output: HTML string
+// Change 3: grouped by customer with industry section header first
+function buildSignalsView(signals, customers) {
+  // Change 1: light theme colours in filter bar
+  const filterBar = `<div style="padding:12px 32px;border-bottom:1px solid #cbd5e1;display:flex;gap:8px;align-items:center;background:#ffffff">
+  <span style="font-size:13px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-right:8px">Filter:</span>
+  <button onclick="filterSignals('ALL')" class="sig-filter" data-filter="ALL" style="padding:4px 12px;background:#0f172a;color:#ffffff;border:1px solid #0f172a;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">ALL</button>
+  <button onclick="filterSignals('INDUSTRY')" class="sig-filter" data-filter="INDUSTRY" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">INDUSTRY</button>
+  <button onclick="filterSignals('ACCOUNT')" class="sig-filter" data-filter="ACCOUNT" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">ACCOUNT</button>
+  <button onclick="filterSignals('EA')" class="sig-filter" data-filter="EA" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">EA</button>
+  <button onclick="filterSignals('SOLUTION')" class="sig-filter" data-filter="SOLUTION" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">SOLUTION</button>
+  <button onclick="filterSignals('CONTRACT')" class="sig-filter" data-filter="CONTRACT" style="padding:4px 12px;background:transparent;color:#64748b;border:1px solid #cbd5e1;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">CONTRACT</button>
+</div>`
+
+  // Separate industry signals from customer signals
+  const industrySigs = signals.filter(s => s.level === 'INDUSTRY')
+  const customerSigs = signals.filter(s => s.level !== 'INDUSTRY')
+
+  // Build industry section
+  let html = ''
+
+  // Industry section header
+  if (industrySigs.length > 0) {
+    html += `<div class="ind-section-header" style="padding:8px 32px;background:#ede9fe;border-bottom:1px solid #c4b5fd">
+  <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6d28d9">Industry Signals</span>
+</div>`
+    for (const sig of industrySigs) {
+      const lc = LEVEL_COLOR[sig.level] ?? '#94a3b8'
+      const expandContent = buildSignalExpansion(sig, customers)
+      html += `<div class="signal-row" data-level="${sig.level}" data-cust="null" data-l1="null" data-l2="null" data-l3="null"
+  onclick="toggleSignal(this)"
+  style="border-left:3px solid ${lc};border-bottom:1px solid #f1f5f9;padding:16px 32px;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:24px;background:#ffffff">
+  <div style="display:flex;align-items:baseline;gap:16px;flex:1;min-width:0">
+    <span style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${lc};flex-shrink:0;width:72px">${sig.level}</span>
+    <span style="font-size:13.5px;font-weight:400;color:#0f172a;line-height:1.4" class="insight-text">${esc(sig.text)}</span>
+  </div>
+  <div style="font-size:11px;color:#64748b;flex-shrink:0;text-align:right;white-space:nowrap">${sig.context}</div>
+</div>
+<div class="signal-expand" data-level="${sig.level}" style="display:none;background:#f1f5f9;border-left:3px solid ${lc};border-bottom:1px solid #cbd5e1;padding:16px 32px 16px 121px">
+  ${expandContent}
+</div>`
+    }
+  }
+
+  // Group customer signals by custIdx
+  const custGroups = new Map()
+  for (const sig of customerSigs) {
+    const ci = sig.custIdx
+    if (!custGroups.has(ci)) custGroups.set(ci, [])
+    custGroups.get(ci).push(sig)
+  }
+
+  // Render per-customer groups in customer order
+  for (const [custIdx, custSignals] of custGroups) {
+    const cust = customers[custIdx]
+    if (!cust) continue
+    const t = customerTotals(cust)
+    const att = attPct(t.budget, t.consumed)
+    const attStr = att != null ? pct(att) : '—'
+    const indStr = esc(cust.industry ?? '')
+
+    html += `<div class="cust-group-header" data-cust="${custIdx}"
+  style="padding:8px 32px;background:#e2e8f0;border-bottom:1px solid #cbd5e1;border-top:1px solid #cbd5e1;display:flex;align-items:center;justify-content:space-between">
+  <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0f172a">${esc(cust.customer)}</span>
+  <span style="font-size:11px;color:#64748b">${indStr}</span>
+</div>`
+
+    for (const sig of custSignals) {
+      const lc = LEVEL_COLOR[sig.level] ?? '#94a3b8'
+      const l1Attr = sig.l1Idx != null ? sig.l1Idx : 'null'
+      const l2Attr = sig.l2Idx != null ? sig.l2Idx : 'null'
+      const l3Attr = sig.l3Idx != null ? sig.l3Idx : 'null'
+      const expandContent = buildSignalExpansion(sig, customers)
+      html += `<div class="signal-row" data-level="${sig.level}" data-cust="${custIdx}" data-l1="${l1Attr}" data-l2="${l2Attr}" data-l3="${l3Attr}"
+  onclick="toggleSignal(this)"
+  style="border-left:3px solid ${lc};border-bottom:1px solid #f1f5f9;padding:16px 32px;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:24px;background:#ffffff">
+  <div style="display:flex;align-items:baseline;gap:16px;flex:1;min-width:0">
+    <span style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${lc};flex-shrink:0;width:72px">${sig.level}</span>
+    <span style="font-size:13.5px;font-weight:400;color:#0f172a;line-height:1.4" class="insight-text">${esc(sig.text)}</span>
+  </div>
+  <div style="font-size:11px;color:#64748b;flex-shrink:0;text-align:right;white-space:nowrap">${sig.context}</div>
+</div>
+<div class="signal-expand" data-level="${sig.level}" style="display:none;background:#f1f5f9;border-left:3px solid ${lc};border-bottom:1px solid #cbd5e1;padding:16px 32px 16px 121px">
+  ${expandContent}
+</div>`
+    }
+  }
+
+  return filterBar + `<div id="signals-list">${html}</div>`
+}
+
+// ── Build ACCOUNTS VIEW HTML ───────────────────────────────────────────────────
+// @contract input: customers[] → output: HTML string
+function buildAccountsView(customers) {
+  // Change 1: light theme for tabs
+  const tabs = customers.map((cust, idx) => {
+    const t = customerTotals(cust)
+    const att = attPct(t.budget, t.consumed)
+    const isFirst = idx === 0
+    return `<button onclick="showCustomer(${idx})" class="cust-tab" data-cust="${idx}"
+  style="padding:8px 20px;background:${isFirst ? '#f1f5f9' : 'transparent'};border:1px solid #cbd5e1;color:${isFirst ? '#0f172a' : '#64748b'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+  ${esc(cust.customer)}
+</button>`
+  }).join('')
+
+  const panels = customers.map((cust, custIdx) => {
+    const t = customerTotals(cust)
+    const att = attPct(t.budget, t.consumed)
+    // Change 5: replace metric bars with canvas — data embedded in ACCT_BAR_DATA
+    // Canvas will be initialized by renderAcctBar(custIdx) called from showCustomer()
+
+    // Change 2: font-size:24px for customer name; Change 4: attainment inline next to name
+    // Change 4: metric priority Consumed > Budget > ACV
+    // L1 tiles — card format: donut header + EA insights body
+    const l1Tiles = (cust.solutions_l1 ?? []).map((l1, l1Idx) => {
+      const lt = l1Totals(l1)
+      const la = attPct(lt.budget, lt.consumed)
+      const eaInsights = (l1.enterprise_architecture_insights ?? [])
+      const eaRows = eaInsights.map(text =>
+        `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #e2e8f0">
+          <i class="bi ${pickIcon(text)}" style="font-size:11px;flex-shrink:0;margin-top:2px"></i>
+          <span style="font-size:13.5px;color:#0f172a;line-height:1.4" class="insight-text">${esc(text)}</span>
+        </div>`
+      ).join('') || `<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:6px 0">No EA insights</div>`
+
+      return `<div style="border:1px solid #e2e8f0;min-width:200px;flex:1;max-width:320px;overflow:hidden">
+  <!-- Card header: bar chart style -->
+  <div onclick="openL1(${custIdx},${l1Idx})" style="cursor:pointer;background:#f8fafc;padding:16px;border-bottom:1px solid #e2e8f0">
+    <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Solution Area</div>
+    <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px">${esc(l1.name)}</div>
+    <div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">${la != null ? pct(la) : '—'}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:14px">Budget Attainment</div>
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>${usd(lt.budget)}</span></div>
+      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>
+    </div>
+    <div style="margin-bottom:4px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>Consumed</span><span>${usd(lt.consumed)}</span></div>
+      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${la != null ? Math.min(100, la).toFixed(1) : 0}%"></div></div>
+    </div>
+    <div style="font-size:12px;color:#94a3b8;margin-top:6px">ACV: ${usd(lt.acv)}</div>
+  </div>
+  <!-- Card body: EA insights -->
+  <div style="padding:12px 14px;background:white">
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#34d399;margin-bottom:6px">EA Insights</div>
+    ${eaRows}
+  </div>
+</div>`
+    }).join('')
+
+    // Account insight rows — Change 1: light theme
+    const accountInsightRows = (cust.account_insights ?? []).map(text => {
+      return `<div style="padding:12px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #f472b6;padding-left:12px;font-size:15px;color:#0f172a;line-height:1.4" class="insight-text">${esc(text)}</div>`
+    }).join('')
+
+    // Change 2: font-size:24px for customer name heading (was 48px)
+    // Change 4: attainment inline next to name at 18px font-weight:700
+    // Change 5: canvas for account bar replacing 3 metric bars
+    return `<div id="cust-panel-${custIdx}" style="display:${custIdx === 0 ? 'block' : 'none'};padding:40px 48px">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
+    <div style="font-size:24px;font-weight:800;color:#0f172a;line-height:1">${esc(cust.customer)}</div>
+  </div>
+  <div style="font-size:13px;color:#64748b;margin-bottom:32px">${esc(cust.industry ?? '')}</div>
+  <div style="display:flex;align-items:flex-start;gap:32px;margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid #cbd5e1">
+    <!-- Donut: 30% width -->
+    <div style="flex:0 0 30%;text-align:center">
+      <canvas id="acct-bar-${custIdx}" width="180" height="180" style="display:block;margin:0 auto"></canvas>
+      <div style="font-size:13px;color:#22c55e;margin-top:6px">Budget: ${usd(t.budget)}</div>
+      <div style="font-size:13px;color:#fb923c">Consumed: ${usd(t.consumed)}</div>
+      <div style="font-size:13px;color:#94a3b8">ACV: ${usd(t.acv)}</div>
+    </div>
+    <!-- Account insights: 70% width -->
+    <div style="flex:1;min-width:0">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#f472b6;margin-bottom:12px">Account Insights</div>
+      ${accountInsightRows || '<div style="font-size:13px;color:#94a3b8;font-style:italic">No insights available</div>'}
+    </div>
+  </div>
+  <!-- Solution area cards -->
+  <div style="margin-bottom:32px">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:12px">Solution Areas</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">${l1Tiles}</div>
+  </div>
+</div>`
+  }).join('\n')
+
+  // Change 1: light theme tab strip
+  return `<div style="padding:12px 32px;border-bottom:1px solid #cbd5e1;display:flex;gap:0;overflow-x:auto;background:#f8fafc">${tabs}</div>
+<div id="accounts-panels">${panels}</div>`
+}
+
+// ── Build INDUSTRY VIEW HTML ───────────────────────────────────────────────────
+// @contract input: indInsights[], customers[] → output: HTML string
+function buildIndustryView(indInsights, customers) {
+  if (indInsights.length === 0) {
+    return `<div style="padding:40px 48px;color:#94a3b8;font-size:14px">No industry insights available.</div>`
+  }
+
+  // Change 1: light theme tabs
+  const tabs = indInsights.map((ind, idx) => {
+    const indCustomers = customers.filter(c => c.industry === ind.industry)
+    let totalBudget = 0, totalConsumed = 0
+    for (const c of indCustomers) { const t = customerTotals(c); totalBudget += t.budget; totalConsumed += t.consumed }
+    const att = attPct(totalBudget, totalConsumed)
+    const isFirst = idx === 0
+    return `<button onclick="showIndustry(${idx})" class="ind-tab" data-ind="${idx}"
+  style="padding:8px 20px;background:${isFirst ? '#f1f5f9' : 'transparent'};border:1px solid #cbd5e1;color:${isFirst ? '#0f172a' : '#64748b'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+  ${esc(ind.industry)}
+</button>`
+  }).join('')
+
+  const panels = indInsights.map((ind, indIdx) => {
+    const indCustomers = customers.filter(c => c.industry === ind.industry)
+    let totalBudget = 0, totalConsumed = 0
+    for (const c of indCustomers) { const t = customerTotals(c); totalBudget += t.budget; totalConsumed += t.consumed }
+    const att = attPct(totalBudget, totalConsumed)
+
+    // Change 1: light theme insight rows
+    const insightRows = (ind.summary ?? []).map(text => {
+      return `<div style="padding:12px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #a78bfa;padding-left:12px;font-size:15px;color:#0f172a;line-height:1.4" class="insight-text">${esc(text)}</div>`
+    }).join('')
+
+    const ac = ind.aggregated_contracts ?? {}
+    const indAcv = ac.annual_contract_value ?? 0
+
+    // Change 2: font-size:24px for industry name heading (was 48px)
+    // Change 6: fixed-height wrapper for canvas; canvas has absolute positioning
+    return `<div id="ind-panel-${indIdx}" style="display:${indIdx === 0 ? 'block' : 'none'};padding:40px 48px">
+  <div style="font-size:24px;font-weight:800;color:#0f172a">${esc(ind.industry)}</div>
+  <div style="font-size:13px;color:#64748b;margin-bottom:32px">${indCustomers.length} customer${indCustomers.length !== 1 ? 's' : ''} · ACV ${usd(indAcv)}</div>
+  <div style="margin-bottom:32px">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:16px">Budget vs Consumed by Customer</div>
+    <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;padding:0 16px">
+      ${indCustomers.map((c, i) => {
+        const ct = customerTotals(c)
+        const att = ct.budget > 0 ? (ct.consumed / ct.budget * 100) : null
+        return `<div style="text-align:center;padding:0 12px">
+          <canvas id="ind-donut-${indIdx}-${i}" width="160" height="160" style="display:block;margin:0 auto"></canvas>
+          <div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:8px">${esc(c.customer)}</div>
+          <div style="font-size:13px;color:#22c55e">Budget: ${usd(ct.budget)}</div>
+          <div style="font-size:13px;color:#fb923c">Consumed: ${usd(ct.consumed)}</div>
+          <div style="font-size:13px;color:#94a3b8">ACV: ${usd(ct.acv)}</div>
+        </div>`
+      }).join('')}
+    </div>
+  </div>
+  <div style="margin-bottom:32px;border-top:1px solid #cbd5e1;padding-top:24px">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#a78bfa;margin-bottom:16px">Industry Insights</div>
+    ${insightRows || '<div style="font-size:13px;color:#94a3b8;font-style:italic">No insights available</div>'}
+  </div>
+</div>`
+  }).join('\n')
+
+  // Change 1: light theme tab strip; Change 6: renderIndChart called directly (no setTimeout)
+  return `<div style="padding:12px 32px;border-bottom:1px solid #cbd5e1;display:flex;gap:0;overflow-x:auto;background:#f8fafc">${tabs}</div>
+<div id="industry-panels">${panels}</div>`
+}
+
+// ── Build DRAWER DATA ─────────────────────────────────────────────────────────
+// @contract input: customers[], reportingMonth → output: { drawerData, l3ChartData }
+function buildDrawerData(customers, reportingMonth) {
+  const drawerData = {}   // keyed "c{c}-l1{l1}" and "c{c}-l1{l1}-l2{l2}"
+  const l3ChartData = {}  // keyed "c{c}-l1{l1}-l2{l2}-l3{l3}"
+
+  customers.forEach((cust, custIdx) => {
+    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
+      const l1Key = `c${custIdx}-l1${l1Idx}`
+      const l1t = l1Totals(l1)
+      const l1Att = attPct(l1t.budget, l1t.consumed)
+
+      // EA-level drawer data: L2 tiles with solution insights embedded
+      const l2Tiles = (l1.solutions_l2 ?? []).map((l2, l2Idx) => {
+        const t = l2Totals(l2)
+        const a = attPct(t.budget, t.consumed)
+        // collect unique saInsights from first L3 that has them (all L3s under an L2 share the same SA insights)
+        const saInsights = []
+        const seen = new Set()
+        for (const l3 of l2.solutions_l3 ?? []) {
+          for (const s of l3.solution_architecture_insights ?? []) {
+            if (!seen.has(s)) { seen.add(s); saInsights.push(s) }
+          }
+          if (saInsights.length > 0) break
+        }
+        return { name: l2.name, attainment: a, budget: t.budget, consumed: t.consumed, acv: t.acv, l2Idx, saInsights }
+      })
+
+      drawerData[l1Key] = {
+        custName: cust.customer,
+        l1Name: l1.name,
+        l1Attainment: l1Att,
+        l1Budget: l1t.budget,
+        l1Consumed: l1t.consumed,
+        eaInsights: l1.enterprise_architecture_insights ?? [],
+        l2Tiles,
+      }
+
+      ;(l1.solutions_l2 ?? []).forEach((l2, l2Idx) => {
+        const l2Key = `c${custIdx}-l1${l1Idx}-l2${l2Idx}`
+
+        // Collect solution_architecture_insights from L3s (deduplicate)
+        const seenSa = new Set()
+        const saInsights = []
+        for (const l3 of l2.solutions_l3 ?? []) {
+          for (const s of l3.solution_architecture_insights ?? []) {
+            if (!seenSa.has(s)) { seenSa.add(s); saInsights.push(s) }
+          }
         }
 
-        const l3List = (l2.solutions_l3 ?? []).map((l3) => {
-          const contractData = l3.contract ?? {}
-          const contractInsights = contractData.contract_insights ?? []
+        const l3List = (l2.solutions_l3 ?? []).map((l3, l3Idx) => {
+          const t = l3Totals(l3)
+          const att = attPct(t.budget, t.consumed)
 
-          // Build chart data filtered to <= reportingMonth
+          // Chart data filtered to <= reportingMonth
           const chartLabels = [], chartBudget = [], chartConsumed = [], chartAttainment = []
-          const yearKeys = Object.keys(contractData).filter(k => k !== 'contract_insights').sort()
-          let totalAcv = 0, totalBudget = 0, totalConsumed = 0
-          for (const yr of yearKeys) {
-            for (const mo of contractData[yr] ?? []) {
-              totalAcv      += mo.annual_contract_value   ?? 0
-              totalBudget   += mo.budget_contract_value   ?? 0
-              totalConsumed += mo.consumed_contract_value ?? 0
+          const contract = l3.contract ?? {}
+          for (const yr of Object.keys(contract).filter(k => k !== 'contract_insights').sort()) {
+            for (const mo of contract[yr] ?? []) {
               const yyyymm = monthToYYYYMM(yr, mo.month)
               if (yyyymm === null) continue
               if (reportingMonth && yyyymm > reportingMonth) continue
@@ -468,161 +812,210 @@ function buildDrawerData(customers, reportingMonth) {
             }
           }
 
-          // Compute L3 attainment from chart data
-          const filteredBudget   = chartBudget.reduce((s, v) => s + v, 0)
-          const filteredConsumed = chartConsumed.reduce((s, v) => s + v, 0)
-          const attainment       = filteredBudget > 0 ? (filteredConsumed / filteredBudget * 100) : null
+          l3ChartData[`${l2Key}-l3${l3Idx}`] = {
+            labels: chartLabels,
+            budget: chartBudget,
+            consumed: chartConsumed,
+            attainment: chartAttainment,
+          }
 
           return {
             lprId: l3.lpr_id ?? '',
             lprName: l3.lpr_name ?? '',
-            attainment,
-            totals: { acv: totalAcv, budget: totalBudget, consumed: totalConsumed },
-            contractInsights,
-            chartData: { labels: chartLabels, budget: chartBudget, consumed: chartConsumed, attainment: chartAttainment }
+            attainment: att,
+            budget: t.budget,
+            consumed: t.consumed,
+            acv: t.acv,
+            contractInsights: l3.contract?.contract_insights ?? [],
           }
         })
 
-        drawerData[key] = {
-          custName: cust.customer ?? '',
-          l1Name: l1.name ?? '',
-          l2Name: l2.name ?? '',
-          saInsights: l2SaInsights,
-          l3List
+        drawerData[l2Key] = {
+          custName: cust.customer,
+          l1Name: l1.name,
+          l2Name: l2.name,
+          saInsights,
+          l3List,
         }
       })
     })
   })
 
-  return { drawerData, miniChartData }
+  return { drawerData, l3ChartData }
 }
 
-// ── ZONE 3: drawer HTML shell ─────────────────────────────────────────────────
-function buildDrawerShell() {
-  return `<div id="drawer" style="position:fixed;bottom:0;left:0;right:0;height:0;background:white;border-top:3px solid #1e293b;overflow:hidden;transition:height 0.2s ease;z-index:200">
-  <!-- Drawer header -->
-  <div style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 24px;display:flex;align-items:center;gap:12px;justify-content:space-between">
-    <div id="drawer-breadcrumb" style="font-size:12px;color:#64748b"></div>
-    <span onclick="closeDrawer()" style="font-size:20px;cursor:pointer;color:#64748b;line-height:1">&times;</span>
-  </div>
-  <!-- Solution architecture insights (L2 level) -->
-  <div id="drawer-sa-insights" style="padding:8px 24px;border-bottom:1px solid #e2e8f0;background:#f8fafc;font-size:11px;display:none"></div>
-  <!-- Drawer body -->
-  <div style="display:flex;height:calc(65vh - 44px);overflow:hidden">
-    <!-- L3 tab list -->
-    <div id="drawer-tabs" style="width:200px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0"></div>
-    <!-- L3 content panel -->
-    <div id="drawer-panel" style="flex:1;overflow-y:auto;padding:16px"></div>
-  </div>
-</div>`
+// ── Build IND_CHART_DATA ───────────────────────────────────────────────────────
+function buildIndChartData(indInsights, customers) {
+  return indInsights.map(ind => {
+    const indCustomers = customers.filter(c => c.industry === ind.industry)
+    const labels = [], budget = [], consumed = [], acv = []
+    for (const c of indCustomers) {
+      const t = customerTotals(c)
+      labels.push(c.customer)
+      budget.push(t.budget)
+      consumed.push(t.consumed)
+      acv.push(t.acv)
+    }
+    return { labels, budget, consumed, acv }
+  })
 }
 
-// ── Global mode toggle ────────────────────────────────────────────────────────
-function buildModeToggle() {
-  return `<div style="position:fixed;top:48px;right:16px;z-index:9999;display:flex;border:2px solid #1e293b;background:white">
-  <button id="btn-exec" onclick="setMode('exec')" style="padding:6px 14px;font-size:10px;font-weight:600;letter-spacing:0.06em;cursor:pointer;border:none;background:#1e293b;color:white;text-transform:uppercase">Executive</button>
-  <button id="btn-ea"   onclick="setMode('ea')"   style="padding:6px 14px;font-size:10px;font-weight:600;letter-spacing:0.06em;cursor:pointer;border:none;background:transparent;color:#1e293b;text-transform:uppercase">EA</button>
-</div>`
+// ── Build ACCT_BAR_DATA and L1_BAR_DATA for browser ──────────────────────────
+function buildAcctBarData(customers) {
+  return customers.map((cust, custIdx) => {
+    const t = customerTotals(cust)
+    const att = attPct(t.budget, t.consumed)
+    return { budget: t.budget, consumed: t.consumed, acv: t.acv, attainment: att }
+  })
 }
 
-// ── Main HTML builder ─────────────────────────────────────────────────────────
+function buildL1BarData(customers) {
+  const data = {}
+  customers.forEach((cust, custIdx) => {
+    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
+      const t = l1Totals(l1)
+      data[`${custIdx}-${l1Idx}`] = { budget: t.budget, consumed: t.consumed }
+    })
+  })
+  return data
+}
+
+// ── Build L2_BAR_DATA for drawer ──────────────────────────────────────────────
+function buildL2BarData(customers) {
+  const data = {}
+  customers.forEach((cust, custIdx) => {
+    ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
+      ;(l1.solutions_l2 ?? []).forEach((l2, l2Idx) => {
+        ;(l2.solutions_l3 ?? []).forEach((l3, l3Idx) => {
+          const t = l3Totals(l3)
+          data[`${custIdx}-${l1Idx}-${l2Idx}-${l3Idx}`] = { budget: t.budget, consumed: t.consumed }
+        })
+      })
+    })
+  })
+  return data
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN HTML BUILDER
+// ═══════════════════════════════════════════════════════════════════════════════
+
 // @contract input: portfolio object + asset strings → output: complete HTML string
-function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs) {
-  const customers     = portfolio.customers ?? []
-  const indInsights   = portfolio.industry_insights ?? []
+function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss = '') {
+  const customers      = portfolio.customers ?? []
+  const indInsights    = portfolio.industry_insights ?? []
   const reportingMonth = portfolio.reporting_month ? parseInt(String(portfolio.reporting_month), 10) : null
+  const rmDisplay      = reportingMonthDisplay(portfolio.reporting_month)
+  const fy             = portfolio.fiscal_year ?? 'FY—'
 
-  // Portfolio-level aggregated totals (all customers)
+  // Set YTD filter so all aggregation helpers exclude future months
+  _reportingMonth = reportingMonth
+
+  // Portfolio totals
   let portAcv = 0, portBudget = 0, portConsumed = 0
   for (const c of customers) {
     const t = customerTotals(c)
-    portAcv      += t.acv
-    portBudget   += t.budget
-    portConsumed += t.consumed
+    portAcv += t.acv; portBudget += t.budget; portConsumed += t.consumed
   }
-  const portTotals = { acv: portAcv, budget: portBudget, consumed: portConsumed }
+  const portAtt = attPct(portBudget, portConsumed)
+  const portAttColor = healthColor(portAtt)
 
-  // Pre-render card arrays
-  const execCards = customers.map((c, i) => buildCustomerCardExec(c, i))
-  const eaCards   = customers.map((c, i) => buildCustomerCardEA(c, i))
+  // Build views
+  const accountsHtml = buildAccountsView(customers)
+  const industryHtml = buildIndustryView(indInsights, customers)
 
-  // Drawer data + mini chart data
-  const { drawerData, miniChartData } = buildDrawerData(customers, reportingMonth)
+  // Build data for browser JS
+  const { drawerData, l3ChartData } = buildDrawerData(customers, reportingMonth)
+  const indChartData = buildIndChartData(indInsights, customers)
+  const acctBarData  = buildAcctBarData(customers)
+  const l1BarData    = buildL1BarData(customers)
+  const l2BarData    = buildL2BarData(customers)
 
-  // Industry → customer index map
-  const industryCustomerMap = indInsights.map(ind =>
-    customers.map((c, ci) => c.industry === ind.industry ? ci : -1).filter(i => i >= 0)
-  )
-
-  // JSON embed helper — escapes </script> in string content
-  function jsonEmbed(v) {
-    return JSON.stringify(v).replace(/<\/script>/gi, '<\\/script>')
+  // Portfolio meta for browser
+  const portfolioMeta = {
+    reportingMonth: rmDisplay,
+    fiscalYear: fy,
+    totalAcv: portAcv,
+    totalBudget: portBudget,
+    totalConsumed: portConsumed,
+    totalAttainment: portAtt,
   }
 
-  const COLORS_JSON                = JSON.stringify({ C_ACV, C_BUDGET, C_CONSUMED, C_PCT })
-  const CUSTOMER_CARDS_EXEC_JSON   = jsonEmbed(execCards)
-  const CUSTOMER_CARDS_EA_JSON     = jsonEmbed(eaCards)
-  const L3_DRAWER_DATA_JSON        = jsonEmbed(drawerData)
-  const MINI_CHART_DATA_JSON       = jsonEmbed(miniChartData)
-  const INDUSTRY_CUSTOMER_MAP_JSON = JSON.stringify(industryCustomerMap)
-  const REPORTING_MONTH_JSON       = JSON.stringify(reportingMonth ?? null)
-  // ICON_RULES for browser-side renderInsightBullets
-  const ICON_RULES_JSON = jsonEmbed(ICON_RULES)
-
-  const headerHtml      = buildPortfolioHeader(portfolio, portTotals)
-  const industryHtml    = buildIndustryStrip(indInsights)
-  const drawerShellHtml = buildDrawerShell()
-  const modeToggleHtml  = buildModeToggle()
+  // Change 4: topnav pills reordered Consumed · Budget · ACV
+  // Change 1: light theme throughout HTML
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SAP Portfolio Briefing — ${esc(portfolio.fiscal_year ?? '')}</title>
+<title>SAP Signal Board — ${esc(fy)}</title>
 <style>${bootstrapCss}</style>
 <style>${iconsCss}</style>
+${nunitoCss ? `<style>${nunitoCss}</style>` : ''}
 <style>
 *, *::before, *::after { border-radius: 0 !important; box-shadow: none !important; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; }
-.cust-card { background: white; border: 1px solid #e2e8f0; }
-.l3-tab:hover { background: #f8fafc !important; }
-.industry-card:hover { border-color: #94a3b8 !important; }
-.l1-chip:hover { background: #f1f5f9 !important; }
-.l2-chip:hover { background: #f1f5f9 !important; }
+body { margin: 0; background: #ffffff; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.signal-row:hover { background: #f1f5f9 !important; }
 </style>
 </head>
 <body>
 
-${headerHtml}
-${modeToggleHtml}
+<!-- TOP NAV -->
+<div id="topnav" style="position:sticky;top:0;z-index:200;background:#f8fafc;border-bottom:1px solid #cbd5e1;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:52px">
+  <div style="display:flex;align-items:center;gap:24px">
+    <span style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f172a">SAP Portfolio Briefing</span>
+    <span style="color:#cbd5e1">|</span>
+    <span style="font-size:11px;color:#64748b">${esc(rmDisplay)} · ${esc(fy)}</span>
+    <span style="color:#cbd5e1">|</span>
+  </div>
+  <div style="display:flex;gap:0">
+    <button id="tab-industry" onclick="showView('industry')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid #0f172a;color:#0f172a;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">INDUSTRY</button>
+    <button id="tab-accounts" onclick="showView('accounts')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid transparent;color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">ACCOUNTS</button>
+  </div>
+  <div style="display:flex;gap:16px;font-size:11px">
+    <span style="color:#ea580c">Consumed <strong style="color:#fb923c">${esc(usd(portConsumed))}</strong></span>
+    <span style="color:#16a34a">Budget <strong style="color:#22c55e">${esc(usd(portBudget))}</strong></span>
+    <span style="color:#9ca3af">ACV <strong style="color:#9ca3af">${esc(usd(portAcv))}</strong></span>
+  </div>
+</div>
+
+<!-- VIEW CONTAINERS -->
+<div id="view-accounts" style="display:none">
+${accountsHtml}
+</div>
+<div id="view-industry" style="display:block">
 ${industryHtml}
+</div>
 
-<!-- Zone 3: Customer grid -->
-<div id="customer-grid" style="padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px"></div>
-
-${drawerShellHtml}
+<!-- DRAWER -->
+<div id="drawer" style="position:fixed;bottom:0;left:0;right:0;height:0;background:#f1f5f9;border-top:2px solid #cbd5e1;overflow:hidden;z-index:300;transition:height 0.15s ease">
+  <div id="drawer-inner" style="height:100%;display:flex;flex-direction:column"></div>
+</div>
 
 <script>${chartJs}</script>
 <script>${bootstrapJs}</script>
 <script>
-// ── Embedded data constants ────────────────────────────────────────────────
-const COLORS                = ${COLORS_JSON};
-const CUSTOMER_CARDS_EXEC   = ${CUSTOMER_CARDS_EXEC_JSON};
-const CUSTOMER_CARDS_EA     = ${CUSTOMER_CARDS_EA_JSON};
-const L3_DRAWER_DATA        = ${L3_DRAWER_DATA_JSON};
-const MINI_CHART_DATA       = ${MINI_CHART_DATA_JSON};
-const INDUSTRY_CUSTOMER_MAP = ${INDUSTRY_CUSTOMER_MAP_JSON};
-const REPORTING_MONTH       = ${REPORTING_MONTH_JSON};
-const ICON_RULES_DATA       = ${ICON_RULES_JSON};
+// ── Embedded data ─────────────────────────────────────────────────────────────
+var DRAWER_DATA    = ${jsonEmbed(drawerData)};
+var L3_CHART_DATA  = ${jsonEmbed(l3ChartData)};
+var IND_CHART_DATA = ${jsonEmbed(indChartData)};
+var PORTFOLIO_META = ${jsonEmbed(portfolioMeta)};
+var ACCT_BAR_DATA  = ${jsonEmbed(acctBarData)};
+var L1_BAR_DATA    = ${jsonEmbed(l1BarData)};
+var L2_BAR_DATA    = ${jsonEmbed(l2BarData)};
 
-// ── State ──────────────────────────────────────────────────────────────────
-var currentMode      = 'exec';
-var selectedIndustry = null;
-var selectedL1       = null;   // {custIdx, l1Idx}
-var drawerState      = null;   // {custIdx, l1Idx, l2Idx, l3Idx}
+// ── State ─────────────────────────────────────────────────────────────────────
+var currentView    = 'industry';
+var currentCust    = 0;
+var currentInd     = 0;
+var drawerState    = null;   // {custIdx, l1Idx} or {custIdx, l1Idx, l2Idx, l3Idx}
+var indChartInst   = {};     // Chart.js instances for industry charts
+var acctBarInst    = {};     // Chart.js instances for account bars
+var l1BarInst      = {};     // Chart.js instances for L1 bars
+var l2BarInst      = {};     // Chart.js instances for L2 bars
 
-// ── Utility ────────────────────────────────────────────────────────────────
+// ── Utilities ─────────────────────────────────────────────────────────────────
 function fmtUsd(n) {
   if (n == null || isNaN(n)) return '—';
   var a = Math.abs(n);
@@ -634,274 +1027,445 @@ function fmtPct(v) {
   if (v == null || isNaN(v)) return '—';
   return Number(v).toFixed(1) + '%';
 }
-function esc(s) {
+function healthColor(att) {
+  return att >= 80 ? '#22c55e' : att >= 50 ? '#f59e0b' : '#ef4444';
+}
+function escHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function renderInsightBullets(insights) {
-  if (!insights || insights.length === 0) {
-    return '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0">'
-      + '<i class="bi bi-dash-circle" style="color:#94a3b8;flex-shrink:0;font-size:12px;margin-top:1px"></i>'
-      + '<span style="font-size:11px;color:#94a3b8;font-style:italic">Run --analyze to generate insights</span>'
-      + '</div>';
-  }
-  function pickIconRule(text) {
-    var lower = text.toLowerCase();
-    for (var r of ICON_RULES_DATA) {
-      for (var kw of r.keywords) {
-        if (lower.includes(kw)) return r;
-      }
+function trunc(s, n) {
+  if (!s) return '';
+  return s.length > n ? s.slice(0, n-1) + '\\u2026' : s;
+}
+
+// ── View tabs ─────────────────────────────────────────────────────────────────
+function showView(v) {
+  currentView = v;
+  ['signals','accounts','industry'].forEach(function(name) {
+    var el = document.getElementById('view-' + name);
+    if (el) el.style.display = name === v ? 'block' : 'none';
+    var tab = document.getElementById('tab-' + name);
+    if (tab) {
+      tab.style.borderBottom = name === v ? '2px solid #0f172a' : '2px solid transparent';
+      tab.style.color = name === v ? '#0f172a' : '#94a3b8';
     }
-    return { icon: 'bi-info-circle', color: '#94a3b8' };
-  }
-  return insights.map(function(p, i) {
-    var rule = pickIconRule(p);
-    var sep = i < insights.length - 1 ? ';border-bottom:1px solid #f1f5f9' : '';
-    return '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0' + sep + '">'
-      + '<i class="bi ' + rule.icon + '" style="color:' + rule.color + ';flex-shrink:0;font-size:12px;margin-top:1px"></i>'
-      + '<span style="font-size:11px;color:#475569;line-height:1.5">' + esc(p) + '</span>'
-      + '</div>';
-  }).join('');
-}
-
-// ── Icon legend HTML (browser constant) ───────────────────────────────────
-var BROWSER_ICON_LEGEND_HTML = '<div class="ins-legend" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #f1f5f9">'
-  + '<span style="font-size:9px;color:#94a3b8"><i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b"></i> Risk</span>'
-  + '<span style="font-size:9px;color:#94a3b8"><i class="bi bi-graph-up-arrow" style="color:#16a34a"></i> Growth</span>'
-  + '<span style="font-size:9px;color:#94a3b8"><i class="bi bi-diagram-3" style="color:#2563eb"></i> Integration</span>'
-  + '<span style="font-size:9px;color:#94a3b8"><i class="bi bi-calendar-check" style="color:#0891b2"></i> Renewal</span>'
-  + '<span style="font-size:9px;color:#94a3b8"><i class="bi bi-lightning-charge-fill" style="color:#2563eb"></i> Action</span>'
-  + '<span style="font-size:9px;color:#94a3b8"><i class="bi bi-bar-chart-line" style="color:#64748b"></i> Adoption</span>'
-  + '<span style="font-size:9px;color:#94a3b8"><i class="bi bi-info-circle" style="color:#94a3b8"></i> Info</span>'
-  + '</div>';
-
-// ── Insight section expand/collapse ───────────────────────────────────────
-function toggleInsights(headerEl) {
-  var legend = headerEl.nextElementSibling;
-  var body = legend.nextElementSibling;
-  var arrow = headerEl.querySelector('.ins-toggle');
-  var isOpen = body.style.display !== 'none';
-  legend.style.display = isOpen ? 'none' : 'flex';
-  body.style.display = isOpen ? 'none' : 'block';
-  arrow.innerHTML = isOpen ? '&#9654;' : '&#9660;';
-}
-
-// ── Mode toggle ────────────────────────────────────────────────────────────
-function setMode(mode) {
-  currentMode = mode;
-  selectedL1 = null;
-  document.getElementById('btn-exec').style.background = mode === 'exec' ? '#1e293b' : 'transparent';
-  document.getElementById('btn-exec').style.color      = mode === 'exec' ? 'white'   : '#1e293b';
-  document.getElementById('btn-ea').style.background   = mode === 'ea'   ? '#1e293b' : 'transparent';
-  document.getElementById('btn-ea').style.color        = mode === 'ea'   ? 'white'   : '#1e293b';
-  closeDrawer();
-  renderGrid();
-}
-
-// ── Industry filter ────────────────────────────────────────────────────────
-function filterByIndustry(idx) {
-  selectedIndustry = idx;
-  document.querySelectorAll('.industry-card').forEach(function(el, i) {
-    el.style.borderColor = i === idx ? '#1e293b' : '#e2e8f0';
-    el.style.borderWidth = i === idx ? '2px'     : '1px';
-    el.style.background  = i === idx ? '#f0f9ff' : 'white';
   });
-  var allBtn = document.getElementById('industry-all');
-  if (allBtn) {
-    allBtn.style.borderColor = idx === null ? '#1e293b' : '#e2e8f0';
-    allBtn.style.background  = idx === null ? '#f0f9ff' : 'white';
+  // Change 6: call renderIndChart directly — no setTimeout
+  if (v === 'industry') {
+    renderIndChart(currentInd);
   }
-  renderGrid();
+  closeDrawer();
 }
 
-// ── Grid renderer ──────────────────────────────────────────────────────────
-function renderGrid() {
-  var grid = document.getElementById('customer-grid');
-  var cards = currentMode === 'exec' ? CUSTOMER_CARDS_EXEC : CUSTOMER_CARDS_EA;
-  var indices = selectedIndustry === null
-    ? cards.map(function(_, i) { return i; })
-    : INDUSTRY_CUSTOMER_MAP[selectedIndustry];
-  if (!indices) indices = [];
-  console.log('[renderGrid] mode=' + currentMode + ' selectedIndustry=' + selectedIndustry + ' cards=' + cards.length + ' indices=' + indices.length);
-  grid.innerHTML = indices.map(function(i) {
-    return '<div class="cust-card" data-cust-idx="' + i + '">' + cards[i] + '</div>';
-  }).join('');
-  setTimeout(function() { indices.forEach(function(i) { renderMiniChart(i); }); }, 0);
+// ── Customer switcher ─────────────────────────────────────────────────────────
+function showCustomer(idx) {
+  currentCust = idx;
+  // Change 1: light theme active tab colours
+  document.querySelectorAll('.cust-tab').forEach(function(btn) {
+    var active = parseInt(btn.dataset.cust) === idx;
+    btn.style.background = active ? '#f1f5f9' : 'transparent';
+    btn.style.color = active ? '#0f172a' : '#64748b';
+  });
+  document.querySelectorAll('[id^="cust-panel-"]').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  var panel = document.getElementById('cust-panel-' + idx);
+  if (panel) panel.style.display = 'block';
+  // Change 5: initialize account bar and L1 bars
+  setTimeout(function() {
+    renderAcctBar(idx);
+
+  }, 0);
 }
 
-// ── Mini chart ─────────────────────────────────────────────────────────────
-function renderMiniChart(custIdx) {
-  var canvas = document.getElementById('minichart-' + custIdx);
-  if (!canvas) return;
-  if (canvas._chart) { canvas._chart.destroy(); }
-  var d = MINI_CHART_DATA[custIdx];
+// ── Industry switcher ─────────────────────────────────────────────────────────
+function showIndustry(idx) {
+  currentInd = idx;
+  // Change 1: light theme active tab colours
+  document.querySelectorAll('.ind-tab').forEach(function(btn) {
+    var active = parseInt(btn.dataset.ind) === idx;
+    btn.style.background = active ? '#f1f5f9' : 'transparent';
+    btn.style.color = active ? '#0f172a' : '#64748b';
+  });
+  document.querySelectorAll('[id^="ind-panel-"]').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  var panel = document.getElementById('ind-panel-' + idx);
+  if (panel) panel.style.display = 'block';
+  // Change 6: call renderIndChart directly — no setTimeout
+  renderIndChart(idx);
+}
+
+// ── Signal filter — Change 3: handle customer group headers and industry section ──
+function filterSignals(level) {
+  // Update button styles
+  document.querySelectorAll('.sig-filter').forEach(function(b) {
+    var active = b.dataset.filter === level;
+    b.style.background = active ? '#0f172a' : 'transparent';
+    b.style.color = active ? '#ffffff' : '#64748b';
+    b.style.borderColor = active ? '#0f172a' : '#cbd5e1';
+  });
+  // Show/hide signal rows and collapse expansions
+  document.querySelectorAll('.signal-row').forEach(function(el) {
+    el.style.display = (level === 'ALL' || el.dataset.level === level) ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.signal-expand').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  // Show/hide customer group headers based on whether any of their signals are visible
+  document.querySelectorAll('.cust-group-header').forEach(function(header) {
+    var custIdx = header.dataset.cust;
+    var hasVisible = Array.from(document.querySelectorAll('.signal-row[data-cust="' + custIdx + '"]'))
+      .some(function(r) { return r.style.display !== 'none'; });
+    header.style.display = hasVisible ? 'flex' : 'none';
+  });
+  // Industry section header
+  var indHeader = document.querySelector('.ind-section-header');
+  if (indHeader) {
+    var hasIndVisible = Array.from(document.querySelectorAll('.signal-row[data-level="INDUSTRY"]'))
+      .some(function(r) { return r.style.display !== 'none'; });
+    indHeader.style.display = hasIndVisible ? 'block' : 'none';
+  }
+}
+
+// ── Signal toggle ─────────────────────────────────────────────────────────────
+function toggleSignal(row) {
+  var expand = row.nextElementSibling;
+  var isOpen = expand.style.display !== 'none';
+  document.querySelectorAll('.signal-expand').forEach(function(e) { e.style.display = 'none'; });
+  if (!isOpen) {
+    expand.style.display = 'block';
+    var sparkCanvas = expand.querySelector('canvas[data-sparkline]');
+    if (sparkCanvas && sparkCanvas.dataset.sparkline) {
+      try {
+        renderSparkline(sparkCanvas, JSON.parse(sparkCanvas.dataset.sparkline));
+      } catch(e) {}
+    }
+  }
+}
+
+// ── Account bar chart (Change 5) ─────────────────────────────────────────────
+function renderAcctBar(custIdx) {
+  var canvas = document.getElementById('acct-bar-' + custIdx);
+  var d = ACCT_BAR_DATA[custIdx];
   if (!d) return;
-  canvas._chart = new Chart(canvas, {
+  renderDonut(canvas, d.budget, d.consumed, d.acv, 180);
+}
+
+// ── L1 bar charts (Change 5) ──────────────────────────────────────────────────
+// ── Shared donut renderer — matches the spec image exactly ───────────────────
+// size: canvas pixel size (square). budget/consumed/acv in dollars. showLabels: show Budget/Consumed/ACV lines below.
+function renderDonut(canvas, budget, consumed, acv, size) {
+  if (!canvas) return;
+  if (canvas._donutChart) { try { canvas._donutChart.destroy(); } catch(e){} canvas._donutChart = null; }
+  size = size || 120;
+  canvas.width  = size;
+  canvas.height = size;
+  var remaining = Math.max(0, budget - consumed);
+  var att = budget > 0 ? Math.round(consumed / budget * 100) : null;
+  var attLabel = att != null ? att + '%' : '—';
+  var attColor = '#60a5fa';
+  var pctFontSize = Math.floor(size * 0.19);
+  var pctOffsetY  = 0;
+
+  // Inline plugin draws centre text on every render (including hover redraws)
+  var centreTextPlugin = {
+    id: 'centreText',
+    afterDraw: function(chart) {
+      var ctx2 = chart.ctx;
+      var cx = chart.width  / 2;
+      var cy = chart.height / 2;
+      ctx2.save();
+      ctx2.textAlign = 'center';
+      ctx2.textBaseline = 'middle';
+      ctx2.fillStyle = attColor;
+      ctx2.font = 'bold ' + pctFontSize + 'px -apple-system,BlinkMacSystemFont,sans-serif';
+      ctx2.fillText(attLabel, cx, cy);
+      ctx2.restore();
+    }
+  };
+
+  canvas._donutChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['Consumed', 'Remaining'],
+      datasets: [{
+        data: [consumed > 0 ? consumed : 0, remaining > 0 ? remaining : (budget > 0 ? budget : 1)],
+        backgroundColor: ['#fb923c', '#e8edf2'],
+        borderWidth: 0,
+        hoverOffset: 0
+      }]
+    },
+    options: {
+      responsive: false,
+      animation: { duration: 0 },
+      cutout: '74%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + fmtUsd(ctx.raw); } } }
+      }
+    },
+    plugins: [centreTextPlugin]
+  });
+}
+
+function renderL1Bars(custIdx) {
+  var prefix = custIdx + '-';
+  Object.keys(L1_BAR_DATA).forEach(function(key) {
+    if (key.indexOf(prefix) !== 0) return;
+    var parts = key.split('-');
+    var l1Idx = parts[1];
+    var canvas = document.getElementById('l1-bar-' + custIdx + '-' + l1Idx);
+    var d = L1_BAR_DATA[key];
+    if (!d) return;
+    renderDonut(canvas, d.budget, d.consumed, d.acv || 0, 90);
+  });
+}
+
+// ── Industry chart — Change 6: responsive:false, explicit pixel dims ──────────
+function renderIndChart(idx) {
+  var d = IND_CHART_DATA[idx];
+  if (!d || !d.labels || d.labels.length === 0) return;
+  (indChartInst[idx] || []);
+  indChartInst[idx] = [];
+  d.labels.forEach(function(label, i) {
+    var canvas = document.getElementById('ind-donut-' + idx + '-' + i);
+    if (!canvas) return;
+    renderDonut(canvas, d.budget[i] || 0, d.consumed[i] || 0, d.acv ? (d.acv[i] || 0) : 0, 160);
+  });
+}
+
+// ── L3 chart ──────────────────────────────────────────────────────────────────
+var _drawerChart = null;
+function renderL3Chart(data) {
+  var canvas = document.getElementById('chart-l3');
+  if (!canvas) return;
+  if (_drawerChart) { try { _drawerChart.destroy(); } catch(e){} _drawerChart = null; }
+  if (!data || !data.labels || data.labels.length === 0) {
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '600 18px -apple-system,BlinkMacSystemFont,sans-serif';
+    ctx.fillText('No chart data available', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+  Chart.defaults.color = '#64748b';
+  _drawerChart = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: [''],
+      labels: data.labels,
       datasets: [
-        { label: 'ACV',      data: [d.acv],      backgroundColor: COLORS.C_ACV,      barThickness: 10 },
-        { label: 'Budget',   data: [d.budget],   backgroundColor: COLORS.C_BUDGET,   barThickness: 10 },
-        { label: 'Consumed', data: [d.consumed], backgroundColor: COLORS.C_CONSUMED, barThickness: 10 }
+        { type: 'line', label: 'Budget',      data: data.budget,     borderColor: '#16a34a', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#16a34a' },
+        { type: 'line', label: 'Consumed',    data: data.consumed,   borderColor: '#ea580c', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#ea580c' },
+        { type: 'bar',  label: 'Attainment%', data: data.attainment, backgroundColor: 'rgba(167,139,250,0.25)', yAxisID: 'y2' }
       ]
     },
     options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: function(ctx) { return ' ' + fmtUsd(ctx.raw); } } }
+        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.yAxisID === 'y2' ? fmtPct(ctx.raw) : ' ' + fmtUsd(ctx.raw); } } }
       },
-      scales: { x: { display: false }, y: { display: false } },
-      animation: false
+      scales: {
+        y:  { position: 'left',  ticks: { color: '#64748b', font: { size: 9 }, callback: function(v){ return fmtUsd(v); } }, grid: { color: '#e2e8f0' }, border: { display: false } },
+        y2: { position: 'right', min: 0, max: 150, ticks: { color: '#64748b', font: { size: 9 }, callback: function(v){ return v + '%'; } }, grid: { drawOnChartArea: false }, border: { display: false } },
+        x:  { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#e2e8f0' }, border: { display: false } }
+      }
     }
   });
 }
 
-// ── L1 toggle (EA mode) ────────────────────────────────────────────────────
-function toggleL1(custIdx, l1Idx, event) {
-  if (currentMode !== 'ea') return;
-  event.stopPropagation();
-  var detailId = 'l1detail-' + custIdx + '-' + l1Idx;
-  var detail = document.getElementById(detailId);
-  if (!detail) return;
-  if (detail.style.display === 'block') {
-    detail.style.display = 'none';
-    selectedL1 = null;
-    // reset chip
-    var chip = document.querySelector('[data-l1chip="' + custIdx + '"][data-l1idx="' + l1Idx + '"]');
-    if (chip) { chip.style.background = 'white'; chip.style.color = '#1e293b'; chip.style.borderColor = '#e2e8f0'; }
-  } else {
-    // hide all other L1 details in this card
-    document.querySelectorAll('[id^="l1detail-' + custIdx + '-"]').forEach(function(el) { el.style.display = 'none'; });
-    // reset all chips in this card
-    document.querySelectorAll('[data-l1chip="' + custIdx + '"]').forEach(function(el) {
-      el.style.background = 'white'; el.style.color = '#1e293b'; el.style.borderColor = '#e2e8f0';
-    });
-    detail.style.display = 'block';
-    selectedL1 = { custIdx: custIdx, l1Idx: l1Idx };
-    var chip2 = document.querySelector('[data-l1chip="' + custIdx + '"][data-l1idx="' + l1Idx + '"]');
-    if (chip2) { chip2.style.background = '#1e293b'; chip2.style.color = 'white'; chip2.style.borderColor = '#1e293b'; }
-  }
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+var _sparkCharts = [];
+function renderSparkline(canvas, data) {
+  if (canvas._sparkChart) { try { canvas._sparkChart.destroy(); } catch(e){} canvas._sparkChart = null; }
+  if (!data || !data.labels || data.labels.length === 0) return;
+  canvas._sparkChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [{ data: data.consumed, borderColor: '#ea580c', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  });
 }
 
-// ── Drawer ─────────────────────────────────────────────────────────────────
-function openDrawer(custIdx, l1Idx, l2Idx) {
-  drawerState = { custIdx: custIdx, l1Idx: l1Idx, l2Idx: l2Idx, l3Idx: 0 };
-  var key  = 'c' + custIdx + '-l1' + l1Idx + '-l2' + l2Idx;
-  var data = L3_DRAWER_DATA[key];
+// ── Drawer: open L1 view ──────────────────────────────────────────────────────
+function openL1(custIdx, l1Idx) {
+  drawerState = { custIdx: custIdx, l1Idx: l1Idx, level: 'l1' };
+  var key  = 'c' + custIdx + '-l1' + l1Idx;
+  var data = DRAWER_DATA[key];
   if (!data) return;
 
-  document.getElementById('drawer-breadcrumb').innerHTML =
-    esc(data.custName) +
-    ' <span style="color:#94a3b8">›</span> ' +
-    esc(data.l1Name) +
-    ' <span style="color:#94a3b8">›</span> ' +
-    '<strong style="color:#1e293b">' + esc(data.l2Name) + '</strong>';
+  var inner = document.getElementById('drawer-inner');
+  var header = '<div style="background:#f8fafc;border-bottom:1px solid #cbd5e1;padding:0 32px;height:44px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+    + '<span style="font-size:11px;color:#64748b">' + escHtml(data.custName) + ' <span style="color:#cbd5e1">›</span> <strong style="color:#34d399">' + escHtml(data.l1Name) + '</strong></span>'
+    + '<button onclick="closeDrawer()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1">×</button>'
+    + '</div>';
 
-  // Render solution architecture insights at L2 level (above tabs)
-  var saDiv = document.getElementById('drawer-sa-insights');
-  if (data.saInsights && data.saInsights.length > 0) {
-    saDiv.style.display = 'block';
-    saDiv.innerHTML = '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">SOLUTION INSIGHTS</div>'
-      + renderInsightBullets(data.saInsights);
-  } else {
-    saDiv.style.display = 'none';
-  }
+  // L2 cards: donut header (metrics) + solution insights body
+  var l2CardHtml = data.l2Tiles.map(function(tile) {
+    var saRows = (tile.saInsights || []).map(function(s) {
+      return '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #e2e8f0">'
+        + '<span style="font-size:13.5px;color:#0f172a;line-height:1.4" class="insight-text">' + escHtml(s) + '</span>'
+        + '</div>';
+    }).join('') || '<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:5px 0">No solution insights</div>';
 
-  document.getElementById('drawer-tabs').innerHTML = data.l3List.map(function(l3, i) {
-    var isActive = i === 0;
-    return '<div class="l3-tab" data-l3idx="' + i + '" onclick="selectL3(' + i + ')"'
-      + ' style="padding:10px 12px;font-size:11px;cursor:pointer;border-bottom:1px solid #f1f5f9;'
-      + (isActive ? 'background:#1e293b;color:white' : 'background:white;color:#1e293b') + '">'
-      + esc(l3.lprName.length > 28 ? l3.lprName.slice(0, 27) + '…' : l3.lprName)
-      + '<div style="font-size:10px;margin-top:2px;color:' + (isActive ? 'white' : COLORS.C_PCT) + '">'
-      + fmtPct(l3.attainment) + '</div></div>';
+    var attPctVal = tile.budget > 0 ? (tile.consumed / tile.budget * 100) : null;
+    var consumedBarW = attPctVal != null ? Math.min(100, attPctVal).toFixed(1) : 0;
+    return '<div style="border:1px solid #e2e8f0;min-width:200px;flex:1;max-width:320px;overflow:hidden">'
+      + '<div onclick="openL2(' + custIdx + ',' + l1Idx + ',' + tile.l2Idx + ')" style="cursor:pointer;background:#f8fafc;padding:14px 16px;border-bottom:1px solid #e2e8f0">'
+      + '<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Sub-Solution Area</div>'
+      + '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:8px">' + escHtml(tile.name) + '</div>'
+      + '<div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">' + (attPctVal != null ? attPctVal.toFixed(1) + '%' : '—') + '</div>'
+      + '<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Budget Attainment</div>'
+      + '<div style="margin-bottom:8px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>' + fmtUsd(tile.budget) + '</span></div>'
+      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>'
+      + '</div>'
+      + '<div style="margin-bottom:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>Consumed</span><span>' + fmtUsd(tile.consumed) + '</span></div>'
+      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:' + consumedBarW + '%"></div></div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;margin-top:6px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
+      + '</div>'
+      + '<div style="padding:10px 14px;background:white">'
+      + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:5px">Solution Insights</div>'
+      + saRows
+      + '</div>'
+      + '</div>';
   }).join('');
 
-  renderL3Panel(0, data);
+  var body = '<div style="flex:1;overflow-y:auto;padding:20px 24px">'
+    + '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:12px">Sub-Solution Areas — click to drill in</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:8px">' + l2CardHtml + '</div>'
+    + '</div>';
+
+  inner.innerHTML = header + '<div style="display:flex;flex:1;overflow:hidden">' + body + '</div>';
   document.getElementById('drawer').style.height = '65vh';
+
+}
+
+// ── Drawer: open L2/L3 view ───────────────────────────────────────────────────
+function openL2(custIdx, l1Idx, l2Idx) {
+  drawerState = { custIdx: custIdx, l1Idx: l1Idx, l2Idx: l2Idx, l3Idx: 0, level: 'l2' };
+  var l1Key = 'c' + custIdx + '-l1' + l1Idx;
+  var l2Key = 'c' + custIdx + '-l1' + l1Idx + '-l2' + l2Idx;
+  var l1Data = DRAWER_DATA[l1Key];
+  var data   = DRAWER_DATA[l2Key];
+  if (!data) return;
+
+  var inner = document.getElementById('drawer-inner');
+
+  // Change 1: light theme header
+  var header = '<div style="background:#f8fafc;border-bottom:1px solid #cbd5e1;padding:0 32px;height:44px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+    + '<span style="font-size:11px;color:#64748b">'
+    + escHtml(data.custName) + ' <span style="color:#cbd5e1">›</span> '
+    + '<span onclick="openL1(' + custIdx + ',' + l1Idx + ')" style="cursor:pointer;color:#34d399">' + escHtml(data.l1Name) + '</span>'
+    + ' <span style="color:#cbd5e1">›</span> <strong style="color:#fb923c">' + escHtml(data.l2Name) + '</strong>'
+    + '</span>'
+    + '<button onclick="closeDrawer()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1">×</button>'
+    + '</div>';
+
+  // Change 1: light theme L3 tabs; Change 2: donut + metrics above LPR name
+  var l3Tabs = data.l3List.map(function(l3, i) {
+    var active = i === 0;
+    var l3Att = l3.budget > 0 ? (l3.consumed / l3.budget * 100) : null;
+    var l3BarW = l3Att != null ? Math.min(100, l3Att).toFixed(1) : 0;
+    return '<div class="l3-tab" data-l3idx="' + i + '" onclick="selectL3(' + i + ')"'
+      + ' style="padding:12px;cursor:pointer;border-bottom:1px solid #e2e8f0;border-left:3px solid '
+      + (active ? '#fb923c' : 'transparent') + ';background:' + (active ? '#f1f5f9' : 'transparent') + '">'
+      + '<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">Solution</div>'
+      + '<div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px;line-height:1.3">' + escHtml(trunc(l3.lprName, 26)) + '</div>'
+      + '<div style="font-size:18px;font-weight:800;color:#60a5fa;line-height:1">' + (l3Att != null ? l3Att.toFixed(1) + '%' : '—') + '</div>'
+      + '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Budget Attainment</div>'
+      + '<div style="margin-bottom:5px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.budget) + '</span></div>'
+      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#22c55e;width:100%"></div></div>'
+      + '</div>'
+      + '<div style="margin-bottom:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#fb923c;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.consumed) + '</span></div>'
+      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#fb923c;width:' + l3BarW + '%"></div></div>'
+      + '</div>'
+      + '<div style="font-size:11px;color:#94a3b8">ACV: ' + fmtUsd(l3.acv) + '</div>'
+      + '</div>';
+  }).join('');
+
+  var body = '<div style="display:flex;flex:1;overflow:hidden">'
+    + '<div id="drawer-l3-tabs" style="width:260px;border-right:1px solid #cbd5e1;overflow-y:auto;flex-shrink:0">' + l3Tabs + '</div>'
+    + '<div id="drawer-l3-panel" style="flex:1;overflow-y:auto;padding:16px 24px"></div>'
+    + '</div>';
+
+  inner.innerHTML = header + body;
+  document.getElementById('drawer').style.height = '65vh';
+  renderL3PanelContent(0, data, custIdx, l1Idx, l2Idx);
 }
 
 function selectL3(l3Idx) {
   if (!drawerState) return;
   drawerState.l3Idx = l3Idx;
-  var key  = 'c' + drawerState.custIdx + '-l1' + drawerState.l1Idx + '-l2' + drawerState.l2Idx;
-  var data = L3_DRAWER_DATA[key];
+  var l2Key = 'c' + drawerState.custIdx + '-l1' + drawerState.l1Idx + '-l2' + drawerState.l2Idx;
+  var data = DRAWER_DATA[l2Key];
+  // Change 1: light theme tab highlight
   document.querySelectorAll('.l3-tab').forEach(function(el, i) {
-    el.style.background = i === l3Idx ? '#1e293b' : 'white';
-    el.style.color      = i === l3Idx ? 'white'   : '#1e293b';
-    var pct_el = el.querySelector('div');
-    if (pct_el) pct_el.style.color = i === l3Idx ? 'white' : COLORS.C_PCT;
+    var active = i === l3Idx;
+    el.style.background = active ? '#f1f5f9' : 'transparent';
+    el.style.color = active ? '#0f172a' : '#64748b';
+    el.style.borderLeft = active ? '3px solid #fb923c' : '3px solid transparent';
   });
-  renderL3Panel(l3Idx, data);
+  renderL3PanelContent(l3Idx, data, drawerState.custIdx, drawerState.l1Idx, drawerState.l2Idx);
 }
 
-function renderL3Panel(l3Idx, data) {
+function renderL3PanelContent(l3Idx, data, custIdx, l1Idx, l2Idx) {
   var l3 = data.l3List[l3Idx];
   if (!l3) return;
-  var panel = document.getElementById('drawer-panel');
-  var totals = l3.totals || { acv: 0, budget: 0, consumed: 0 };
-  var attainmentVal = totals.budget > 0 ? (totals.consumed / totals.budget * 100) : null;
-  panel.innerHTML =
-    '<div style="font-size:13px;font-weight:600;color:#1e293b">' + esc(l3.lprName) + '</div>'
-    + '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px">' + esc(l3.lprId) + '</div>'
-    + '<div style="display:flex;gap:16px;padding:8px 0;margin-bottom:8px;border-bottom:1px solid #e2e8f0;font-size:11px">'
-    +   '<span style="color:#9ca3af">ACV: <strong>' + fmtUsd(totals.acv) + '</strong></span>'
-    +   '<span style="color:#16a34a">Budget: <strong>' + fmtUsd(totals.budget) + '</strong></span>'
-    +   '<span style="color:#ea580c">Consumed: <strong>' + fmtUsd(totals.consumed) + '</strong></span>'
-    +   '<span style="color:#1d4ed8">Attainment: <strong>' + fmtPct(attainmentVal) + '</strong></span>'
+  var panel = document.getElementById('drawer-l3-panel');
+  if (!panel) return;
+  var att = l3.budget > 0 ? (l3.consumed / l3.budget * 100) : null;
+  var budgetWidth = 100;
+  var consumedWidth = l3.budget > 0 ? Math.min(100, (l3.consumed / l3.budget) * 100) : 0;
+
+  // Change 1: light theme contract insights
+  var insightRows = l3.contractInsights.map(function(s) {
+    return '<div style="padding:10px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #94a3b8;padding-left:12px;font-size:13.5px;color:#0f172a;line-height:1.4" class="insight-text">' + escHtml(s) + '</div>';
+  }).join('') || '<div style="font-size:13px;color:#94a3b8;font-style:italic;padding:8px 0">No contract insights</div>';
+
+  // Change 4: metric order Consumed first, then Budget, then ACV, then Attainment
+  // Change 5: L2 bar canvas
+  var l2BarKey = custIdx + '-' + l1Idx + '-' + l2Idx + '-' + l3Idx;
+  panel.innerHTML = '<div style="margin-bottom:12px">'
+    + '<div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:2px">' + escHtml(l3.lprName) + '</div>'
+    + '<div style="font-size:11px;color:#64748b">' + escHtml(l3.lprId) + '</div>'
     + '</div>'
-    + '<div style="position:relative;height:160px"><canvas id="chart-drawer" style="height:160px;width:100%"></canvas></div>'
-    + '<hr style="margin:12px 0;border:none;border-top:1px solid #e2e8f0">'
-    + '<div onclick="toggleInsights(this)" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:6px">'
-    +   '<span>Contract Insights</span>'
-    +   '<span class="ins-toggle" style="font-size:12px;color:#94a3b8">&#9660;</span>'
-    + '</div>'
-    + BROWSER_ICON_LEGEND_HTML.replace('display:none', 'display:flex')
-    + '<div class="ins-body" style="display:block">' + renderInsightBullets(l3.contractInsights) + '</div>';
-  setTimeout(function() { renderDrawerChart(l3.chartData); }, 0);
+    + '<div style="position:relative;height:180px;margin-bottom:16px"><canvas id="chart-l3" style="height:180px;width:100%"></canvas></div>'
+    + '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#64748b;margin-bottom:12px">Contract Insights</div>'
+    + insightRows;
+
+  var chartKey = 'c' + custIdx + '-l1' + l1Idx + '-l2' + l2Idx + '-l3' + l3Idx;
+  var chartData = L3_CHART_DATA[chartKey];
+  setTimeout(function() {
+    renderL3Chart(chartData);
+  }, 0);
 }
 
-function renderDrawerChart(chartData) {
-  var canvas = document.getElementById('chart-drawer');
-  if (!canvas) return;
-  if (canvas._chart) { canvas._chart.destroy(); }
-  if (!chartData || !chartData.labels || chartData.labels.length === 0) return;
-  canvas._chart = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: chartData.labels,
-      datasets: [
-        { type:'line', label:'Budget',   data: chartData.budget,     borderColor: COLORS.C_BUDGET,   backgroundColor:'transparent', yAxisID:'y',  tension:0.3, pointRadius:3 },
-        { type:'line', label:'Consumed', data: chartData.consumed,   borderColor: COLORS.C_CONSUMED, backgroundColor:'transparent', yAxisID:'y',  tension:0.3, pointRadius:3 },
-        { type:'bar',  label:'Attainment%', data: chartData.attainment, backgroundColor:'rgba(99,102,241,0.2)', yAxisID:'y2' }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: function(ctx) {
-          return ctx.dataset.yAxisID === 'y2' ? fmtPct(ctx.raw) : ' ' + fmtUsd(ctx.raw);
-        }}}
-      },
-      scales: {
-        y:  { position:'left',  ticks:{ callback: function(v){ return fmtUsd(v); }, font:{size:9} }, grid:{color:'#f1f5f9'} },
-        y2: { position:'right', min:0, max:120, ticks:{ callback: function(v){ return v+'%'; }, font:{size:9} }, grid:{drawOnChartArea:false} },
-        x:  { ticks:{ font:{size:9} }, grid:{color:'#f1f5f9'} }
-      }
-    }
-  });
-}
-
+// ── Drawer close ──────────────────────────────────────────────────────────────
 function closeDrawer() {
   document.getElementById('drawer').style.height = '0';
   drawerState = null;
 }
 
-// ── Boot: render all cards (show all) ──────────────────────────────────────
-renderGrid();
+// ── Boot ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  showIndustry(0);
+  showCustomer(0);
+});
 </script>
 </body>
 </html>`
@@ -956,8 +1520,16 @@ export async function run(args, options) {
     process.stderr.write(`warn: Chart.js not found\n`)
   }
 
-  process.stderr.write(`warn: generating The Briefing HTML dashboard…\n`)
-  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs)
+  let nunitoCss = ''
+  try {
+    nunitoCss = loadNunitoCss()
+    process.stderr.write(`warn: Nunito Sans loaded\n`)
+  } catch (e) {
+    process.stderr.write(`warn: Nunito Sans not found: ${e.message}\n`)
+  }
+
+  process.stderr.write(`warn: generating The Signal Board HTML dashboard…\n`)
+  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss)
 
   try {
     writeFileSync(outputPath, html, 'utf8')

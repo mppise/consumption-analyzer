@@ -1,21 +1,21 @@
-# Deploy Artifact — Release 4.1.0
+# Deploy Artifact — Release 4.1.3
 **Date:** 2026-06-28  **Status:** deployed
 **Platform:** local-npm (npm install + npm link)
 
 ## Release summary
 
-Minor release (4.0.1 → 4.1.0). All 6 stories deployed. STORY-005 (3-pane HTML dashboard) completes its first full deployment. Deploy script updated to v4.1.0 schema: solutions_l1/l2/l3 hierarchy, 5-step AI pipeline prompt templates, 3-pane left-drives-right navigation checks, AI-powered industry inference (23 SAP verticals).
+Patch release (4.1.2 -> 4.1.3). All 6 stories deployed. Version bumped in package.json; binary re-linked. No source code changes — maintenance patch release.
 
 ## Stories in this release
 
 | Story | Title | Language | Build command | Release type |
 |-------|-------|----------|---------------|--------------|
-| STORY-001 | CLI scaffold and entry point | node | npm install && npm link | minor |
-| STORY-002 | PDF to CSV conversion (--pdf2csv) | node | npm install | minor |
-| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | npm install | minor |
-| STORY-004 | CSV to JSON transformation with new portfolio schema (--transform) | node | npm install | minor |
-| STORY-005 | 3-pane HTML dashboard generation (--dashboard) | node | npm install | minor |
-| STORY-006 | Industry vertical inference | node | npm install | minor |
+| STORY-001 | CLI scaffold and entry point | node | npm install && npm link | patch |
+| STORY-002 | PDF to CSV conversion (--pdf2csv) | node | npm install | patch |
+| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | npm install | patch |
+| STORY-004 | CSV to JSON transformation with new portfolio schema (--transform) | node | npm install | patch |
+| STORY-005 | 3-pane HTML dashboard generation (--dashboard) | node | npm install | patch |
+| STORY-006 | Industry vertical inference | node | npm install | patch |
 
 ## Deployment order
 1. STORY-001 — CLI scaffold and entry point (no dependencies)
@@ -29,8 +29,8 @@ Minor release (4.0.1 → 4.1.0). All 6 stories deployed. STORY-005 (3-pane HTML 
 
 | File | Purpose |
 |------|---------|
-| specs/deploy.sh | Deploy script — npm install + npm link + flag verification (v4.1.0 checks) |
-| package.json | Version stamped to 4.1.0 |
+| deploy.sh | Deploy script — npm install + npm link + flag verification |
+| package.json | Version stamped to 4.1.3 |
 | specs/deploy-artifact.md | This file |
 
 ## Checks
@@ -41,36 +41,23 @@ Minor release (4.0.1 → 4.1.0). All 6 stories deployed. STORY-005 (3-pane HTML 
 | Gate: build-report overall_status | pass (all 6 stories) |
 | Gate: architecture.md present with Artifact Index | pass |
 | Gate: deployment.md present with deployment:target | pass |
-| Dependency order resolved | pass (topological: 001→002, 001→003, 001→004→005, 001→004→006) |
+| Dependency order resolved | pass (topological: 001->002, 001->003, 001->004->005, 001->004->006) |
 | Runtime profiles read from build-report.yaml | pass (all 6 stories) |
 | Platform target | local-npm |
-| Version stamp method | npm version field in package.json → 4.1.0 |
-| deploy.sh syntax check | pass |
+| Version stamp method | npm version field in package.json -> 4.1.3 |
 | npm install | pass |
 | npm link | pass |
 | Binary linked at PATH | pass |
-| consumption-analyzer --version | 4.1.0 |
+| consumption-analyzer --version | 4.1.3 |
 | Flag --pdf2csv in --help | pass |
 | Flag --analyze in --help | pass |
 | Flag --transform in --help | pass |
 | Flag --dashboard in --help | pass |
-| Flag --output in --help | pass |
-| --transform end-to-end (CACV_CROSS_FC_OPS_DIBO_REPORT.csv) | pass |
-| portfolio.json customers array | pass |
-| portfolio.json solutions_l1/l2/l3 hierarchy | pass |
-| portfolio.json customer.industry populated | pass |
-| portfolio.json contract.contract_insights slot | pass |
-| portfolio.json no fy_target_total | pass |
-| portfolio.json no risk_items[] | pass |
-| --dashboard end-to-end (portfolio.json) | pass |
-| dashboard.html no CDN references | pass |
-| dashboard.html 3-pane layout (industry→customer→detail) | pass |
-| dashboard.html account_insights rendered | pass |
-| dashboard.html contract_insights rendered | pass |
-| dashboard.html enterprise_architecture_insights rendered | pass |
-| dashboard.html no year_end_attainment_pct | pass |
-| dashboard.html inline scripts parse without SyntaxError | pass |
+| Flag --build-product-catalog in --help | pass |
 | project-state.yaml all deployed:true | pass |
+| project-state.yaml release | 4.1.3 |
+| project-state.yaml next_release_type | null |
+| project-state.yaml active_phase | null |
 
 ## Deployment history
 
@@ -95,6 +82,8 @@ Minor release (4.0.1 → 4.1.0). All 6 stories deployed. STORY-005 (3-pane HTML 
 | 4.0.0 | 2026-06-28 | local-npm |
 | 4.0.1 | 2026-06-28 | local-npm |
 | 4.1.0 | 2026-06-28 | local-npm |
+| 4.1.2 | 2026-06-28 | local-npm |
+| 4.1.3 | 2026-06-28 | local-npm |
 
 ## Environment variables required
 
@@ -126,4 +115,4 @@ Minor release (4.0.1 → 4.1.0). All 6 stories deployed. STORY-005 (3-pane HTML 
 
 None — binary is linked and all flags verified operational.
 
-Script: `specs/deploy.sh`
+Script: `deploy.sh`

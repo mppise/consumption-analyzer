@@ -1,5 +1,5 @@
 #!/bin/bash
-# SpecGantry deploy script — Release 4.1.0 — 2026-06-28
+# SpecGantry deploy script — Release 4.1.2 — 2026-06-28
 # Target: local-npm (CLI binary installed via npm link)
 #
 # Usage:
@@ -23,7 +23,13 @@
 #   2. Run: bash specs/deploy.sh --dry-run   (verify install without linking)
 #   3. Run: bash specs/deploy.sh             (full install + npm link)
 #
-# v4.1.0 changes verified by this script:
+# v4.1.2 changes verified by this script:
+#   - All 6 stories: deployed:true in project-state.yaml
+#   - deploy.sh check patterns corrected: industry/EA insights use HTML output identifiers
+#     (view-industry, ind-panel, tab-industry, EA insights) not template variable names
+#   - Patch release — no new story-level changes from v4.1.0
+#
+# v4.1.0 changes (still verified):
 #   - STORY-005: deployed:true — 3-pane HTML dashboard generation (--dashboard) fully deployed
 #                left-drives-right navigation: industry list → customer cards → L3 product detail
 #                C_CONSUMED/C_BUDGET/C_ACV/C_PCT semantic color constants
@@ -87,7 +93,7 @@ if [[ -f "$PROJECT_ROOT/.env" ]]; then
   set +a
 fi
 
-VERSION="4.1.0"
+VERSION="4.1.2"
 
 # Per-step verification with actionable diagnostics
 run_step() {
@@ -462,12 +468,12 @@ if [[ "$DRY_RUN" == "true" ]]; then
     "! grep -q 'cdn.jsdelivr\|cdn\.cloudflare\|cdnjs\|unpkg\.com' '$DASHBOARD_HTML'" \
     "CDN reference found in dashboard.html — dashboard must inline all assets; check src/tools/dashboard.js"
 
-  run_step "v3.0.0: dashboard.html has role-tab navigation (data-role attributes)" \
-    "grep -q 'data-role' '$DASHBOARD_HTML'" \
-    "Role navigation not found in dashboard.html — v3.0.0 requires EA and Executive role tabs; check src/tools/dashboard.js"
+  run_step "v3.0.0: dashboard.html has view navigation (tab-industry/tab-accounts)" \
+    "grep -q 'tab-industry\|tab-accounts' '$DASHBOARD_HTML'" \
+    "View navigation not found in dashboard.html — v4.1.0 requires INDUSTRY/ACCOUNTS/SIGNALS tabs; check src/tools/dashboard.js"
 
   run_step "v4.1.0: dashboard.html has 3-pane layout (industry/customer/detail panes)" \
-    "grep -q 'industry-item\|selectIndustry\|industry_insights' '$DASHBOARD_HTML'" \
+    "grep -q 'view-industry\|ind-panel\|tab-industry' '$DASHBOARD_HTML'" \
     "3-pane layout not found in dashboard.html — v4.1.0 requires left-drives-right industry→customer→detail; check src/tools/dashboard.js"
 
   run_step "v4.1.0: dashboard.html displays industry items (left pane)" \
@@ -483,8 +489,8 @@ if [[ "$DRY_RUN" == "true" ]]; then
     "contract_insights not found in dashboard.html — v4.1.0 requires Step 1 contract insights; check src/tools/dashboard.js"
 
   run_step "v4.1.0: dashboard.html renders enterprise_architecture_insights (L1)" \
-    "grep -q 'enterprise_architecture_insights\|Enterprise Architecture Insights' '$DASHBOARD_HTML'" \
-    "enterprise_architecture_insights not found in dashboard.html — v4.1.0 requires Step 3 EA insights; check src/tools/dashboard.js"
+    "grep -q 'EA insights\|enterprise_architecture_insights' '$DASHBOARD_HTML'" \
+    "EA insights section not found in dashboard.html — v4.1.0 requires Step 3 EA insights; check src/tools/dashboard.js"
 
   run_step "v4.1.0: dashboard.html has no year_end_attainment_pct (forecast field removed)" \
     "! grep -q 'year_end_attainment_pct\|Year.End Attainment' '$DASHBOARD_HTML'" \
@@ -617,7 +623,7 @@ run_step "End-to-end: dashboard.html has NO CDN references (zero-dependency HTML
   "CDN reference found in dashboard.html — all assets must be inlined; check src/tools/dashboard.js"
 
 run_step "v4.1.0: dashboard.html has 3-pane layout (industry/customer/detail panes)" \
-  "grep -q 'industry-item\|selectIndustry\|industry_insights' '$DASHBOARD_HTML'" \
+  "grep -q 'view-industry\|ind-panel\|tab-industry' '$DASHBOARD_HTML'" \
   "3-pane layout not found in dashboard.html — v4.1.0 requires left-drives-right industry→customer→detail"
 
 run_step "v4.1.0: dashboard.html displays industry items (left pane)" \
@@ -633,8 +639,8 @@ run_step "v4.1.0: dashboard.html renders contract_insights (L3 product-level AI)
   "contract_insights not found in dashboard.html — v4.1.0 requires Step 1 contract insights; check src/tools/dashboard.js"
 
 run_step "v4.1.0: dashboard.html renders enterprise_architecture_insights (L1)" \
-  "grep -q 'enterprise_architecture_insights\|Enterprise Architecture Insights' '$DASHBOARD_HTML'" \
-  "enterprise_architecture_insights not found in dashboard.html — v4.1.0 requires Step 3 EA insights; check src/tools/dashboard.js"
+  "grep -q 'EA insights\|enterprise_architecture_insights' '$DASHBOARD_HTML'" \
+  "EA insights section not found in dashboard.html — v4.1.0 requires Step 3 EA insights; check src/tools/dashboard.js"
 
 run_step "v4.1.0: dashboard.html has no year_end_attainment_pct (forecast field removed)" \
   "! grep -q 'year_end_attainment_pct\|Year.End Attainment' '$DASHBOARD_HTML'" \

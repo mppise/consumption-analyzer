@@ -147,18 +147,13 @@ function buildCatalogContext(lprNames, catalog) {
     let caps = ''
     let desc = ''
     if (catalogEntry) {
-      const filteredCaps = (catalogEntry.capabilities ?? []).filter(c =>
-        c.length > 8 && c.length < 90 &&
-        !/add-on|all plans|what is|early-bird|available for|get started|details/i.test(c)
-      ).slice(0, 4)
-      if (filteredCaps.length) caps = `  Capabilities: ${filteredCaps.join(' | ')}`
-      const tagline = catalogEntry.tagline
-      if (tagline && !/early-bird|available for some|get started/i.test(tagline) && tagline.length > 20) {
-        desc = tagline.slice(0, 180)
-      }
+      const filteredCaps = (catalogEntry.capabilities ?? []).filter(c => c.length >= 10 && c.length <= 100).slice(0, 5)
+      if (filteredCaps.length) caps = `  Capabilities:\n${filteredCaps.map(c => `  - ${c}`).join('\n')}`
+      const d = catalogEntry.description ?? ''
+      if (d.length >= 40) desc = d.slice(0, 250)
     }
 
-    lines.push([`### ${lprName}`, desc ? `Description: ${desc}` : null, caps || null].filter(Boolean).join('\n'))
+    lines.push([`### ${lprName}`, desc ? `Architectural role: ${desc}` : '(no catalog entry — reason from product name)', caps || null].filter(Boolean).join('\n'))
   }
 
   return lines.join('\n\n')
@@ -346,7 +341,6 @@ async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
   const results = await Promise.allSettled(tasks.map(async ({ customer, l3 }) => {
     const contractBlock = l3.contract ?? {}
     const contractDataText = formatContractData(contractBlock)
-    const catalogContext = buildCatalogContext([l3.lpr_name].filter(Boolean), catalog)
 
     const prompt = renderPrompt('step1-contract.md', {
       lpr_name:          l3.lpr_name ?? '(unknown)',
