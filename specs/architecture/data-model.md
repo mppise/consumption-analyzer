@@ -164,8 +164,8 @@ Fields:
 - ytd_annual_contract_value: number, required — ACV actuals figure YTD for this month
 - ytd_budget_contract_value: number, required — budgeted YTD contract value for this month
 - ytd_consumed_contract_value: number, required — actual YTD consumption for this month
-- projected_annual_budget_contract_value: number, required — sum of ytd_budget_contract_value across ALL 12 months of this L3+year; stamped on every month record at transform time
-- projected_annual_consumed_contract_value: number, required — sum of ytd_consumed_contract_value across ALL 12 months of this L3+year; stamped on every month record at transform time
+- projected_annual_budget_contract_value: number, required — sum of ytd_budget_contract_value across ALL 12 months of this L3+year; stamped on every month record at transform time (future months carry real budget values so summing all 12 is correct)
+- projected_annual_consumed_contract_value: number, required — extrapolated run-rate: (ytd_consumed_contract_value_at_reporting_month / months_elapsed) * 12; months_elapsed derived from portfolio.reporting_month (last 2 digits of YYYYMM); stamped on every month record at transform time; buildL1Hierarchy() receives reportingMonth as its second argument to perform this computation
 - projected_annual_acv_gap: number, required — ytd_annual_contract_value − projected_annual_consumed_contract_value
 - projected_annual_budget_gap: number, required — projected_annual_budget_contract_value − projected_annual_consumed_contract_value
 - projected_annual_budget_attainment: number, required — (projected_annual_consumed / projected_annual_budget) × 100; 0 if budget = 0

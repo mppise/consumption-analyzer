@@ -1,4 +1,4 @@
-# Deploy Artifact — Release 4.4.0
+# Deploy Artifact — Release 4.5.0
 **Date:** 2026-06-29  **Status:** ready
 **Platform:** local-npm (Node.js CLI, no cloud infrastructure)
 
@@ -8,7 +8,7 @@
 |-------|-------|----------|---------------|--------------|
 | STORY-001 | CLI scaffold and entry point | node | npm install && npm link | prior release |
 | STORY-002 | PDF to CSV conversion (--pdf2csv) | node | npm install | prior release |
-| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | npm install | minor |
+| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | npm install | prior release |
 | STORY-004 | CSV to JSON transformation with new portfolio schema (--transform) | node | npm install | minor |
 | STORY-005 | 3-pane HTML dashboard generation (--dashboard) | node | npm install | minor |
 | STORY-006 | Industry vertical inference | node | npm install | prior release |
@@ -26,7 +26,7 @@
 | File | Size | Purpose |
 |------|------|---------|
 | data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio.json | regenerated | Structured portfolio data (--transform output) |
-| data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio-dashboard.html | 1.5 MB | Self-contained HTML dashboard (--dashboard output) |
+| data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio-dashboard.html | 1,077,080 bytes | Self-contained HTML dashboard (--dashboard output) |
 
 ## Checks
 
@@ -36,11 +36,11 @@
 | Gate: build-report overall_status | pass (all 6 stories) |
 | `node src/cli.js --help` | pass — CLI loads, all flags listed |
 | `--transform data/CACV_CROSS_FC_OPS_DIBO_REPORT.csv` | pass — 1686 rows, 8 customers, 5 industry groups, 147 L3 products |
-| `--dashboard data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio.json` | pass — 1,070,681 bytes written |
+| `--dashboard data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio.json` | pass — 1,077,080 bytes written |
 | Dependency order resolved | pass (topological: 001->002, 001->003, 001->004->005, 001->004->006) |
 | Platform target | local-npm |
 | project-state.yaml all deployed:true | pass |
-| project-state.yaml release | 4.4.0 |
+| project-state.yaml release | 4.5.0 |
 | project-state.yaml next_release_type | null |
 
 ## Deployment history
@@ -71,6 +71,7 @@
 | 4.2.0 | 2026-06-29 | local-npm |
 | 4.3.0 | 2026-06-29 | local-npm |
 | 4.4.0 | 2026-06-29 | local-npm |
+| 4.5.0 | 2026-06-29 | local-npm |
 
 ## Environment variables required
 

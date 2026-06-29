@@ -39,6 +39,7 @@ const BOOTSTRAP_JS_PATH   = path.join(NM, 'bootstrap', 'dist', 'js', 'bootstrap.
 const BOOTSTRAP_ICONS_CSS = path.join(NM, 'bootstrap-icons', 'font', 'bootstrap-icons.min.css')
 const BOOTSTRAP_ICONS_WOFF2 = path.join(NM, 'bootstrap-icons', 'font', 'fonts', 'bootstrap-icons.woff2')
 const CHARTJS_PATH        = path.join(NM, 'chart.js', 'dist', 'chart.umd.js')
+const MERMAID_PATH        = path.join(NM, 'mermaid', 'dist', 'mermaid.min.js')
 const NUNITO_400 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-400-normal.woff2')
 const NUNITO_600 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-600-normal.woff2')
 const NUNITO_700 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-700-normal.woff2')
@@ -194,6 +195,16 @@ function l3AnnualTotals(l3) {
     annualAcv      += monthsElapsed > 0 ? Math.round(ytdAcv / monthsElapsed * 12 * 100) / 100 : 0
     annualBudget   += Math.max(...months.map(mo => mo.projected_annual_budget_contract_value      ?? 0))
     annualConsumed += Math.max(...months.map(mo => mo.projected_annual_consumed_contract_value    ?? 0))
+  }
+  return { annualAcv, annualBudget, annualConsumed }
+}
+
+// @contract input: l2 node → output: { annualAcv, annualBudget, annualConsumed }
+function l2AnnualTotals(l2) {
+  let annualAcv = 0, annualBudget = 0, annualConsumed = 0
+  for (const l3 of l2.solutions_l3 ?? []) {
+    const t = l3AnnualTotals(l3)
+    annualAcv += t.annualAcv; annualBudget += t.annualBudget; annualConsumed += t.annualConsumed
   }
   return { annualAcv, annualBudget, annualConsumed }
 }
@@ -496,13 +507,17 @@ function buildDrawerData(customers, reportingMonth) {
     ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
       const l1Key = `c${custIdx}-l1${l1Idx}`
       const l1t = l1Totals(l1)
+      const l1Ann = l1AnnualTotals(l1)
       const l1Att = attPct(l1t.budget, l1t.consumed)
 
       // L1 drawer data: L2 tiles (metrics only — SA insights now live at L1, shown in Accounts view)
       const l2Tiles = (l1.solutions_l2 ?? []).map((l2, l2Idx) => {
         const t = l2Totals(l2)
+        const ann = l2AnnualTotals(l2)
         const a = attPct(t.budget, t.consumed)
-        return { name: l2.name, attainment: a, budget: t.budget, consumed: t.consumed, acv: t.acv, l2Idx, saInsights: [] }
+        return { name: l2.name, attainment: a, budget: t.budget, consumed: t.consumed, acv: t.acv,
+                 annualConsumed: ann.annualConsumed, annualBudget: ann.annualBudget, annualAcv: ann.annualAcv,
+                 l2Idx, saInsights: [] }
       })
 
       drawerData[l1Key] = {
@@ -511,6 +526,9 @@ function buildDrawerData(customers, reportingMonth) {
         l1Attainment: l1Att,
         l1Budget: l1t.budget,
         l1Consumed: l1t.consumed,
+        l1AnnualConsumed: l1Ann.annualConsumed,
+        l1AnnualBudget: l1Ann.annualBudget,
+        l1AnnualAcv: l1Ann.annualAcv,
         eaInsights: cust.enterprise_architecture_insights ?? [],
         l2Tiles,
       }
@@ -520,6 +538,7 @@ function buildDrawerData(customers, reportingMonth) {
 
         const l3List = (l2.solutions_l3 ?? []).map((l3, l3Idx) => {
           const t = l3Totals(l3)
+          const ann = l3AnnualTotals(l3)
           const att = attPct(t.budget, t.consumed)
 
           // Chart data filtered to <= reportingMonth
@@ -551,6 +570,9 @@ function buildDrawerData(customers, reportingMonth) {
             budget: t.budget,
             consumed: t.consumed,
             acv: t.acv,
+            annualConsumed: ann.annualConsumed,
+            annualBudget: ann.annualBudget,
+            annualAcv: ann.annualAcv,
             contractInsights: l3.contract?.contract_insights ?? [],
           }
         })
@@ -626,7 +648,7 @@ function buildL2BarData(customers) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // @contract input: portfolio object + asset strings → output: complete HTML string
-function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss = '') {
+function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss = '', mermaidJs = '') {
   const customers      = portfolio.customers ?? []
   const indInsights    = portfolio.industry_insights ?? []
   const reportingMonth = portfolio.reporting_month ? parseInt(String(portfolio.reporting_month), 10) : null
@@ -732,7 +754,7 @@ ${industryHtml}
 
 <script>${chartJs}</script>
 <script>${bootstrapJs}</script>
-${hasMermaidDiagram ? `<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+${mermaidJs ? `<script>${mermaidJs}</script>
 <script>mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'antiscript',fontFamily:"'Nunito Sans',sans-serif"});</script>` : ''}
 <script>
 // ── Embedded data ─────────────────────────────────────────────────────────────
@@ -1006,14 +1028,20 @@ function openL1(custIdx, l1Idx) {
       + '<div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">' + (attPctVal != null ? attPctVal.toFixed(1) + '%' : '—') + '</div>'
       + '<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Budget Attainment</div>'
       + '<div style="margin-bottom:8px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>' + fmtUsd(tile.budget) + '</span></div>'
-      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>'
-      + '</div>'
-      + '<div style="margin-bottom:4px">'
       + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>Consumed</span><span>' + fmtUsd(tile.consumed) + '</span></div>'
       + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:' + consumedBarW + '%"></div></div>'
       + '</div>'
-      + '<div style="font-size:12px;color:#94a3b8;margin-top:6px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
+      + '<div style="margin-bottom:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>' + fmtUsd(tile.budget) + '</span></div>'
+      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;margin-top:6px;margin-bottom:8px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
+      + '<div style="padding-top:8px;border-top:1px solid #e2e8f0">'
+      + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Projected</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#7c3aed;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(tile.annualConsumed) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(tile.annualBudget) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af"><span>ACV</span><span>' + fmtUsd(tile.annualAcv) + '</span></div>'
+      + '</div>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1069,7 +1097,13 @@ function openL2(custIdx, l1Idx, l2Idx) {
       + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.budget) + '</span></div>'
       + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#22c55e;width:100%"></div></div>'
       + '</div>'
-      + '<div style="font-size:11px;color:#94a3b8">ACV: ' + fmtUsd(l3.acv) + '</div>'
+      + '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px">ACV: ' + fmtUsd(l3.acv) + '</div>'
+      + '<div style="padding-top:6px;border-top:1px solid #e2e8f0">'
+      + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Projected</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#7c3aed;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.annualConsumed) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.annualBudget) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af"><span>ACV</span><span>' + fmtUsd(l3.annualAcv) + '</span></div>'
+      + '</div>'
       + '</div>';
   }).join('');
 
@@ -1195,6 +1229,14 @@ export async function run(args, options) {
     process.stderr.write(`warn: Chart.js not found\n`)
   }
 
+  let mermaidJs = ''
+  try {
+    mermaidJs = readFileSync(MERMAID_PATH, 'utf8')
+    process.stderr.write(`warn: Mermaid loaded (${Buffer.byteLength(mermaidJs, 'utf8')} bytes)\n`)
+  } catch (e) {
+    process.stderr.write(`warn: Mermaid not found — diagrams will not render\n`)
+  }
+
   let nunitoCss = ''
   try {
     nunitoCss = loadNunitoCss()
@@ -1204,7 +1246,7 @@ export async function run(args, options) {
   }
 
   process.stderr.write(`warn: generating HTML dashboard…\n`)
-  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss)
+  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss, mermaidJs)
 
   try {
     writeFileSync(outputPath, html, 'utf8')
