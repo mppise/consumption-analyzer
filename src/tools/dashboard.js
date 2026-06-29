@@ -30,6 +30,7 @@ const C_ACV      = '#9ca3af'
 const C_BUDGET   = '#16a34a'
 const C_CONSUMED = '#ea580c'
 const C_PCT      = '#1d4ed8'
+const C_PROJ_CONSUMED = '#7c3aed'
 
 // ── Asset paths (node_modules) ────────────────────────────────────────────────
 const NM = path.join(__dirname, '..', '..', 'node_modules')
@@ -128,9 +129,7 @@ function isYtd(year, monthAbbr) {
 }
 
 // ── Aggregation helpers ───────────────────────────────────────────────────────
-// ytd_annual_contract_value is constant across months for a given L3+year (it's the
-// contracted ceiling, not a monthly accrual). Use max-per-L3-per-year to avoid
-// multiplying by the number of reported months.
+// ytd_annual_contract_value is a monthly ACV portion — sum across YTD months per L3+year.
 function l3Totals(l3) {
   let acv = 0, budget = 0, consumed = 0
   const c = l3.contract ?? {}
@@ -138,7 +137,7 @@ function l3Totals(l3) {
     if (year === 'contract_insights') continue
     const ytdMonths = (c[year] ?? []).filter(mo => isYtd(year, mo.month))
     if (!ytdMonths.length) continue
-    acv      += Math.max(...ytdMonths.map(mo => mo.ytd_annual_contract_value   ?? 0))
+    acv      += ytdMonths.reduce((s, mo) => s + (mo.ytd_annual_contract_value   ?? 0), 0)
     budget   += ytdMonths.reduce((s, mo) => s + (mo.ytd_budget_contract_value   ?? 0), 0)
     consumed += ytdMonths.reduce((s, mo) => s + (mo.ytd_consumed_contract_value ?? 0), 0)
   }
@@ -176,21 +175,23 @@ function attPct(budget, consumed) {
   return budget > 0 ? (consumed / budget * 100) : null
 }
 
-// ── Full-Year aggregation from L3 projected_annual_* fields ──────────────────
-// Full-Year ACV:      max(ytd_annual_contract_value) per L3 per year (constant field — avoid
-//                     multi-month multiplication), summed across all L3s in scope.
-// Full-Year Budget:   max(projected_annual_budget_contract_value) per L3 per year (same value
-//                     stamped on every month — max is safe and picks the first non-zero).
-// Full-Year Consumed: same pattern using projected_annual_consumed_contract_value.
+// ── Projected aggregation from L3 projected_annual_* fields ──────────────────
+// Projected ACV:      extrapolate YTD ACV to full year: (ytdAcv / monthsElapsed) * 12
+//                     monthsElapsed derived from _reportingMonth (YYYYMM → last 2 digits)
+// Projected Budget:   max(projected_annual_budget_contract_value) per L3 per year
+// Projected Consumed: max(projected_annual_consumed_contract_value) per L3 per year
 // @contract input: l3 node → output: { annualAcv, annualBudget, annualConsumed }
 function l3AnnualTotals(l3) {
   let annualAcv = 0, annualBudget = 0, annualConsumed = 0
+  const monthsElapsed = _reportingMonth ? (_reportingMonth % 100) : 12
   const c = l3.contract ?? {}
   for (const year of Object.keys(c)) {
     if (year === 'contract_insights') continue
     const months = (c[year] ?? [])
     if (!months.length) continue
-    annualAcv      += Math.max(...months.map(mo => mo.ytd_annual_contract_value                  ?? 0))
+    const ytdMonths = months.filter(mo => isYtd(year, mo.month))
+    const ytdAcv = ytdMonths.reduce((s, mo) => s + (mo.ytd_annual_contract_value ?? 0), 0)
+    annualAcv      += monthsElapsed > 0 ? Math.round(ytdAcv / monthsElapsed * 12 * 100) / 100 : 0
     annualBudget   += Math.max(...months.map(mo => mo.projected_annual_budget_contract_value      ?? 0))
     annualConsumed += Math.max(...months.map(mo => mo.projected_annual_consumed_contract_value    ?? 0))
   }
@@ -304,15 +305,15 @@ function buildAccountsView(customers) {
     <div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">${la != null ? pct(la) : '—'}</div>
     <div style="font-size:11px;color:#94a3b8;margin-bottom:14px">YTD Budget Attainment</div>
     <div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>YTD Budget</span><span>${usd(lt.budget)}</span></div>
-      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>
-    </div>
-    <div style="margin-bottom:4px">
       <div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>YTD Consumed</span><span>${usd(lt.consumed)}</span></div>
       <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${la != null ? Math.min(100, la).toFixed(1) : 0}%"></div></div>
     </div>
+    <div style="margin-bottom:4px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>YTD Budget</span><span>${usd(lt.budget)}</span></div>
+      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>
+    </div>
     <div style="font-size:12px;color:#94a3b8;margin-top:6px">YTD ACV: ${usd(lt.acv)}</div>
-    <div style="font-size:11px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0">Full-Year ACV: <strong style="color:#9ca3af">${usd(l1Annual.annualAcv)}</strong> · Full-Year Budget: <strong style="color:#22c55e">${usd(l1Annual.annualBudget)}</strong></div>
+    <div style="font-size:11px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0">Projected Consumed: <strong style="color:${C_PROJ_CONSUMED}">${usd(l1Annual.annualConsumed)}</strong> · Projected Budget: <strong style="color:#22c55e">${usd(l1Annual.annualBudget)}</strong> · Projected ACV: <strong style="color:#9ca3af">${usd(l1Annual.annualAcv)}</strong></div>
   </div>
   <!-- Card body: Solution insights -->
   <div style="padding:12px 14px;background:white">
@@ -356,12 +357,13 @@ function buildAccountsView(customers) {
     <!-- Donut: 30% width -->
     <div style="flex:0 0 30%;text-align:center">
       <canvas id="acct-bar-${custIdx}" width="180" height="180" style="display:block;margin:0 auto"></canvas>
-      <div style="font-size:13px;color:#22c55e;margin-top:6px">YTD Budget: ${usd(t.budget)}</div>
-      <div style="font-size:13px;color:#fb923c">YTD Consumed: ${usd(t.consumed)}</div>
+      <div style="font-size:13px;color:#fb923c;margin-top:6px">YTD Consumed: ${usd(t.consumed)}</div>
+      <div style="font-size:13px;color:#22c55e">YTD Budget: ${usd(t.budget)}</div>
       <div style="font-size:13px;color:#9ca3af">YTD ACV: ${usd(t.acv)}</div>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
-        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Full-Year ACV: <strong style="color:#9ca3af">${usd(annual.annualAcv)}</strong></div>
-        <div style="font-size:11px;color:#64748b">Full-Year Budget: <strong style="color:#22c55e">${usd(annual.annualBudget)}</strong></div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Projected Consumed: <strong style="color:${C_PROJ_CONSUMED}">${usd(annual.annualConsumed)}</strong></div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Projected Budget: <strong style="color:#22c55e">${usd(annual.annualBudget)}</strong></div>
+        <div style="font-size:11px;color:#64748b">Projected ACV: <strong style="color:#9ca3af">${usd(annual.annualAcv)}</strong></div>
       </div>
     </div>
     <!-- EA insights: 70% width -->
@@ -406,12 +408,12 @@ function buildIndustryView(indInsights, customers) {
   const panels = indInsights.map((ind, indIdx) => {
     const indCustomers = customers.filter(c => c.industry === ind.industry)
     let totalAcv = 0, totalBudget = 0, totalConsumed = 0
-    let totalAnnualAcv = 0, totalAnnualBudget = 0
+    let totalAnnualAcv = 0, totalAnnualBudget = 0, totalAnnualConsumed = 0
     for (const c of indCustomers) {
       const t = customerTotals(c)
       totalAcv += t.acv; totalBudget += t.budget; totalConsumed += t.consumed
       const ann = customerAnnualTotals(c)
-      totalAnnualAcv += ann.annualAcv; totalAnnualBudget += ann.annualBudget
+      totalAnnualAcv += ann.annualAcv; totalAnnualBudget += ann.annualBudget; totalAnnualConsumed += ann.annualConsumed
     }
     const att = attPct(totalBudget, totalConsumed)
 
@@ -428,24 +430,28 @@ function buildIndustryView(indInsights, customers) {
   <div style="font-size:13px;color:#64748b;margin-bottom:8px">${indCustomers.length} customer${indCustomers.length !== 1 ? 's' : ''}</div>
   <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:32px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0">
     <div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD ACV</div>
-      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAcv)}</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Consumed</div>
+      <div style="font-size:16px;font-weight:700;color:#fb923c">${usd(totalConsumed)}</div>
     </div>
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Budget</div>
       <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalBudget)}</div>
     </div>
     <div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Consumed</div>
-      <div style="font-size:16px;font-weight:700;color:#fb923c">${usd(totalConsumed)}</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD ACV</div>
+      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAcv)}</div>
     </div>
     <div style="border-left:1px solid #e2e8f0;padding-left:32px">
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Full-Year ACV</div>
-      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAnnualAcv)}</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected Consumed</div>
+      <div style="font-size:16px;font-weight:700;color:${C_PROJ_CONSUMED}">${usd(totalAnnualConsumed)}</div>
     </div>
     <div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Full-Year Budget</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected Budget</div>
       <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalAnnualBudget)}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected ACV</div>
+      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAnnualAcv)}</div>
     </div>
   </div>
   <div style="margin-bottom:32px">
@@ -458,11 +464,12 @@ function buildIndustryView(indInsights, customers) {
         return `<div style="text-align:center;padding:0 12px">
           <canvas id="ind-donut-${indIdx}-${i}" width="160" height="160" style="display:block;margin:0 auto"></canvas>
           <div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:8px">${esc(c.customer)}</div>
-          <div style="font-size:12px;color:#9ca3af">YTD ACV: ${usd(ct.acv)}</div>
-          <div style="font-size:12px;color:#22c55e">YTD Budget: ${usd(ct.budget)}</div>
           <div style="font-size:12px;color:#fb923c">YTD Consumed: ${usd(ct.consumed)}</div>
-          <div style="font-size:11px;color:#9ca3af;margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0">Full-Year ACV: ${usd(cann.annualAcv)}</div>
-          <div style="font-size:11px;color:#22c55e">Full-Year Budget: ${usd(cann.annualBudget)}</div>
+          <div style="font-size:12px;color:#22c55e">YTD Budget: ${usd(ct.budget)}</div>
+          <div style="font-size:12px;color:#9ca3af">YTD ACV: ${usd(ct.acv)}</div>
+          <div style="font-size:11px;color:${C_PROJ_CONSUMED};margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0">Projected Consumed: ${usd(cann.annualConsumed)}</div>
+          <div style="font-size:11px;color:#22c55e">Projected Budget: ${usd(cann.annualBudget)}</div>
+          <div style="font-size:11px;color:#9ca3af">Projected ACV: ${usd(cann.annualAcv)}</div>
         </div>`
       }).join('')}
     </div>
@@ -638,9 +645,12 @@ function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nuni
 
   // Portfolio totals
   let portAcv = 0, portBudget = 0, portConsumed = 0
+  let portProjAcv = 0, portProjBudget = 0, portProjConsumed = 0
   for (const c of customers) {
     const t = customerTotals(c)
     portAcv += t.acv; portBudget += t.budget; portConsumed += t.consumed
+    const ann = customerAnnualTotals(c)
+    portProjAcv += ann.annualAcv; portProjBudget += ann.annualBudget; portProjConsumed += ann.annualConsumed
   }
   const portAtt = attPct(portBudget, portConsumed)
   const portAttColor = healthColor(portAtt)
@@ -697,9 +707,13 @@ ${nunitoCss ? `<style>${nunitoCss}</style>` : ''}
     <button id="tab-accounts" onclick="showView('accounts')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid transparent;color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">ACCOUNTS</button>
   </div>
   <div style="display:flex;gap:16px;font-size:11px">
-    <span style="color:#ea580c">Consumed <strong style="color:#fb923c">${esc(usd(portConsumed))}</strong></span>
-    <span style="color:#16a34a">Budget <strong style="color:#22c55e">${esc(usd(portBudget))}</strong></span>
-    <span style="color:#9ca3af">ACV <strong style="color:#9ca3af">${esc(usd(portAcv))}</strong></span>
+    <span style="color:#64748b">YTD Consumed <strong style="color:#fb923c">${esc(usd(portConsumed))}</strong></span>
+    <span style="color:#64748b">YTD Budget <strong style="color:#22c55e">${esc(usd(portBudget))}</strong></span>
+    <span style="color:#64748b">YTD ACV <strong style="color:#9ca3af">${esc(usd(portAcv))}</strong></span>
+    <span style="color:#cbd5e1">|</span>
+    <span style="color:#64748b">Proj Consumed <strong style="color:${C_PROJ_CONSUMED}">${esc(usd(portProjConsumed))}</strong></span>
+    <span style="color:#64748b">Proj Budget <strong style="color:#22c55e">${esc(usd(portProjBudget))}</strong></span>
+    <span style="color:#64748b">Proj ACV <strong style="color:#9ca3af">${esc(usd(portProjAcv))}</strong></span>
   </div>
 </div>
 
@@ -947,8 +961,8 @@ function renderL3Chart(data) {
     data: {
       labels: data.labels,
       datasets: [
-        { type: 'line', label: 'Budget',      data: data.budget,     borderColor: '#16a34a', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#16a34a' },
         { type: 'line', label: 'Consumed',    data: data.consumed,   borderColor: '#ea580c', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#ea580c' },
+        { type: 'line', label: 'Budget',      data: data.budget,     borderColor: '#16a34a', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#16a34a' },
         { type: 'bar',  label: 'Attainment%', data: data.attainment, backgroundColor: 'rgba(167,139,250,0.25)', yAxisID: 'y2' }
       ]
     },
@@ -1048,12 +1062,12 @@ function openL2(custIdx, l1Idx, l2Idx) {
       + '<div style="font-size:18px;font-weight:800;color:#60a5fa;line-height:1">' + (l3Att != null ? l3Att.toFixed(1) + '%' : '—') + '</div>'
       + '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Budget Attainment</div>'
       + '<div style="margin-bottom:5px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.budget) + '</span></div>'
-      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#22c55e;width:100%"></div></div>'
-      + '</div>'
-      + '<div style="margin-bottom:4px">'
       + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#fb923c;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.consumed) + '</span></div>'
       + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#fb923c;width:' + l3BarW + '%"></div></div>'
+      + '</div>'
+      + '<div style="margin-bottom:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.budget) + '</span></div>'
+      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#22c55e;width:100%"></div></div>'
       + '</div>'
       + '<div style="font-size:11px;color:#94a3b8">ACV: ' + fmtUsd(l3.acv) + '</div>'
       + '</div>';

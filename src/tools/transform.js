@@ -323,7 +323,8 @@ function computeVariances(ytd_annual_contract_value, ytd_budget_contract_value, 
  * @returns {object[]} solutions_l1[] conforming to contract:solutions-l1-shape
  */
 // @contract input: cacv-json-record[] for one customer → output: solutions_l1[] with nested hierarchy and contract blocks
-function buildL1Hierarchy(records) {
+function buildL1Hierarchy(records, reportingMonth) {
+  const monthsElapsed = reportingMonth ? (parseInt(String(reportingMonth).slice(4, 6), 10) || 12) : 12
   // Group: l1Name → l2Name → productKey → { meta, monthMap }
   // productKey = `${product_id}|${sub_solution_area}` to handle same LPR in multiple L2s
   const l1Map = new Map()
@@ -385,10 +386,13 @@ function buildL1Hierarchy(records) {
         for (const [year, monthEntries] of yearMap) {
           monthEntries.sort((a, b) => a.yyyymm.localeCompare(b.yyyymm))
 
-          // Projected annual = sum of ALL 12 months of ytd_budget_contract_value / ytd_consumed_contract_value
-          // (future months have 0 values, so summing all 12 gives the full-year projection)
+          // Projected annual budget = sum of ALL 12 months (future months have real planned values)
+          // Projected annual consumed = extrapolate YTD consumed: (ytdConsumed / monthsElapsed) * 12
           const projected_annual_budget_contract_value = intSum(monthEntries.map(e => e.budget_contract_value))
-          const projected_annual_consumed_contract_value = intSum(monthEntries.map(e => e.consumed_contract_value))
+          const ytdConsumed = intSum(monthEntries.filter(e => parseInt(e.yyyymm, 10) <= parseInt(reportingMonth ?? '999912', 10)).map(e => e.consumed_contract_value))
+          const projected_annual_consumed_contract_value = monthsElapsed > 0
+            ? Math.round(ytdConsumed / monthsElapsed * 12 * 100) / 100
+            : 0
 
           contractBlock[year] = monthEntries.map(entry => {
             const { yyyymm, budget_contract_value, consumed_contract_value, annual_contract_value } = entry
@@ -656,7 +660,7 @@ export async function run(args, options) {
     // Sort records by month ascending before building hierarchy
     cg.records.sort((a, b) => a.month.localeCompare(b.month))
 
-    const solutions_l1 = buildL1Hierarchy(cg.records)
+    const solutions_l1 = buildL1Hierarchy(cg.records, reportingMonth)
 
     customerBuilds.push({
       customer_id: cg.customer_id,

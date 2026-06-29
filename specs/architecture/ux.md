@@ -70,6 +70,7 @@ Dashboard conventions (generated HTML — 3-pane layout):
   - Empty state: centered text "Select an industry" before selection
   - Each customer card: customer name, industry, account_insights (first paragraph or truncated), aggregated contract values, L1 breakdown (name + budget_attainment per L1) — always expanded, no collapse wrapper
   - EA insights (enterprise_architecture_insights, Step 3) always visible in a Bootstrap card frame beneath each customer card
+  - Enterprise architecture diagram: if `customer.enterprise_architecture_diagram` is a non-empty string, a Mermaid block diagram is rendered directly below EA insights and before the L1 solution areas. If the field is empty or absent the diagram block is omitted entirely. Mermaid.js is conditionally injected into the generated HTML (CDN script + `mermaid.initialize()` block) only when at least one customer in the portfolio has a non-empty diagram field.
   - Selected customer highlighted with Bootstrap active class
   - Clicking an L1 box triggers `selectL1(custIdx, l1Idx)` to populate the right pane
 - Right pane (L3 product detail):
@@ -107,7 +108,7 @@ Dashboard layout template (3-pane single merged view):
                   Each entry: industry name · ACV · budget · consumed · summary (inline collapse)
   [Middle pane] Customer cards for selected industry
                   Empty state: "Select an industry"
-                  Each card: customer name · account_insights (truncated) · aggregated values · L1 breakdown (always expanded) · EA insights (always-visible card frame)
+                  Each card: customer name · account_insights (truncated) · aggregated values · L1 breakdown (always expanded) · EA insights (always-visible card frame) · enterprise_architecture_diagram (Mermaid block, rendered before L1 solution areas; omitted when empty)
   [Right pane]  L3 product detail for selected L1 solution area
                   Empty state: "Select an L1 solution area"
                   Grouped by L1 → L2; each L2 has solution_architecture_insights (always-visible card frame)

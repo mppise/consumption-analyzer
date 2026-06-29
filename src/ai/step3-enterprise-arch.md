@@ -40,11 +40,11 @@ Every insight should follow this pattern: **state the architectural fact → fra
 
 ## Output instructions
 
-Identify between 3-4 most relevant distinct insights and 3-4 most relevant action items based on those insights that can help improve solution consumption. Use following guidance to formulate these insights and action items:
+Draft clearly articulating executive summary with insights and action items and then split them into 3 to 4 most relevant distinct insights and action items each. Use following guidance to formulate these insights and action items:
 - Identify cross-L1 architecture patterns, integration dependencies, or strategic risk
 - Lead with the enterprise architecture insight or action
+- Formulate short, easy to follow, and impactful statements
 - Sort in the order of most relevant to least
-- Draft one clearly articulating short statement for each insight and action item.
 
 Return ONLY top 3 insights and top 3 action iteams in a valid JSON array. No markdown, no code fences, no preamble.
 

@@ -1,37 +1,32 @@
-# Deploy Artifact — Release 4.1.3
-**Date:** 2026-06-28  **Status:** deployed
-**Platform:** local-npm (npm install + npm link)
-
-## Release summary
-
-Patch release (4.1.2 -> 4.1.3). All 6 stories deployed. Version bumped in package.json; binary re-linked. No source code changes — maintenance patch release.
+# Deploy Artifact — Release 4.4.0
+**Date:** 2026-06-29  **Status:** ready
+**Platform:** local-npm (Node.js CLI, no cloud infrastructure)
 
 ## Stories in this release
 
 | Story | Title | Language | Build command | Release type |
 |-------|-------|----------|---------------|--------------|
-| STORY-001 | CLI scaffold and entry point | node | npm install && npm link | patch |
-| STORY-002 | PDF to CSV conversion (--pdf2csv) | node | npm install | patch |
-| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | npm install | patch |
-| STORY-004 | CSV to JSON transformation with new portfolio schema (--transform) | node | npm install | patch |
-| STORY-005 | 3-pane HTML dashboard generation (--dashboard) | node | npm install | patch |
-| STORY-006 | Industry vertical inference | node | npm install | patch |
+| STORY-001 | CLI scaffold and entry point | node | npm install && npm link | prior release |
+| STORY-002 | PDF to CSV conversion (--pdf2csv) | node | npm install | prior release |
+| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | npm install | minor |
+| STORY-004 | CSV to JSON transformation with new portfolio schema (--transform) | node | npm install | minor |
+| STORY-005 | 3-pane HTML dashboard generation (--dashboard) | node | npm install | minor |
+| STORY-006 | Industry vertical inference | node | npm install | prior release |
 
 ## Deployment order
-1. STORY-001 — CLI scaffold and entry point (no dependencies)
-2. STORY-002 — PDF to CSV conversion (depends on STORY-001)
-3. STORY-003 — AI-powered analysis (depends on STORY-001)
-4. STORY-004 — CSV to JSON transformation (depends on STORY-001)
-5. STORY-005 — 3-pane HTML dashboard generation (depends on STORY-004)
-6. STORY-006 — Industry vertical inference (depends on STORY-004)
+1. STORY-001 — CLI scaffold and entry point
+2. STORY-002 — PDF to CSV conversion (--pdf2csv)
+3. STORY-003 — AI-powered analysis — 5-step bottom-up pipeline (--analyze)
+4. STORY-004 — CSV to JSON transformation with new portfolio schema (--transform)
+5. STORY-006 — Industry vertical inference
+6. STORY-005 — 3-pane HTML dashboard generation (--dashboard)
 
-## Generated files
+## Generated outputs
 
-| File | Purpose |
-|------|---------|
-| deploy.sh | Deploy script — npm install + npm link + flag verification |
-| package.json | Version stamped to 4.1.3 |
-| specs/deploy-artifact.md | This file |
+| File | Size | Purpose |
+|------|------|---------|
+| data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio.json | regenerated | Structured portfolio data (--transform output) |
+| data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio-dashboard.html | 1.5 MB | Self-contained HTML dashboard (--dashboard output) |
 
 ## Checks
 
@@ -39,25 +34,14 @@ Patch release (4.1.2 -> 4.1.3). All 6 stories deployed. Version bumped in packag
 |-------|--------|
 | Gate: all stories built | pass |
 | Gate: build-report overall_status | pass (all 6 stories) |
-| Gate: architecture.md present with Artifact Index | pass |
-| Gate: deployment.md present with deployment:target | pass |
+| `node src/cli.js --help` | pass — CLI loads, all flags listed |
+| `--transform data/CACV_CROSS_FC_OPS_DIBO_REPORT.csv` | pass — 1686 rows, 8 customers, 5 industry groups, 147 L3 products |
+| `--dashboard data/CACV_CROSS_FC_OPS_DIBO_REPORT/portfolio.json` | pass — 1,070,681 bytes written |
 | Dependency order resolved | pass (topological: 001->002, 001->003, 001->004->005, 001->004->006) |
-| Runtime profiles read from build-report.yaml | pass (all 6 stories) |
 | Platform target | local-npm |
-| Version stamp method | npm version field in package.json -> 4.1.3 |
-| npm install | pass |
-| npm link | pass |
-| Binary linked at PATH | pass |
-| consumption-analyzer --version | 4.1.3 |
-| Flag --pdf2csv in --help | pass |
-| Flag --analyze in --help | pass |
-| Flag --transform in --help | pass |
-| Flag --dashboard in --help | pass |
-| Flag --build-product-catalog in --help | pass |
 | project-state.yaml all deployed:true | pass |
-| project-state.yaml release | 4.1.3 |
+| project-state.yaml release | 4.4.0 |
 | project-state.yaml next_release_type | null |
-| project-state.yaml active_phase | null |
 
 ## Deployment history
 
@@ -84,6 +68,9 @@ Patch release (4.1.2 -> 4.1.3). All 6 stories deployed. Version bumped in packag
 | 4.1.0 | 2026-06-28 | local-npm |
 | 4.1.2 | 2026-06-28 | local-npm |
 | 4.1.3 | 2026-06-28 | local-npm |
+| 4.2.0 | 2026-06-29 | local-npm |
+| 4.3.0 | 2026-06-29 | local-npm |
+| 4.4.0 | 2026-06-29 | local-npm |
 
 ## Environment variables required
 
@@ -108,7 +95,7 @@ Patch release (4.1.2 -> 4.1.3). All 6 stories deployed. Version bumped in packag
 - STORY-002: new-format PDFs (CACV_CROSS_FC_OPS_DIBO_REPORT) do not carry a separate lpr column; logical_product_id will be empty in output CSV — downstream --transform parses LPR code from product name
 - STORY-003: Steps 4-5 run customers/industries sequentially to respect opus model rate limits
 - STORY-004: LPR code parsed from PFHIER_LOGICAL_PRODUCT_DESC column (no standalone logical_product_id in this CSV format)
-- STORY-005: Bootstrap Icons woff2 font embedded as base64 data URI for offline-capable dashboard
+- STORY-005: Bootstrap Icons woff2 font embedded as base64 data URI for offline-capable dashboard; Mermaid.js loaded from CDN when enterprise_architecture_diagram is present
 - STORY-006: inferIndustry() uses AI_MODEL (sonnet) via AIClient — requires AI_API_KEY at runtime; criterion 6 (no AI call) superseded per gap.md
 
 ## Manual steps required
