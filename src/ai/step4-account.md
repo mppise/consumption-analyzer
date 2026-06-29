@@ -43,12 +43,13 @@ Every insight must contain all three elements, woven into one statement.
 
 ## Output instructions
 
-Return exactly 3–4 insight strings. Each must:
+Return between 2-4 most relevant distinct insight strings. Each must:
 - Tie an architectural observation directly to a business or financial consequence
 - Reference a specific dollar amount or percentage to make it concrete
 - Name the specific product, solution area, or platform involved
 - End with or contain a specific ask or recommended action
-- Be one sentence, max 35 words
+- Be one sentence, max 25 words
+- Sorted in the order of most relevant to least
 
 Return ONLY valid JSON array. No markdown, no code fences, no preamble.
 

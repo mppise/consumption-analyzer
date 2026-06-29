@@ -46,11 +46,12 @@ You are synthesising upward from adoption signals to architectural diagnosis. 70
 
 ## Output instructions
 
-Return exactly 3–4 insight strings. Each must:
+Return between 2-4 most relevant distinct insight strings. Each must:
 - Lead with the LoB adoption or architectural diagnosis
 - Name specific products and their functional role
 - Ground at least one insight in a consumption figure
-- Be one sentence, max 30 words
+- Be one sentence, max 25 words
+- Sorted in the order of most relevant to least
 
 Return ONLY valid JSON array. No markdown, no code fences, no preamble.
 

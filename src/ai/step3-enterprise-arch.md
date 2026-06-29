@@ -49,12 +49,12 @@ Every insight should follow this pattern: **state the architectural fact → fra
 
 ## Output instructions
 
-Return exactly 3–4 insight strings. Each must:
+Return between 2-4 most relevant distinct insight strings. Each must:
 - Identify a cross-L2 architectural pattern, integration dependency, or strategic risk
-- Reference the architectural blueprint (what was designed, what is missing)
 - Lead with the enterprise architecture implication or the specific EA action
-- Be one sentence, max 35 words
-- Be 100% architecture focused — no consumption figures
+- Reference the architectural blueprint (what was designed, what is missing)
+- Be one sentence, max 25 words
+- Sorted in the order of most relevant to least
 
 Return ONLY valid JSON array. No markdown, no code fences, no preamble.
 

@@ -48,12 +48,13 @@ You do not need to cite exact dollar figures, but use relative signals: "leading
 
 ## Output instructions
 
-Return exactly 3–4 insight strings. Each must:
+Return between 2-4 most relevant distinct insight strings. Each must:
 - Compare customers within the peer group explicitly (name names)
 - Connect the observation to an industry-relevant capability or business priority
 - Lead with who is leading or lagging and in what specific area
 - Use relative language, not exact figures
-- Be one sentence, max 35 words
+- Be one sentence, max 25 words
+- Sorted in the order of most relevant to least
 
 Return ONLY valid JSON array. No markdown, no code fences, no preamble.
 
