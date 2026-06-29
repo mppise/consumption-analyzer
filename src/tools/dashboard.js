@@ -2,13 +2,6 @@
 // @intent generates a self-contained single-file HTML dashboard with sticky top nav,
 //         two views (Industry, Accounts), an L1/L2/L3 drill drawer, and zero internet dependency;
 //         Bootstrap CSS/JS/Icons + Chart.js inlined from node_modules
-// @gap 2026-06-29 enterprise_architecture_diagram rendered as Mermaid block diagram per customer
-//      when field is a non-empty string; Mermaid loaded via CDN (not inlined) — dashboard is
-//      otherwise fully offline-capable; diagram block is skipped entirely when field is absent/empty
-// @gap 2026-06-29 Full-Year ACV/Budget/Consumed derived from L3 contract month records
-//      (projected_annual_* fields stamped on every month by --transform); customer.annual_contract_values
-//      rollup removed from portfolio.json schema; customerAnnualBudget() and l1AnnualBudget()
-//      replaced by l3 walk helpers; variance field names updated to ytd_* prefix
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import path from 'path'
@@ -30,7 +23,6 @@ const C_ACV      = '#9ca3af'
 const C_BUDGET   = '#16a34a'
 const C_CONSUMED = '#ea580c'
 const C_PCT      = '#1d4ed8'
-const C_PROJ_CONSUMED = '#7c3aed'
 
 // ── Asset paths (node_modules) ────────────────────────────────────────────────
 const NM = path.join(__dirname, '..', '..', 'node_modules')
@@ -39,7 +31,6 @@ const BOOTSTRAP_JS_PATH   = path.join(NM, 'bootstrap', 'dist', 'js', 'bootstrap.
 const BOOTSTRAP_ICONS_CSS = path.join(NM, 'bootstrap-icons', 'font', 'bootstrap-icons.min.css')
 const BOOTSTRAP_ICONS_WOFF2 = path.join(NM, 'bootstrap-icons', 'font', 'fonts', 'bootstrap-icons.woff2')
 const CHARTJS_PATH        = path.join(NM, 'chart.js', 'dist', 'chart.umd.js')
-const MERMAID_PATH        = path.join(NM, 'mermaid', 'dist', 'mermaid.min.js')
 const NUNITO_400 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-400-normal.woff2')
 const NUNITO_600 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-600-normal.woff2')
 const NUNITO_700 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-700-normal.woff2')
@@ -130,15 +121,17 @@ function isYtd(year, monthAbbr) {
 }
 
 // ── Aggregation helpers ───────────────────────────────────────────────────────
-// ytd_annual_contract_value is a monthly ACV portion — sum across YTD months per L3+year.
+// ytd_annual_contract_value is constant across months for a given L3+year (it's the
+// contracted ceiling, not a monthly accrual). Use max-per-L3-per-year to avoid
+// multiplying by the number of reported months.
 function l3Totals(l3) {
   let acv = 0, budget = 0, consumed = 0
   const c = l3.contract ?? {}
   for (const year of Object.keys(c)) {
-    if (year === 'contract_insights') continue
+    if (year === 'contract_insights' || year === 'annual_contract_values') continue
     const ytdMonths = (c[year] ?? []).filter(mo => isYtd(year, mo.month))
     if (!ytdMonths.length) continue
-    acv      += ytdMonths.reduce((s, mo) => s + (mo.ytd_annual_contract_value   ?? 0), 0)
+    acv      += Math.max(...ytdMonths.map(mo => mo.ytd_annual_contract_value   ?? 0))
     budget   += ytdMonths.reduce((s, mo) => s + (mo.ytd_budget_contract_value   ?? 0), 0)
     consumed += ytdMonths.reduce((s, mo) => s + (mo.ytd_consumed_contract_value ?? 0), 0)
   }
@@ -176,59 +169,34 @@ function attPct(budget, consumed) {
   return budget > 0 ? (consumed / budget * 100) : null
 }
 
-// ── Projected aggregation from L3 projected_annual_* fields ──────────────────
-// Projected ACV:      extrapolate YTD ACV to full year: (ytdAcv / monthsElapsed) * 12
-//                     monthsElapsed derived from _reportingMonth (YYYYMM → last 2 digits)
-// Projected Budget:   max(projected_annual_budget_contract_value) per L3 per year
-// Projected Consumed: max(projected_annual_consumed_contract_value) per L3 per year
-// @contract input: l3 node → output: { annualAcv, annualBudget, annualConsumed }
-function l3AnnualTotals(l3) {
-  let annualAcv = 0, annualBudget = 0, annualConsumed = 0
-  const monthsElapsed = _reportingMonth ? (_reportingMonth % 100) : 12
-  const c = l3.contract ?? {}
-  for (const year of Object.keys(c)) {
-    if (year === 'contract_insights') continue
-    const months = (c[year] ?? [])
-    if (!months.length) continue
-    const ytdMonths = months.filter(mo => isYtd(year, mo.month))
-    const ytdAcv = ytdMonths.reduce((s, mo) => s + (mo.ytd_annual_contract_value ?? 0), 0)
-    annualAcv      += monthsElapsed > 0 ? Math.round(ytdAcv / monthsElapsed * 12 * 100) / 100 : 0
-    annualBudget   += Math.max(...months.map(mo => mo.projected_annual_budget_contract_value      ?? 0))
-    annualConsumed += Math.max(...months.map(mo => mo.projected_annual_consumed_contract_value    ?? 0))
+// Read annual_annual_contract_value + annual_budget_contract_value from customer.annual_contract_values
+function customerAnnualBudget(customer, filterYear) {
+  let acv = 0, budget = 0
+  for (const [year, vals] of Object.entries(customer.annual_contract_values ?? {})) {
+    if (filterYear && year !== filterYear) continue
+    acv    += vals.annual_annual_contract_value ?? 0
+    budget += vals.annual_budget_contract_value ?? 0
   }
-  return { annualAcv, annualBudget, annualConsumed }
+  return { acv: Math.round(acv * 100) / 100, budget: Math.round(budget * 100) / 100 }
 }
 
-// @contract input: l2 node → output: { annualAcv, annualBudget, annualConsumed }
-function l2AnnualTotals(l2) {
-  let annualAcv = 0, annualBudget = 0, annualConsumed = 0
-  for (const l3 of l2.solutions_l3 ?? []) {
-    const t = l3AnnualTotals(l3)
-    annualAcv += t.annualAcv; annualBudget += t.annualBudget; annualConsumed += t.annualConsumed
-  }
-  return { annualAcv, annualBudget, annualConsumed }
-}
-
-// @contract input: l1 node → output: { annualAcv, annualBudget, annualConsumed }
-function l1AnnualTotals(l1) {
-  let annualAcv = 0, annualBudget = 0, annualConsumed = 0
+function l1AnnualBudget(l1, filterYear) {
+  let acv = 0, budget = 0
   for (const l2 of l1.solutions_l2 ?? []) {
     for (const l3 of l2.solutions_l3 ?? []) {
-      const t = l3AnnualTotals(l3)
-      annualAcv += t.annualAcv; annualBudget += t.annualBudget; annualConsumed += t.annualConsumed
+      const c = l3.contract ?? {}
+      for (const year of Object.keys(c)) {
+        if (year === 'contract_insights' || year === 'annual_contract_values') continue
+        if (filterYear && year !== filterYear) continue
+        const months = c[year] ?? []
+        if (!months.length) continue
+        // ACV is constant per L3+year — use max
+        acv    += Math.max(...months.map(mo => mo.ytd_annual_contract_value  ?? 0))
+        budget += months.reduce((s, mo) => s + (mo.ytd_budget_contract_value ?? 0), 0)
+      }
     }
   }
-  return { annualAcv, annualBudget, annualConsumed }
-}
-
-// @contract input: customer node → output: { annualAcv, annualBudget, annualConsumed }
-function customerAnnualTotals(customer) {
-  let annualAcv = 0, annualBudget = 0, annualConsumed = 0
-  for (const l1 of customer.solutions_l1 ?? []) {
-    const t = l1AnnualTotals(l1)
-    annualAcv += t.annualAcv; annualBudget += t.annualBudget; annualConsumed += t.annualConsumed
-  }
-  return { annualAcv, annualBudget, annualConsumed }
+  return { acv: Math.round(acv * 100) / 100, budget: Math.round(budget * 100) / 100 }
 }
 
 // ── Month string to YYYYMM integer ────────────────────────────────────────────
@@ -306,7 +274,7 @@ function buildAccountsView(customers) {
           <span style="font-size:13px;color:#0f172a;line-height:1.4" class="insight-text">${esc(pi.text)}</span>
         </div>`
       }).join('') || `<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:6px 0">No solution insights</div>`
-      const l1Annual = l1AnnualTotals(l1)
+      const l1Annual = l1AnnualBudget(l1)
 
       return `<div style="border:1px solid #e2e8f0;min-width:200px;flex:1;max-width:320px;overflow:hidden">
   <!-- Card header: bar chart style -->
@@ -316,15 +284,15 @@ function buildAccountsView(customers) {
     <div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">${la != null ? pct(la) : '—'}</div>
     <div style="font-size:11px;color:#94a3b8;margin-bottom:14px">YTD Budget Attainment</div>
     <div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>YTD Consumed</span><span>${usd(lt.consumed)}</span></div>
-      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${la != null ? Math.min(100, la).toFixed(1) : 0}%"></div></div>
-    </div>
-    <div style="margin-bottom:4px">
       <div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>YTD Budget</span><span>${usd(lt.budget)}</span></div>
       <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>
     </div>
+    <div style="margin-bottom:4px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>YTD Consumed</span><span>${usd(lt.consumed)}</span></div>
+      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${la != null ? Math.min(100, la).toFixed(1) : 0}%"></div></div>
+    </div>
     <div style="font-size:12px;color:#94a3b8;margin-top:6px">YTD ACV: ${usd(lt.acv)}</div>
-    <div style="font-size:11px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0">Projected Consumed: <strong style="color:${C_PROJ_CONSUMED}">${usd(l1Annual.annualConsumed)}</strong> · Projected Budget: <strong style="color:#22c55e">${usd(l1Annual.annualBudget)}</strong> · Projected ACV: <strong style="color:#9ca3af">${usd(l1Annual.annualAcv)}</strong></div>
+    <div style="font-size:11px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0">Full-Year ACV: <strong style="color:#9ca3af">${usd(l1Annual.acv)}</strong> · Full-Year Budget: <strong style="color:#22c55e">${usd(l1Annual.budget)}</strong></div>
   </div>
   <!-- Card body: Solution insights -->
   <div style="padding:12px 14px;background:white">
@@ -342,22 +310,7 @@ function buildAccountsView(customers) {
         <span style="font-size:14px;color:#0f172a;line-height:1.5" class="insight-text">${esc(pi.text)}</span>
       </div>`
     }).join('')
-    const annual = customerAnnualTotals(cust)
-
-    // @contract enterprise_architecture_diagram: non-empty string → render Mermaid block; empty/absent → skip entirely
-    const eaDiagram = (cust.enterprise_architecture_diagram && typeof cust.enterprise_architecture_diagram === 'string' && cust.enterprise_architecture_diagram.trim().length > 0)
-      ? cust.enterprise_architecture_diagram.trim()
-      : null
-
-    const solutionLandscapeBlock = eaDiagram
-      ? `<!-- Solution Landscape diagram — rendered by Mermaid.js CDN -->
-  <div style="margin-bottom:32px;padding-bottom:32px;border-bottom:1px solid #cbd5e1">
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#6366f1;margin-bottom:12px">Solution Landscape</div>
-    <div style="border:1px solid #e2e8f0;background:#f8fafc;padding:20px 24px;overflow-x:auto">
-      <div class="mermaid" style="min-width:0">${esc(eaDiagram)}</div>
-    </div>
-  </div>`
-      : ''
+    const annual = customerAnnualBudget(cust)
 
     return `<div id="cust-panel-${custIdx}" style="display:${custIdx === 0 ? 'block' : 'none'};padding:40px 48px">
   <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
@@ -368,13 +321,12 @@ function buildAccountsView(customers) {
     <!-- Donut: 30% width -->
     <div style="flex:0 0 30%;text-align:center">
       <canvas id="acct-bar-${custIdx}" width="180" height="180" style="display:block;margin:0 auto"></canvas>
-      <div style="font-size:13px;color:#fb923c;margin-top:6px">YTD Consumed: ${usd(t.consumed)}</div>
-      <div style="font-size:13px;color:#22c55e">YTD Budget: ${usd(t.budget)}</div>
+      <div style="font-size:13px;color:#22c55e;margin-top:6px">YTD Budget: ${usd(t.budget)}</div>
+      <div style="font-size:13px;color:#fb923c">YTD Consumed: ${usd(t.consumed)}</div>
       <div style="font-size:13px;color:#9ca3af">YTD ACV: ${usd(t.acv)}</div>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
-        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Projected Consumed: <strong style="color:${C_PROJ_CONSUMED}">${usd(annual.annualConsumed)}</strong></div>
-        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Projected Budget: <strong style="color:#22c55e">${usd(annual.annualBudget)}</strong></div>
-        <div style="font-size:11px;color:#64748b">Projected ACV: <strong style="color:#9ca3af">${usd(annual.annualAcv)}</strong></div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Full-Year ACV: <strong style="color:#9ca3af">${usd(annual.acv)}</strong></div>
+        <div style="font-size:11px;color:#64748b">Full-Year Budget: <strong style="color:#22c55e">${usd(annual.budget)}</strong></div>
       </div>
     </div>
     <!-- EA insights: 70% width -->
@@ -383,7 +335,7 @@ function buildAccountsView(customers) {
       ${eaInsightRows || '<div style="font-size:13px;color:#94a3b8;font-style:italic">No insights available</div>'}
     </div>
   </div>
-  ${solutionLandscapeBlock}<!-- Solution area cards -->
+  <!-- Solution area cards -->
   <div style="margin-bottom:32px">
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:12px">Solution Areas</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">${l1Tiles}</div>
@@ -419,12 +371,12 @@ function buildIndustryView(indInsights, customers) {
   const panels = indInsights.map((ind, indIdx) => {
     const indCustomers = customers.filter(c => c.industry === ind.industry)
     let totalAcv = 0, totalBudget = 0, totalConsumed = 0
-    let totalAnnualAcv = 0, totalAnnualBudget = 0, totalAnnualConsumed = 0
+    let totalAnnualAcv = 0, totalAnnualBudget = 0
     for (const c of indCustomers) {
       const t = customerTotals(c)
       totalAcv += t.acv; totalBudget += t.budget; totalConsumed += t.consumed
-      const ann = customerAnnualTotals(c)
-      totalAnnualAcv += ann.annualAcv; totalAnnualBudget += ann.annualBudget; totalAnnualConsumed += ann.annualConsumed
+      const ann = customerAnnualBudget(c)
+      totalAnnualAcv += ann.acv; totalAnnualBudget += ann.budget
     }
     const att = attPct(totalBudget, totalConsumed)
 
@@ -441,28 +393,24 @@ function buildIndustryView(indInsights, customers) {
   <div style="font-size:13px;color:#64748b;margin-bottom:8px">${indCustomers.length} customer${indCustomers.length !== 1 ? 's' : ''}</div>
   <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:32px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0">
     <div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Consumed</div>
-      <div style="font-size:16px;font-weight:700;color:#fb923c">${usd(totalConsumed)}</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD ACV</div>
+      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAcv)}</div>
     </div>
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Budget</div>
       <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalBudget)}</div>
     </div>
     <div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD ACV</div>
-      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAcv)}</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Consumed</div>
+      <div style="font-size:16px;font-weight:700;color:#fb923c">${usd(totalConsumed)}</div>
     </div>
     <div style="border-left:1px solid #e2e8f0;padding-left:32px">
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected Consumed</div>
-      <div style="font-size:16px;font-weight:700;color:${C_PROJ_CONSUMED}">${usd(totalAnnualConsumed)}</div>
-    </div>
-    <div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected Budget</div>
-      <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalAnnualBudget)}</div>
-    </div>
-    <div>
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected ACV</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Full-Year ACV</div>
       <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAnnualAcv)}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Full-Year Budget</div>
+      <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalAnnualBudget)}</div>
     </div>
   </div>
   <div style="margin-bottom:32px">
@@ -470,17 +418,16 @@ function buildIndustryView(indInsights, customers) {
     <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;padding:0 16px">
       ${indCustomers.map((c, i) => {
         const ct = customerTotals(c)
-        const cann = customerAnnualTotals(c)
+        const cann = customerAnnualBudget(c)
         const att = ct.budget > 0 ? (ct.consumed / ct.budget * 100) : null
         return `<div style="text-align:center;padding:0 12px">
           <canvas id="ind-donut-${indIdx}-${i}" width="160" height="160" style="display:block;margin:0 auto"></canvas>
           <div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:8px">${esc(c.customer)}</div>
-          <div style="font-size:12px;color:#fb923c">YTD Consumed: ${usd(ct.consumed)}</div>
-          <div style="font-size:12px;color:#22c55e">YTD Budget: ${usd(ct.budget)}</div>
           <div style="font-size:12px;color:#9ca3af">YTD ACV: ${usd(ct.acv)}</div>
-          <div style="font-size:11px;color:${C_PROJ_CONSUMED};margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0">Projected Consumed: ${usd(cann.annualConsumed)}</div>
-          <div style="font-size:11px;color:#22c55e">Projected Budget: ${usd(cann.annualBudget)}</div>
-          <div style="font-size:11px;color:#9ca3af">Projected ACV: ${usd(cann.annualAcv)}</div>
+          <div style="font-size:12px;color:#22c55e">YTD Budget: ${usd(ct.budget)}</div>
+          <div style="font-size:12px;color:#fb923c">YTD Consumed: ${usd(ct.consumed)}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0">Full-Year ACV: ${usd(cann.acv)}</div>
+          <div style="font-size:11px;color:#22c55e">Full-Year Budget: ${usd(cann.budget)}</div>
         </div>`
       }).join('')}
     </div>
@@ -507,17 +454,13 @@ function buildDrawerData(customers, reportingMonth) {
     ;(cust.solutions_l1 ?? []).forEach((l1, l1Idx) => {
       const l1Key = `c${custIdx}-l1${l1Idx}`
       const l1t = l1Totals(l1)
-      const l1Ann = l1AnnualTotals(l1)
       const l1Att = attPct(l1t.budget, l1t.consumed)
 
       // L1 drawer data: L2 tiles (metrics only — SA insights now live at L1, shown in Accounts view)
       const l2Tiles = (l1.solutions_l2 ?? []).map((l2, l2Idx) => {
         const t = l2Totals(l2)
-        const ann = l2AnnualTotals(l2)
         const a = attPct(t.budget, t.consumed)
-        return { name: l2.name, attainment: a, budget: t.budget, consumed: t.consumed, acv: t.acv,
-                 annualConsumed: ann.annualConsumed, annualBudget: ann.annualBudget, annualAcv: ann.annualAcv,
-                 l2Idx, saInsights: [] }
+        return { name: l2.name, attainment: a, budget: t.budget, consumed: t.consumed, acv: t.acv, l2Idx, saInsights: [] }
       })
 
       drawerData[l1Key] = {
@@ -526,9 +469,6 @@ function buildDrawerData(customers, reportingMonth) {
         l1Attainment: l1Att,
         l1Budget: l1t.budget,
         l1Consumed: l1t.consumed,
-        l1AnnualConsumed: l1Ann.annualConsumed,
-        l1AnnualBudget: l1Ann.annualBudget,
-        l1AnnualAcv: l1Ann.annualAcv,
         eaInsights: cust.enterprise_architecture_insights ?? [],
         l2Tiles,
       }
@@ -538,13 +478,12 @@ function buildDrawerData(customers, reportingMonth) {
 
         const l3List = (l2.solutions_l3 ?? []).map((l3, l3Idx) => {
           const t = l3Totals(l3)
-          const ann = l3AnnualTotals(l3)
           const att = attPct(t.budget, t.consumed)
 
           // Chart data filtered to <= reportingMonth
           const chartLabels = [], chartBudget = [], chartConsumed = [], chartAttainment = []
           const contract = l3.contract ?? {}
-          for (const yr of Object.keys(contract).filter(k => k !== 'contract_insights').sort()) {
+          for (const yr of Object.keys(contract).filter(k => k !== 'contract_insights' && k !== 'annual_contract_values').sort()) {
             for (const mo of contract[yr] ?? []) {
               const yyyymm = monthToYYYYMM(yr, mo.month)
               if (yyyymm === null) continue
@@ -552,7 +491,7 @@ function buildDrawerData(customers, reportingMonth) {
               chartLabels.push(`${mo.month} ${yr}`)
               chartBudget.push(mo.ytd_budget_contract_value ?? 0)
               chartConsumed.push(mo.ytd_consumed_contract_value ?? 0)
-              chartAttainment.push(mo.variances?.ytd_budget_attainment ?? null)
+              chartAttainment.push(mo.variances?.budget_attainment ?? null)
             }
           }
 
@@ -570,9 +509,6 @@ function buildDrawerData(customers, reportingMonth) {
             budget: t.budget,
             consumed: t.consumed,
             acv: t.acv,
-            annualConsumed: ann.annualConsumed,
-            annualBudget: ann.annualBudget,
-            annualAcv: ann.annualAcv,
             contractInsights: l3.contract?.contract_insights ?? [],
           }
         })
@@ -648,7 +584,7 @@ function buildL2BarData(customers) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // @contract input: portfolio object + asset strings → output: complete HTML string
-function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss = '', mermaidJs = '') {
+function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss = '') {
   const customers      = portfolio.customers ?? []
   const indInsights    = portfolio.industry_insights ?? []
   const reportingMonth = portfolio.reporting_month ? parseInt(String(portfolio.reporting_month), 10) : null
@@ -658,21 +594,11 @@ function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nuni
   // Set YTD filter so all aggregation helpers exclude future months
   _reportingMonth = reportingMonth
 
-  // Check if any customer has a non-empty enterprise_architecture_diagram — Mermaid CDN loaded only when needed
-  const hasMermaidDiagram = customers.some(c =>
-    c.enterprise_architecture_diagram &&
-    typeof c.enterprise_architecture_diagram === 'string' &&
-    c.enterprise_architecture_diagram.trim().length > 0
-  )
-
   // Portfolio totals
   let portAcv = 0, portBudget = 0, portConsumed = 0
-  let portProjAcv = 0, portProjBudget = 0, portProjConsumed = 0
   for (const c of customers) {
     const t = customerTotals(c)
     portAcv += t.acv; portBudget += t.budget; portConsumed += t.consumed
-    const ann = customerAnnualTotals(c)
-    portProjAcv += ann.annualAcv; portProjBudget += ann.annualBudget; portProjConsumed += ann.annualConsumed
   }
   const portAtt = attPct(portBudget, portConsumed)
   const portAttColor = healthColor(portAtt)
@@ -729,13 +655,9 @@ ${nunitoCss ? `<style>${nunitoCss}</style>` : ''}
     <button id="tab-accounts" onclick="showView('accounts')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid transparent;color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">ACCOUNTS</button>
   </div>
   <div style="display:flex;gap:16px;font-size:11px">
-    <span style="color:#64748b">YTD Consumed <strong style="color:#fb923c">${esc(usd(portConsumed))}</strong></span>
-    <span style="color:#64748b">YTD Budget <strong style="color:#22c55e">${esc(usd(portBudget))}</strong></span>
-    <span style="color:#64748b">YTD ACV <strong style="color:#9ca3af">${esc(usd(portAcv))}</strong></span>
-    <span style="color:#cbd5e1">|</span>
-    <span style="color:#64748b">Proj Consumed <strong style="color:${C_PROJ_CONSUMED}">${esc(usd(portProjConsumed))}</strong></span>
-    <span style="color:#64748b">Proj Budget <strong style="color:#22c55e">${esc(usd(portProjBudget))}</strong></span>
-    <span style="color:#64748b">Proj ACV <strong style="color:#9ca3af">${esc(usd(portProjAcv))}</strong></span>
+    <span style="color:#ea580c">Consumed <strong style="color:#fb923c">${esc(usd(portConsumed))}</strong></span>
+    <span style="color:#16a34a">Budget <strong style="color:#22c55e">${esc(usd(portBudget))}</strong></span>
+    <span style="color:#9ca3af">ACV <strong style="color:#9ca3af">${esc(usd(portAcv))}</strong></span>
   </div>
 </div>
 
@@ -754,8 +676,6 @@ ${industryHtml}
 
 <script>${chartJs}</script>
 <script>${bootstrapJs}</script>
-${mermaidJs ? `<script>${mermaidJs}</script>
-<script>mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'antiscript',fontFamily:"'Nunito Sans',sans-serif"});</script>` : ''}
 <script>
 // ── Embedded data ─────────────────────────────────────────────────────────────
 var DRAWER_DATA    = ${jsonEmbed(drawerData)};
@@ -983,8 +903,8 @@ function renderL3Chart(data) {
     data: {
       labels: data.labels,
       datasets: [
-        { type: 'line', label: 'Consumed',    data: data.consumed,   borderColor: '#ea580c', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#ea580c' },
         { type: 'line', label: 'Budget',      data: data.budget,     borderColor: '#16a34a', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#16a34a' },
+        { type: 'line', label: 'Consumed',    data: data.consumed,   borderColor: '#ea580c', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#ea580c' },
         { type: 'bar',  label: 'Attainment%', data: data.attainment, backgroundColor: 'rgba(167,139,250,0.25)', yAxisID: 'y2' }
       ]
     },
@@ -1028,20 +948,14 @@ function openL1(custIdx, l1Idx) {
       + '<div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">' + (attPctVal != null ? attPctVal.toFixed(1) + '%' : '—') + '</div>'
       + '<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Budget Attainment</div>'
       + '<div style="margin-bottom:8px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>Consumed</span><span>' + fmtUsd(tile.consumed) + '</span></div>'
-      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:' + consumedBarW + '%"></div></div>'
-      + '</div>'
-      + '<div style="margin-bottom:4px">'
       + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>' + fmtUsd(tile.budget) + '</span></div>'
       + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>'
       + '</div>'
-      + '<div style="font-size:12px;color:#94a3b8;margin-top:6px;margin-bottom:8px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
-      + '<div style="padding-top:8px;border-top:1px solid #e2e8f0">'
-      + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Projected</div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#7c3aed;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(tile.annualConsumed) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(tile.annualBudget) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af"><span>ACV</span><span>' + fmtUsd(tile.annualAcv) + '</span></div>'
+      + '<div style="margin-bottom:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>Consumed</span><span>' + fmtUsd(tile.consumed) + '</span></div>'
+      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:' + consumedBarW + '%"></div></div>'
       + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;margin-top:6px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1090,20 +1004,14 @@ function openL2(custIdx, l1Idx, l2Idx) {
       + '<div style="font-size:18px;font-weight:800;color:#60a5fa;line-height:1">' + (l3Att != null ? l3Att.toFixed(1) + '%' : '—') + '</div>'
       + '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Budget Attainment</div>'
       + '<div style="margin-bottom:5px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#fb923c;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.consumed) + '</span></div>'
-      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#fb923c;width:' + l3BarW + '%"></div></div>'
-      + '</div>'
-      + '<div style="margin-bottom:4px">'
       + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.budget) + '</span></div>'
       + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#22c55e;width:100%"></div></div>'
       + '</div>'
-      + '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px">ACV: ' + fmtUsd(l3.acv) + '</div>'
-      + '<div style="padding-top:6px;border-top:1px solid #e2e8f0">'
-      + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Projected</div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#7c3aed;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.annualConsumed) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.annualBudget) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af"><span>ACV</span><span>' + fmtUsd(l3.annualAcv) + '</span></div>'
+      + '<div style="margin-bottom:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#fb923c;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.consumed) + '</span></div>'
+      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#fb923c;width:' + l3BarW + '%"></div></div>'
       + '</div>'
+      + '<div style="font-size:11px;color:#94a3b8">ACV: ' + fmtUsd(l3.acv) + '</div>'
       + '</div>';
   }).join('');
 
@@ -1229,14 +1137,6 @@ export async function run(args, options) {
     process.stderr.write(`warn: Chart.js not found\n`)
   }
 
-  let mermaidJs = ''
-  try {
-    mermaidJs = readFileSync(MERMAID_PATH, 'utf8')
-    process.stderr.write(`warn: Mermaid loaded (${Buffer.byteLength(mermaidJs, 'utf8')} bytes)\n`)
-  } catch (e) {
-    process.stderr.write(`warn: Mermaid not found — diagrams will not render\n`)
-  }
-
   let nunitoCss = ''
   try {
     nunitoCss = loadNunitoCss()
@@ -1246,7 +1146,7 @@ export async function run(args, options) {
   }
 
   process.stderr.write(`warn: generating HTML dashboard…\n`)
-  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss, mermaidJs)
+  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss)
 
   try {
     writeFileSync(outputPath, html, 'utf8')

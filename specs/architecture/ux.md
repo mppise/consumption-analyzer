@@ -36,13 +36,10 @@ Generated HTML dashboard:
 - spacing: Bootstrap default spacing scale
 
 Color scheme constants (semantic):
-- C_ACV:           #9ca3af — grey; annual_contract_value (ACV ceiling)
-- C_BUDGET:        #16a34a — green; budget_contract_value (target)
-- C_CONSUMED:      #ea580c — orange; ytd consumed_contract_value
-- C_PROJ_CONSUMED: #7c3aed — purple; projected_annual_consumed_contract_value
-- C_PCT:           #1d4ed8 — royal blue; all percentage and attainment values
-
-Metric display order (enforced on ALL surfaces): Consumed → Budget → ACV (within each YTD group and each Projected group)
+- C_ACV:      #9ca3af — grey; annual_contract_value (ACV ceiling)
+- C_BUDGET:   #16a34a — green; budget_contract_value (target)
+- C_CONSUMED: #ea580c — orange; consumed_contract_value (actuals)
+- C_PCT:      #1d4ed8 — royal blue; all percentage and attainment values
 
 Language standards (enforced throughout all dashboard output):
 - "consumed" or "consumed_contract_value" — not "actuals", "cACV", or "YTD actuals"
@@ -65,21 +62,20 @@ CLI conventions:
 Dashboard conventions (generated HTML — 3-pane layout):
 - Pane widths: left pane ~20%, middle pane ~35%, right pane ~45% (Bootstrap grid columns; adjust at story-spec time)
 - Left pane (industry list):
-  - Each industry row: 6 metrics in Consumed → Budget → ACV order for both YTD and Projected groups: YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV
+  - Each industry row: industry name + aggregated annual_contract_value, budget_contract_value, consumed_contract_value
   - Industry summary (industry_insights[].summary) shown inline beneath each row via Bootstrap collapse with a small toggle indicator
   - Selected industry highlighted with Bootstrap active class
   - Aggregated values formatted as abbreviated USD (e.g. $1.2M)
 - Middle pane (customer cards):
   - Empty state: centered text "Select an industry" before selection
-  - Each customer card: customer name, industry, account_insights (first paragraph or truncated), YTD and Projected metrics in Consumed → Budget → ACV order (YTD group then Projected group; Proj Consumed in C_PROJ_CONSUMED), L1 breakdown (name + budget_attainment per L1) — always expanded, no collapse wrapper; L1 footer line shows YTD Consumed · YTD Budget · Proj Consumed in respective semantic colors
+  - Each customer card: customer name, industry, account_insights (first paragraph or truncated), aggregated contract values, L1 breakdown (name + budget_attainment per L1) — always expanded, no collapse wrapper
   - EA insights (enterprise_architecture_insights, Step 3) always visible in a Bootstrap card frame beneath each customer card
-  - Enterprise architecture diagram: if `customer.enterprise_architecture_diagram` is a non-empty string, a Mermaid block diagram is rendered directly below EA insights and before the L1 solution areas. If the field is empty or absent the diagram block is omitted entirely. Mermaid.js is conditionally injected into the generated HTML (CDN script + `mermaid.initialize()` block) only when at least one customer in the portfolio has a non-empty diagram field.
   - Selected customer highlighted with Bootstrap active class
   - Clicking an L1 box triggers `selectL1(custIdx, l1Idx)` to populate the right pane
 - Right pane (L3 product detail):
   - Empty state: centered text "Select an L1 solution area" before selection; not populated by customer click
   - Grouped by L1, then L2; each L2 group shows solution_architecture_insights (Step 2) in an always-visible card frame
-  - Each L3 row: lpr_name, lpr_id, Chart.js line chart (datasets in order: Consumed C_CONSUMED first, Budget C_BUDGET second, ACV C_ACV third; months filtered to ≤ portfolio.reporting_month; data labels on each point); per-customer donut section shows Proj Consumed (C_PROJ_CONSUMED) alongside Proj Budget and Proj ACV
+  - Each L3 row: lpr_name, lpr_id, Chart.js line chart (three datasets: ACV C_ACV, budget C_BUDGET, consumed C_CONSUMED; months filtered to ≤ portfolio.reporting_month; data labels on each point)
   - ai_insights (Step 1) shown in an always-visible card frame below each L3 row
   - All AI insight fields display "Run --analyze to generate insights" when the array is empty
 - No expand/collapse panels for any AI insight section (EA insights, SA insights, contract AI insights) — all rendered as always-visible card frames
@@ -106,18 +102,16 @@ On error:
 Dashboard layout template (3-pane single merged view):
 ```
 [Navbar]       consumption-analyzer · <fiscal year> · Generated: <timestamp>
-               YTD Consumed $x · YTD Budget $x · YTD ACV $x | Proj Consumed $x · Proj Budget $x · Proj ACV $x
-               (labels in #64748b; metric values in semantic color: Consumed=C_CONSUMED, Budget=C_BUDGET, ACV=C_ACV, Proj Consumed=C_PROJ_CONSUMED)
 [Body]
   [Left pane]   Industry list
-                  Each entry: 6 metrics in order — YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV · summary (inline collapse)
+                  Each entry: industry name · ACV · budget · consumed · summary (inline collapse)
   [Middle pane] Customer cards for selected industry
                   Empty state: "Select an industry"
-                  Each card: customer name · account_insights (truncated) · aggregated values (Consumed → Budget → ACV order, YTD then Projected) · L1 breakdown (always expanded) · EA insights (always-visible card frame) · enterprise_architecture_diagram (Mermaid block, rendered before L1 solution areas; omitted when empty)
+                  Each card: customer name · account_insights (truncated) · aggregated values · L1 breakdown (always expanded) · EA insights (always-visible card frame)
   [Right pane]  L3 product detail for selected L1 solution area
                   Empty state: "Select an L1 solution area"
                   Grouped by L1 → L2; each L2 has solution_architecture_insights (always-visible card frame)
-                  Each L3 row: lpr_name · lpr_id · line chart (Consumed C_CONSUMED first, Budget C_BUDGET second, ACV C_ACV third; months filtered to ≤ portfolio.reporting_month; data labels on each point) · ai_insights (always-visible card frame)
+                  Each L3 row: lpr_name · lpr_id · line chart (ACV/budget/consumed, current month cutoff, data labels) · ai_insights (always-visible card frame)
 ```
 
 Interaction flow:

@@ -90,6 +90,10 @@ One industry-level insight block within entity:portfolio.industry_insights[]. Pr
 Fields:
 - industry: string, required — unique industry name inferred from the customer list (e.g. "Pharma/Life Sciences", "Manufacturing", "Healthcare")
 - summary: string[], required — array of paragraph strings; cross-customer industry narrative and action items written by Step 4 (opus); empty array until --analyze has run
+- aggregated_contracts: object, required — financial roll-up across all customers in this industry:
+  - annual_contract_value: number — sum of annual_contract_value across all contract months for customers in this industry
+  - budget_contract_value: number — sum of budget_contract_value across all contract months
+  - consumed_contract_value: number — sum of consumed_contract_value across all contract months
 
 owned-by: actor:operator
 
@@ -103,7 +107,10 @@ Fields:
 - customer: string, required — display name parsed from the same combined field
 - industry: string, required — determined by STORY-006 industry inference; matches entity:industry_insight.industry
 - enterprise_architecture_insights: string[], required — array of paragraph strings; cross-domain EA patterns, integration dependencies, and strategic actions written by --analyze Step 3 (sonnet); empty array until --analyze has run
-- enterprise_architecture_diagram: string, required — Mermaid or SVG diagram string produced by --analyze Step 3 (sonnet); empty string ("") until --analyze has run; STORY-003 populates this field; STORY-005 reads and renders it in the dashboard
+- annual_contract_values: object, required — per-year full-year financial rollup across all L3 contracts for this customer (keyed by year string e.g. "2026"):
+  - annual_annual_contract_value: number — intSum of all months' ytd_annual_contract_value for that year (full-year ACV)
+  - annual_budget_contract_value: number — intSum of all months' ytd_budget_contract_value for that year (full-year budget)
+  - both fields verified by reconcilePortfolio() Check 3 before portfolio.json is written
 - solutions_l1: entity:solutions_l1[], required — top-level solution area groupings for this customer
 
 owned-by: actor:operator
@@ -161,24 +168,18 @@ One month's contract record within entity:contract.[year][]. The fundamental uni
 
 Fields:
 - month: string, required — month name or abbreviation (e.g. "Jan", "Feb") matching source CSV
-- ytd_annual_contract_value: number, required — ACV actuals figure YTD for this month
-- ytd_budget_contract_value: number, required — budgeted YTD contract value for this month
-- ytd_consumed_contract_value: number, required — actual YTD consumption for this month
-- projected_annual_budget_contract_value: number, required — sum of ytd_budget_contract_value across ALL 12 months of this L3+year; stamped on every month record at transform time (future months carry real budget values so summing all 12 is correct)
-- projected_annual_consumed_contract_value: number, required — extrapolated run-rate: (ytd_consumed_contract_value_at_reporting_month / months_elapsed) * 12; months_elapsed derived from portfolio.reporting_month (last 2 digits of YYYYMM); stamped on every month record at transform time; buildL1Hierarchy() receives reportingMonth as its second argument to perform this computation
-- projected_annual_acv_gap: number, required — ytd_annual_contract_value − projected_annual_consumed_contract_value
-- projected_annual_budget_gap: number, required — projected_annual_budget_contract_value − projected_annual_consumed_contract_value
-- projected_annual_budget_attainment: number, required — (projected_annual_consumed / projected_annual_budget) × 100; 0 if budget = 0
-- variances: object, required — YTD computed variance metrics:
-  - ytd_acv_gap: number — ytd_annual_contract_value - ytd_consumed_contract_value
-  - ytd_budget_gap: number — ytd_budget_contract_value - ytd_consumed_contract_value
-  - ytd_budget_attainment: number | null — (ytd_consumed / ytd_budget) * 100 as a percentage; null if ytd_budget = 0
+- ytd_annual_contract_value: number, required — ACV actuals figure YTD for this month (renamed from annual_contract_value)
+- ytd_budget_contract_value: number, required — budgeted YTD contract value for this month (renamed from budget_contract_value)
+- ytd_consumed_contract_value: number, required — actual YTD consumption for this month (renamed from consumed_contract_value)
+- variances: object, required — computed variance metrics:
+  - acv_gap: number — ytd_annual_contract_value - ytd_consumed_contract_value
+  - budget_gap: number — ytd_budget_contract_value - ytd_consumed_contract_value
+  - budget_attainment: number — (ytd_consumed / ytd_budget) * 100 as a percentage; null if ytd_budget = 0
 
 Computation precision rules (enforced by --transform):
 - All summations use integer-safe arithmetic: Math.round(val * 100) per value, sum as integers, divide by 100
-- ytd_budget_attainment: Math.round((consumed / budget) * 1000) / 10 (1 decimal precision; null if budget = 0)
-- projected_annual_budget_attainment: Math.round((consumed / budget) * 1000) / 10 (1 decimal precision; 0 if budget = 0)
-- projected annual fields: stamped once per L3+year on every month record for that combination
+- budget_attainment: Math.round((consumed / budget) * 1000) / 10 (1 decimal precision; null if budget = 0)
+- annual_contract_values rollup uses intSum() over all months in year — verified by reconcilePortfolio() before write
 
 State machine: none (read-only computed record per --transform run)
 

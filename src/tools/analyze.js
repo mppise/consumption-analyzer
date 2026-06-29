@@ -277,9 +277,9 @@ function formatContractData(contractBlock) {
       const acv      = typeof m.ytd_annual_contract_value   === 'number' ? m.ytd_annual_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       const budget   = typeof m.ytd_budget_contract_value   === 'number' ? m.ytd_budget_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       const consumed = typeof m.ytd_consumed_contract_value === 'number' ? m.ytd_consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const attainment = m.variances?.ytd_budget_attainment != null ? `${m.variances.ytd_budget_attainment.toFixed(1)}%` : 'N/A'
-      const acvGap     = m.variances?.ytd_acv_gap  != null ? m.variances.ytd_acv_gap.toLocaleString('en-US',  { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const budgetGap  = m.variances?.ytd_budget_gap != null ? m.variances.ytd_budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const attainment = m.variances?.budget_attainment != null ? `${m.variances.budget_attainment.toFixed(1)}%` : 'N/A'
+      const acvGap     = m.variances?.acv_gap  != null ? m.variances.acv_gap.toLocaleString('en-US',  { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const budgetGap  = m.variances?.budget_gap != null ? m.variances.budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       lines.push(`- **${m.month}**: ACV=${acv} | Budget=${budget} | Consumed=${consumed} | Attainment=${attainment} | ACV Gap=${acvGap} | Budget Gap=${budgetGap}`)
     }
   }
@@ -422,46 +422,8 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
   process.stderr.write(`info: Step 2 complete — ${tasks.length - failCount} succeeded${failCount ? `, ${failCount} failed` : ''}\n`)
 }
 
-/**
- * Build a plain-text representation of a customer's L1/L2/L3 SAP solution landscape
- * for injection into the Mermaid diagram prompt.
- * @param {object[]} l1List — customer.solutions_l1 array
- * @returns {string}
- */
-function buildSolutionLandscapeText(l1List) {
-  if (!l1List?.length) return '(No solution landscape available)'
-  const lines = []
-  for (const l1 of l1List) {
-    lines.push(`### ${l1.name}`)
-    for (const l2 of l1.solutions_l2 ?? []) {
-      lines.push(`  - ${l2.name}`)
-      for (const l3 of l2.solutions_l3 ?? []) {
-        lines.push(`    - ${l3.lpr_name}`)
-      }
-    }
-  }
-  return lines.join('\n')
-}
-
-/**
- * Strip Mermaid code fences from AI response text.
- * The diagram prompt instructs no fences, but LLMs sometimes add them anyway.
- * Returns raw mermaid syntax starting with "graph" or "block" keyword.
- */
-function stripMermaidFences(text) {
-  if (!text) return text
-  const trimmed = text.trim()
-  // Strip ```mermaid ... ``` or ``` ... ``` wrappers
-  const fenced = trimmed.match(/^```(?:mermaid)?\s*\n?([\s\S]*?)\n?```\s*$/i)
-  if (fenced) return fenced[1].trim()
-  // Strip any leading text before the first "graph" or "block" line
-  const graphStart = trimmed.match(/(graph\s+\w+[\s\S]*)$/i)
-  if (graphStart) return graphStart[1].trim()
-  return trimmed
-}
-
-// @entry runStep3 | Step 3 — enterprise_architecture_insights + enterprise_architecture_diagram per customer (sonnet)
-// @contract input: portfolio with Steps 1+2 complete → output: every customer.enterprise_architecture_insights[] and customer.enterprise_architecture_diagram (raw Mermaid string) populated
+// @entry runStep3 | Step 3 — enterprise_architecture_insights per customer (sonnet)
+// @contract input: portfolio with Steps 1+2 complete → output: every customer.enterprise_architecture_insights[] populated
 async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
   process.stderr.write('info: Step 3 — enterprise_architecture_insights per customer (sonnet)\n')
   process.stderr.write(`info: Step 3 — ${portfolio.customers?.length ?? 0} customer(s)\n`)
@@ -503,30 +465,7 @@ async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
 
     const parsed = parseStringArray(rawText, `Step 3 / ${customer.customer ?? customer.customer_id}`)
     customer.enterprise_architecture_insights = parsed
-    process.stderr.write(`info:   Step 3 insights done — ${customer.customer ?? customer.customer_id} (${parsed.length} insight(s))\n`)
-
-    // Step 3b — generate enterprise_architecture_diagram (Mermaid)
-    // @gap 2026-06-29 Step 3 extended with a second AI call to produce a Mermaid diagram of the customer's SAP solution landscape — spec only defined enterprise_architecture_insights; diagram field added per gap.md
-    const solutionLandscape = buildSolutionLandscapeText(l1List)
-    const insightsSummary = parsed.join(' ')
-
-    const diagramPrompt = renderPrompt('step3-enterprise-arch-diagram.md', {
-      customer_name:                    customer.customer ?? customer.customer_id ?? 'Unknown',
-      solution_landscape:               solutionLandscape,
-      enterprise_architecture_insights: insightsSummary,
-    })
-
-    let diagramRaw
-    try {
-      diagramRaw = await chatSonnet(diagramPrompt)
-    } catch (err) {
-      process.stderr.write(`warn: Step 3 diagram AI call failed for ${customer.customer ?? customer.customer_id}: ${err.message ?? String(err)} — storing empty diagram\n`)
-      diagramRaw = ''
-    }
-
-    const diagramText = diagramRaw ? stripMermaidFences(diagramRaw) : ''
-    customer.enterprise_architecture_diagram = diagramText
-    process.stderr.write(`info:   Step 3 diagram done — ${customer.customer ?? customer.customer_id} (${diagramText.length} chars)\n`)
+    process.stderr.write(`info:   Step 3 done — ${customer.customer ?? customer.customer_id} (${parsed.length} insight(s))\n`)
   }))
 
   let failCount = 0
@@ -571,8 +510,7 @@ async function runStep4(portfolio, chatOpus, promptVars) {
     }).join('\n\n')
 
     const customerList = customers.map(c => c.customer ?? c.customer_id ?? 'Unknown').join(', ')
-    // @gap 2026-06-29 aggregated_contracts removed from industry_insights — financial figures no longer passed to Step 4 prompt; prompt uses customer EA insights only
-    const agg = { annual_contract_value: 0, budget_contract_value: 0, consumed_contract_value: 0 }
+    const agg = industryBlock.aggregated_contracts ?? { annual_contract_value: 0, budget_contract_value: 0, consumed_contract_value: 0 }
 
     const prompt = renderPrompt('step4-industry.md', {
       industry:                industryName,

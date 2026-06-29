@@ -51,4 +51,3 @@ Draft clearly articulating executive summary with insights and action items and 
 Return ONLY top 2 insights and top 2 action iteams in a valid JSON array. No markdown, no code fences, no preamble.
 
 ["[insight] insight", ..., "[action] action item", ...]
-

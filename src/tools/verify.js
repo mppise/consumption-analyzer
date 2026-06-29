@@ -1,7 +1,6 @@
 // @story STORY-004 | verify
 // @intent reads a portfolio.json produced by --transform and performs independent financial accuracy checks —
 //   re-derives all rollup values from raw month data and fails fast if any computed field is inconsistent
-//   Updated 2026-06-29: variance field names renamed (ytd_ prefix); annual_contract_values check removed; aggregated_contracts check removed
 
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -67,9 +66,47 @@ export async function run(args, _options) {
 
   for (const customer of portfolio.customers) {
     const custName = customer.customer || customer.customer_id || '(unknown)'
+    const customerRollup = customer.annual_contract_values ?? {}
 
-    // ── Check A: annual_contract_values rollup removed — @gap 2026-06-29 field no longer present on customer objects;
-    //    projected annual figures are now embedded per L3 contract_month record
+    // ── Check A: Customer-level annual rollup integrity ───────────────────────
+    // Recompute from all L3 months and compare to customer.annual_contract_values
+    // ACV is constant per L3+year — use max() per L3, then sum across L3s (same as transform.js)
+    const recomputedYears = {}
+    for (const l1 of customer.solutions_l1 ?? []) {
+      for (const l2 of l1.solutions_l2 ?? []) {
+        for (const l3 of l2.solutions_l3 ?? []) {
+          const contract = l3.contract ?? {}
+          for (const key of Object.keys(contract)) {
+            if (key === 'contract_insights') continue
+            const months = contract[key]
+            if (!Array.isArray(months) || !months.length) continue
+            if (!recomputedYears[key]) recomputedYears[key] = { acv: [], budget: [] }
+            // max() per L3 for ACV (constant across months); sum() for budget (monthly accrual)
+            recomputedYears[key].acv.push(Math.max(...months.map(m => m.ytd_annual_contract_value ?? 0)))
+            for (const m of months) {
+              recomputedYears[key].budget.push(m.ytd_budget_contract_value ?? 0)
+            }
+          }
+        }
+      }
+    }
+    for (const [year, arrs] of Object.entries(recomputedYears)) {
+      const reacv    = intSum(arrs.acv)
+      const rebudget = intSum(arrs.budget)
+      const stored   = customerRollup[year]
+      if (!stored) {
+        failures.push(`[A] ${custName} / year=${year}: missing annual_contract_values entry`)
+      } else {
+        const tolA = tolerance(reacv,    stored.annual_annual_contract_value ?? 0)
+        const tolB = tolerance(rebudget, stored.annual_budget_contract_value  ?? 0)
+        if (Math.abs(reacv    - (stored.annual_annual_contract_value ?? 0)) > tolA) {
+          failures.push(`[A] ${custName} / ${year}: annual_annual_contract_value stored=${stored.annual_annual_contract_value} recomputed=${reacv}`)
+        }
+        if (Math.abs(rebudget - (stored.annual_budget_contract_value ?? 0)) > tolB) {
+          failures.push(`[A] ${custName} / ${year}: annual_budget_contract_value stored=${stored.annual_budget_contract_value} recomputed=${rebudget}`)
+        }
+      }
+    }
 
     for (const l1 of customer.solutions_l1 ?? []) {
       for (const l2 of l1.solutions_l2 ?? []) {
@@ -104,16 +141,15 @@ export async function run(args, _options) {
               const expectedAttainment = bud > 0 ? roundTo1(cons / bud * 100) : null
 
               const tolV = 0.02  // tight: variances are derived, not measured
-              // @gap 2026-06-29 variance field names renamed: acv_gap → ytd_acv_gap, budget_gap → ytd_budget_gap, budget_attainment → ytd_budget_attainment
-              if (v.ytd_acv_gap !== undefined && Math.abs((v.ytd_acv_gap ?? 0) - expectedAcvGap) > tolV) {
-                failures.push(`[B] ${tag} / ${key}/${m.month}: ytd_acv_gap stored=${v.ytd_acv_gap} expected=${expectedAcvGap}`)
+              if (v.acv_gap !== undefined && Math.abs((v.acv_gap ?? 0) - expectedAcvGap) > tolV) {
+                failures.push(`[B] ${tag} / ${key}/${m.month}: acv_gap stored=${v.acv_gap} expected=${expectedAcvGap}`)
               }
-              if (v.ytd_budget_gap !== undefined && Math.abs((v.ytd_budget_gap ?? 0) - expectedBudgetGap) > tolV) {
-                failures.push(`[B] ${tag} / ${key}/${m.month}: ytd_budget_gap stored=${v.ytd_budget_gap} expected=${expectedBudgetGap}`)
+              if (v.budget_gap !== undefined && Math.abs((v.budget_gap ?? 0) - expectedBudgetGap) > tolV) {
+                failures.push(`[B] ${tag} / ${key}/${m.month}: budget_gap stored=${v.budget_gap} expected=${expectedBudgetGap}`)
               }
-              if (expectedAttainment !== null && v.ytd_budget_attainment !== undefined && v.ytd_budget_attainment !== null) {
-                if (Math.abs(v.ytd_budget_attainment - expectedAttainment) > 0.1) {
-                  failures.push(`[B] ${tag} / ${key}/${m.month}: ytd_budget_attainment stored=${v.ytd_budget_attainment} expected=${expectedAttainment}`)
+              if (expectedAttainment !== null && v.budget_attainment !== undefined && v.budget_attainment !== null) {
+                if (Math.abs(v.budget_attainment - expectedAttainment) > 0.1) {
+                  failures.push(`[B] ${tag} / ${key}/${m.month}: budget_attainment stored=${v.budget_attainment} expected=${expectedAttainment}`)
                 }
               }
 
@@ -136,8 +172,51 @@ export async function run(args, _options) {
     }
   }
 
-  // ── Check C: industry aggregated_contracts removed — @gap 2026-06-29 field no longer present on industry_insights objects;
-  //    dashboard derives industry-level figures from L3 projected_annual_* fields
+  // ── Check C: Industry aggregated_contracts vs customer rollup ───────────────
+  // Build customer YTD totals per industry from raw months, compare to stored aggregated_contracts
+  const industryTotals = new Map()
+  for (const customer of portfolio.customers) {
+    const ind = customer.industry ?? 'Unknown'
+    if (!industryTotals.has(ind)) industryTotals.set(ind, { budget: 0, consumed: 0 })
+    const agg = industryTotals.get(ind)
+    for (const l1 of customer.solutions_l1 ?? []) {
+      for (const l2 of l1.solutions_l2 ?? []) {
+        for (const l3 of l2.solutions_l3 ?? []) {
+          const contract = l3.contract ?? {}
+          for (const key of Object.keys(contract)) {
+            if (key === 'contract_insights' || key === 'annual_contract_values') continue
+            const months = contract[key]
+            if (!Array.isArray(months)) continue
+            for (const m of months) {
+              if (rmInt) {
+                const yyyymm = monthToYYYYMM(key, m.month)
+                if (yyyymm !== null && yyyymm > rmInt) continue
+              }
+              agg.budget   += m.ytd_budget_contract_value   ?? 0
+              agg.consumed += m.ytd_consumed_contract_value ?? 0
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (const indBlock of portfolio.industry_insights ?? []) {
+    const ind = indBlock.industry ?? 'Unknown'
+    const stored = indBlock.aggregated_contracts ?? {}
+    const derived = industryTotals.get(ind)
+    if (!derived) continue
+    const rebudget   = Math.round(derived.budget   * 100) / 100
+    const reconsumed = Math.round(derived.consumed * 100) / 100
+    const tolIB = tolerance(rebudget,   stored.budget_contract_value   ?? 0)
+    const tolIC = tolerance(reconsumed, stored.consumed_contract_value ?? 0)
+    if (Math.abs(rebudget   - (stored.budget_contract_value   ?? 0)) > tolIB) {
+      failures.push(`[C] Industry "${ind}": budget_contract_value stored=${stored.budget_contract_value} recomputed=${rebudget}`)
+    }
+    if (Math.abs(reconsumed - (stored.consumed_contract_value ?? 0)) > tolIC) {
+      failures.push(`[C] Industry "${ind}": consumed_contract_value stored=${stored.consumed_contract_value} recomputed=${reconsumed}`)
+    }
+  }
 
   // ── Emit warnings (non-fatal) ─────────────────────────────────────────────
   for (const w of warnings) {

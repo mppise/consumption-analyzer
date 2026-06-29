@@ -12,7 +12,7 @@ reads:
 ## Criteria
 1. `--analyze <file.json>` reads a portfolio JSON produced by --transform; exits 0 on success.
 2. Executes pattern:bottom-up-ai-pipeline in order: Step 1 (contract_insights per L3, sonnet), Step 2 (solution_architecture_insights per L1, sonnet), Step 3 (enterprise_architecture_insights per customer, sonnet), Step 4 (industry_insights summary per industry, opus).
-3. After completion, every contract:contract-block-shape.contract_insights[] is non-empty, every contract:solutions-l1-shape.solution_architecture_insights[] is non-empty, every contract:customer-shape.enterprise_architecture_insights[] is non-empty, every contract:customer-shape.enterprise_architecture_diagram is a non-empty string, and every contract:industry-insight-shape.summary[] is non-empty.
+3. After completion, every contract:contract-block-shape.contract_insights[] is non-empty, every contract:solutions-l1-shape.solution_architecture_insights[] is non-empty, every contract:customer-shape.enterprise_architecture_insights[] is non-empty, and every contract:industry-insight-shape.summary[] is non-empty.
 4. Portfolio JSON is written back to disk after each step completes — a crash loses at most one step's computation.
 5. Prompt templates are `.md` files in `/src/ai/`; sole product knowledge source is `src/ai/sap-product-catalog.json`; no inline prompt strings in source code.
 6. Steps 1–3 use `AI_MODEL` env var (sonnet); Step 4 uses `AI_MODEL_SENIOR` env var (opus); both must be set.
@@ -39,9 +39,9 @@ reads:
 - owns: data:portfolio (enriches in-place — populates all AI insight fields across all 4 levels)
 - reads: data:contract (Step 1 input: year/month series + variances per L3 product)
 - reads: data:solutions_l1 (Step 2 scope: one call per L1 per customer; reads all L3 contract_insights aggregated)
-- reads: data:customer (Step 3 scope: one call per customer; reads all L1 solution_architecture_insights; second AI call writes enterprise_architecture_diagram as Mermaid string via prompt template src/ai/step3-enterprise-arch-diagram.md)
+- reads: data:customer (Step 3 scope: one call per customer; reads all L1 solution_architecture_insights)
 - reads: data:industry_insight (Step 4 scope: one call per distinct industry; reads customer enterprise_architecture_insights)
-- new fields: enterprise_architecture_diagram: string (on data:customer — Mermaid block diagram of SAP solution landscape; produced by second AI call in Step 3; defined in contract:customer-shape)
+- new fields: none (all AI fields defined in contract:contract-block-shape, contract:solutions-l1-shape, contract:customer-shape, contract:industry-insight-shape)
 
 ## Change history
 | Release | Date       | Summary                                                                                                    | Source     |
@@ -54,4 +54,3 @@ reads:
 | 3.1.0   | 2026-06-27 | Gap merged: L3 schema expanded; key_signals and signal_type removed; L3 per-field count logging added | gap-merge |
 | 4.0.0   | 2026-06-28 | Rewritten for 5-step bottom-up pipeline; supersedes 3-level pipeline; new entity hierarchy and metric names | rewrite |
 | 4.1.3   | 2026-06-29 | Schema restructure: solution_architecture_insights moved to L1, enterprise_architecture_insights moved to customer, Step 4 (account_insights) removed; pipeline is now 4 steps | gap-merge |
-| 4.2.0   | 2026-06-29 | Gap merged: Step 3 second AI call added; enterprise_architecture_diagram Mermaid field added to customer; Criterion 3 extended; prompt template step3-enterprise-arch-diagram.md documented | gap-merge |
