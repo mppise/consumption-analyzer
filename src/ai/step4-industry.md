@@ -42,9 +42,6 @@ Use relative signals: "leading", "lagging", "strongest adoption", "most dormant"
 **Good:** "BTP activation is a shared gap across all four customers — none has progressed past basic connectivity, which for life sciences companies means GxP automation and regulatory reporting workflows remain manual and high-risk; VAT should run a coordinated BTP activation sprint across the cohort."
 **Bad:** "BTP is underperforming across the industry cohort."
 
-**Good:** "Cardinal Health is lagging the peer group on procurement transformation — while AbbVie and Abbott show active Ariba sourcing and buying workflows, Cardinal's procurement signals suggest the programme has not moved beyond contracting, creating a competitive gap in supply chain efficiency."
-**Bad:** "Cardinal Health has lower Ariba consumption than other customers."
-
 ---
 
 ## Output instructions
