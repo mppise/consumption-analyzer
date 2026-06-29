@@ -277,9 +277,9 @@ function formatContractData(contractBlock) {
       const acv      = typeof m.ytd_annual_contract_value   === 'number' ? m.ytd_annual_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       const budget   = typeof m.ytd_budget_contract_value   === 'number' ? m.ytd_budget_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       const consumed = typeof m.ytd_consumed_contract_value === 'number' ? m.ytd_consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const attainment = m.variances?.budget_attainment != null ? `${m.variances.budget_attainment.toFixed(1)}%` : 'N/A'
-      const acvGap     = m.variances?.acv_gap  != null ? m.variances.acv_gap.toLocaleString('en-US',  { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const budgetGap  = m.variances?.budget_gap != null ? m.variances.budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const attainment = m.variances?.ytd_budget_attainment != null ? `${m.variances.ytd_budget_attainment.toFixed(1)}%` : 'N/A'
+      const acvGap     = m.variances?.ytd_acv_gap  != null ? m.variances.ytd_acv_gap.toLocaleString('en-US',  { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const budgetGap  = m.variances?.ytd_budget_gap != null ? m.variances.ytd_budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       lines.push(`- **${m.month}**: ACV=${acv} | Budget=${budget} | Consumed=${consumed} | Attainment=${attainment} | ACV Gap=${acvGap} | Budget Gap=${budgetGap}`)
     }
   }
@@ -571,7 +571,8 @@ async function runStep4(portfolio, chatOpus, promptVars) {
     }).join('\n\n')
 
     const customerList = customers.map(c => c.customer ?? c.customer_id ?? 'Unknown').join(', ')
-    const agg = industryBlock.aggregated_contracts ?? { annual_contract_value: 0, budget_contract_value: 0, consumed_contract_value: 0 }
+    // @gap 2026-06-29 aggregated_contracts removed from industry_insights — financial figures no longer passed to Step 4 prompt; prompt uses customer EA insights only
+    const agg = { annual_contract_value: 0, budget_contract_value: 0, consumed_contract_value: 0 }
 
     const prompt = renderPrompt('step4-industry.md', {
       industry:                industryName,

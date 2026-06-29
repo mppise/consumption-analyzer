@@ -10,6 +10,11 @@ runtime:
   exposed_ports: []
 files_modified:
   - src/tools/transform.js
+  - src/tools/verify.js
+  - src/tools/analyze.js
+  - specs/architecture/contracts.md
+  - specs/architecture/data-model.md
+  - specs/stories/STORY-004/gap.md
 commits:
   - "ac54ee4 feat(STORY-004): rewrite --transform for new portfolio schema"
 gap_specs:
@@ -18,4 +23,7 @@ warnings:
   - "Criterion 3 says industry:'' (placeholder until STORY-006) but inferIndustry() from src/lib/industry.js was already implemented; calling it here satisfies both STORY-004 and STORY-006 criteria. Documented in gap.md."
   - "The CSV's PFHIER_LOGICAL_PRODUCT_DESC column carries both product name and LPR code in one field (e.g. 'SAP Analytics Cloud BI (LPR1064)'); the logical_product_id column is not present in this CSV format. LPR IDs are parsed from the name column via parseProductRaw(). Field mapper emits: 'optional canonical fields not mapped: logical_product_id' — this is expected for this CSV format."
   - "LPR1153 (SAP BTP Enterprise Agreement) appears under multiple L2 sub-solution areas within the same L1. This is correct data — each row represents a portion of the BTP Enterprise Agreement allocated to a different sub-solution. They are distinct L3 entries under their respective L2s."
+  - "enterprise_architecture_diagram field added as empty string stub per gap.md — STORY-003 must populate and STORY-005 must render this field."
+  - "STORY-005 dashboard.js reads old variance field names (acv_gap, budget_gap, budget_attainment) and customer.annual_contract_values — separate story update required to consume new field names and projected_annual_* fields."
+  - "analyze.js Step 4 prompt no longer receives financial totals (total_acv, total_budget, total_consumed) since aggregated_contracts was removed from industry_insights; those prompt variables resolve to $0. The step4-industry.md prompt template may need updating to use a different data source."
 overall_status: pass

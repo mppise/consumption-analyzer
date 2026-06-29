@@ -291,22 +291,24 @@ async function parseCsvFile(filePath, aiClient = null) {
 // ─── Variance computation ─────────────────────────────────────────────────────
 
 /**
- * Compute variance fields for a single contract_month.
+ * Compute YTD variance fields for a single contract_month.
  * Uses integer-safe arithmetic per entity:contract_month rules.
+ * Field names are prefixed ytd_ to distinguish from projected annual variances.
  *
- * @param {number} annual_contract_value
- * @param {number} budget_contract_value
- * @param {number} consumed_contract_value
- * @returns {{ acv_gap: number, budget_gap: number, budget_attainment: number|null }}
+ * @param {number} ytd_annual_contract_value
+ * @param {number} ytd_budget_contract_value
+ * @param {number} ytd_consumed_contract_value
+ * @returns {{ ytd_acv_gap: number, ytd_budget_gap: number, ytd_budget_attainment: number|null }}
  */
-// @contract input: annual_contract_value, budget_contract_value, consumed_contract_value → output: variances object
+// @contract input: ytd_annual_contract_value, ytd_budget_contract_value, ytd_consumed_contract_value → output: variances object with ytd_ prefix names
+// @gap 2026-06-29 variance field names renamed: acv_gap → ytd_acv_gap, budget_gap → ytd_budget_gap, budget_attainment → ytd_budget_attainment
 function computeVariances(ytd_annual_contract_value, ytd_budget_contract_value, ytd_consumed_contract_value) {
-  const acv_gap = Math.round((ytd_annual_contract_value - ytd_consumed_contract_value) * 100) / 100
-  const budget_gap = Math.round((ytd_budget_contract_value - ytd_consumed_contract_value) * 100) / 100
-  const budget_attainment = ytd_budget_contract_value > 0
+  const ytd_acv_gap = Math.round((ytd_annual_contract_value - ytd_consumed_contract_value) * 100) / 100
+  const ytd_budget_gap = Math.round((ytd_budget_contract_value - ytd_consumed_contract_value) * 100) / 100
+  const ytd_budget_attainment = ytd_budget_contract_value > 0
     ? Math.round((ytd_consumed_contract_value / ytd_budget_contract_value) * 1000) / 10
     : null
-  return { acv_gap, budget_gap, budget_attainment }
+  return { ytd_acv_gap, ytd_budget_gap, ytd_budget_attainment }
 }
 
 // ─── Hierarchy builder ────────────────────────────────────────────────────────
@@ -376,18 +378,38 @@ function buildL1Hierarchy(records) {
         }
 
         // Sort each year's months and build contract_month objects
+        // For each L3+year: compute projected annual totals (sum all 12 months) then stamp onto every month record
         const contractBlock = {
           contract_insights: [],
         }
         for (const [year, monthEntries] of yearMap) {
           monthEntries.sort((a, b) => a.yyyymm.localeCompare(b.yyyymm))
+
+          // Projected annual = sum of ALL 12 months of ytd_budget_contract_value / ytd_consumed_contract_value
+          // (future months have 0 values, so summing all 12 gives the full-year projection)
+          const projected_annual_budget_contract_value = intSum(monthEntries.map(e => e.budget_contract_value))
+          const projected_annual_consumed_contract_value = intSum(monthEntries.map(e => e.consumed_contract_value))
+
           contractBlock[year] = monthEntries.map(entry => {
             const { yyyymm, budget_contract_value, consumed_contract_value, annual_contract_value } = entry
+
+            // Projected annual variance fields derived from projected totals
+            const projected_annual_acv_gap = Math.round((annual_contract_value - projected_annual_consumed_contract_value) * 100) / 100
+            const projected_annual_budget_gap = Math.round((projected_annual_budget_contract_value - projected_annual_consumed_contract_value) * 100) / 100
+            const projected_annual_budget_attainment = projected_annual_budget_contract_value > 0
+              ? Math.round((projected_annual_consumed_contract_value / projected_annual_budget_contract_value) * 1000) / 10
+              : 0
+
             return {
               month: yyyymmToMonthName(yyyymm),
-              ytd_annual_contract_value:   annual_contract_value,
-              ytd_budget_contract_value:   budget_contract_value,
-              ytd_consumed_contract_value: consumed_contract_value,
+              ytd_annual_contract_value:                annual_contract_value,
+              ytd_budget_contract_value:                budget_contract_value,
+              ytd_consumed_contract_value:              consumed_contract_value,
+              projected_annual_budget_contract_value,
+              projected_annual_consumed_contract_value,
+              projected_annual_acv_gap,
+              projected_annual_budget_gap,
+              projected_annual_budget_attainment,
               variances: computeVariances(annual_contract_value, budget_contract_value, consumed_contract_value),
             }
           })
@@ -425,47 +447,6 @@ function buildL1Hierarchy(records) {
   return l1Array
 }
 
-// ─── Customer annual contract values ──────────────────────────────────────────
-
-/**
- * Roll up annual ACV and budget totals per year across all L3 contracts for a customer.
- * Uses intSum for integer-safe arithmetic.
- * @param {object[]} solutions_l1
- * @returns {object} year-keyed { annual_annual_contract_value, annual_budget_contract_value }
- */
-function buildCustomerAnnualContractValues(solutions_l1) {
-  const yearMap = new Map()
-  for (const l1 of solutions_l1 ?? []) {
-    for (const l2 of l1.solutions_l2 ?? []) {
-      for (const l3 of l2.solutions_l3 ?? []) {
-        const contract = l3.contract ?? {}
-        for (const key of Object.keys(contract)) {
-          if (key === 'contract_insights') continue
-          const months = contract[key]
-          if (!Array.isArray(months) || !months.length) continue
-          if (!yearMap.has(key)) yearMap.set(key, { acv: [], budget: [] })
-          const agg = yearMap.get(key)
-          // ytd_annual_contract_value is constant across months for this L3+year — take the max
-          // ytd_budget_contract_value accrues monthly — sum all months
-          const maxAcv = Math.max(...months.map(m => m.ytd_annual_contract_value ?? 0))
-          agg.acv.push(maxAcv)
-          for (const m of months) {
-            agg.budget.push(m.ytd_budget_contract_value ?? 0)
-          }
-        }
-      }
-    }
-  }
-  const result = {}
-  for (const [year, agg] of yearMap) {
-    result[year] = {
-      annual_annual_contract_value: intSum(agg.acv),
-      annual_budget_contract_value: intSum(agg.budget),
-    }
-  }
-  return result
-}
-
 // ─── Reporting month detection ────────────────────────────────────────────────
 
 /**
@@ -494,53 +475,22 @@ function detectReportingMonth(records) {
  * @param {object[]} customers - built customer objects (new schema)
  * @returns {object[]} industry_insights[] conforming to contract:industry-insight-shape
  */
-// @contract input: customers[], reportingMonth string YYYYMM → output: industry_insights[] with YTD aggregated_contracts
+// @contract input: customers[], reportingMonth string YYYYMM → output: industry_insights[] stubs (no aggregated_contracts — dashboard derives from L3 projected_annual_* fields)
 function buildIndustryInsights(customers, reportingMonth) {
-  const rmInt = reportingMonth ? parseInt(reportingMonth, 10) : null
-  const industryMap = new Map()
+  // Collect distinct industry names only — aggregated financial data removed; dashboard derives from L3 data
+  const industrySet = new Set()
 
   for (const customer of customers) {
     const industry = customer.industry || 'Unknown'
-    if (!industryMap.has(industry)) {
-      industryMap.set(industry, { acv: 0, budget: 0, consumed: 0 })
-    }
-    const agg = industryMap.get(industry)
-
-    for (const l1 of customer.solutions_l1 ?? []) {
-      for (const l2 of l1.solutions_l2 ?? []) {
-        for (const l3 of l2.solutions_l3 ?? []) {
-          const contract = l3.contract ?? {}
-          for (const key of Object.keys(contract)) {
-            if (key === 'contract_insights') continue
-            const months = contract[key]
-            if (!Array.isArray(months) || !months.length) continue
-            const ytdMonths = months.filter(m => {
-              if (!rmInt) return true
-              const moNum = MONTH_ABBR_TO_NUM[m.month]
-              if (!moNum) return true
-              return parseInt(`${key}${moNum}`, 10) <= rmInt
-            })
-            if (!ytdMonths.length) continue
-            // ACV is constant per L3+year — use max to avoid multiplying by month count
-            agg.acv      += Math.max(...ytdMonths.map(m => m.ytd_annual_contract_value   ?? 0))
-            agg.budget   += ytdMonths.reduce((s, m) => s + (m.ytd_budget_contract_value   ?? 0), 0)
-            agg.consumed += ytdMonths.reduce((s, m) => s + (m.ytd_consumed_contract_value ?? 0), 0)
-          }
-        }
-      }
-    }
+    industrySet.add(industry)
   }
 
   const result = []
-  for (const [industry, agg] of industryMap) {
+  for (const industry of industrySet) {
+    // @gap 2026-06-29 aggregated_contracts removed from industry_insights — dashboard derives industry-level figures from L3 projected_annual_* fields
     result.push({
       industry,
       summary: [],
-      aggregated_contracts: {
-        annual_contract_value:   Math.round(agg.acv      * 100) / 100,
-        budget_contract_value:   Math.round(agg.budget   * 100) / 100,
-        consumed_contract_value: Math.round(agg.consumed * 100) / 100,
-      },
     })
   }
 
@@ -597,24 +547,8 @@ function reconcilePortfolio(customers) {
         }
       }
     }
-    // Check 3: customer-level annual rollup integrity — recompute from all L3 months
-    const customerRollup = customer.annual_contract_values ?? {}
-    const recomputedRollup = buildCustomerAnnualContractValues(customer.solutions_l1)
-    for (const year of Object.keys(recomputedRollup)) {
-      const stored = customerRollup[year]
-      const expected = recomputedRollup[year]
-      const tol = 0.02
-      if (!stored) {
-        failures.push(`${customerName}: missing annual_contract_values entry for year ${year}`)
-        continue
-      }
-      if (Math.abs((stored.annual_annual_contract_value ?? 0) - expected.annual_annual_contract_value) > tol) {
-        failures.push(`${customerName} / ${year}: annual_annual_contract_value stored=${stored.annual_annual_contract_value} recomputed=${expected.annual_annual_contract_value}`)
-      }
-      if (Math.abs((stored.annual_budget_contract_value ?? 0) - expected.annual_budget_contract_value) > tol) {
-        failures.push(`${customerName} / ${year}: annual_budget_contract_value stored=${stored.annual_budget_contract_value} recomputed=${expected.annual_budget_contract_value}`)
-      }
-    }
+    // Check 3 (annual_contract_values rollup) removed — field no longer present on customer objects;
+    // @gap 2026-06-29 Check 3 removed because annual_contract_values field removed from customer; projected annual figures are now embedded per L3 month record
   }
 
   if (failures.length > 0) {
@@ -748,7 +682,9 @@ export async function run(args, options) {
     customer: cb.customer_name || cb.customer_id || 'Unknown',
     industry: industryMap.get(cb.customer_name) ?? 'Professional services',
     enterprise_architecture_insights: [],
-    annual_contract_values: buildCustomerAnnualContractValues(cb.solutions_l1),
+    // @gap 2026-06-29 enterprise_architecture_diagram stub added — gap.md: STORY-003 populates during --analyze Step 3; STORY-005 reads and renders in dashboard
+    enterprise_architecture_diagram: '',
+    // @gap 2026-06-29 annual_contract_values removed — dashboard now derives full-year figures from projected_annual_* fields embedded in each L3 contract_month record
     solutions_l1: cb.solutions_l1,
   }))
 

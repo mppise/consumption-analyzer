@@ -104,10 +104,6 @@ One industry-level insight block within contract:portfolio-json.industry_insight
 Fields:
 - industry: string — unique industry name (e.g. "Pharma/Life Sciences", "Manufacturing")
 - summary: string[] — array of paragraph strings from --analyze Step 4 (opus model); empty array until --analyze has run
-- aggregated_contracts: object — financial roll-up:
-  - annual_contract_value: number
-  - budget_contract_value: number
-  - consumed_contract_value: number
 
 ---
 
@@ -119,9 +115,7 @@ Fields:
 - customer: string — display name
 - industry: string — inferred industry vertical; matches contract:industry-insight-shape.industry
 - enterprise_architecture_insights: string[] — paragraph strings from --analyze Step 3 (sonnet); cross-domain EA patterns and actions for this customer; empty array until --analyze has run
-- annual_contract_values: object — per-year full-year financial rollup across all L3 contracts for this customer (keyed by year string e.g. "2026"):
-  - annual_annual_contract_value: number — sum of all months' ytd_annual_contract_value for that year across all L3 products (full-year ACV)
-  - annual_budget_contract_value: number — sum of all months' ytd_budget_contract_value for that year across all L3 products (full-year budget)
+- enterprise_architecture_diagram: string — Mermaid or SVG diagram string produced by --analyze Step 3 (sonnet); empty string until --analyze has run
 - solutions_l1: contract:solutions-l1-shape[]
 
 ---
@@ -172,10 +166,15 @@ Fields:
 - ytd_annual_contract_value: number — ACV actuals YTD for this month
 - ytd_budget_contract_value: number — budgeted YTD value for this month
 - ytd_consumed_contract_value: number — actual YTD consumption for this month
-- variances: object — computed variance metrics:
-  - acv_gap: number — ytd_annual_contract_value - ytd_consumed_contract_value
-  - budget_gap: number — ytd_budget_contract_value - ytd_consumed_contract_value
-  - budget_attainment: number | null — (consumed / budget) * 100 as percentage; null if budget = 0
+- projected_annual_budget_contract_value: number — sum of ytd_budget_contract_value across ALL 12 months of this L3+year (full-year budget projection)
+- projected_annual_consumed_contract_value: number — sum of ytd_consumed_contract_value across ALL 12 months of this L3+year (full-year consumption projection)
+- projected_annual_acv_gap: number — ytd_annual_contract_value − projected_annual_consumed_contract_value
+- projected_annual_budget_gap: number — projected_annual_budget_contract_value − projected_annual_consumed_contract_value
+- projected_annual_budget_attainment: number — (projected_annual_consumed / projected_annual_budget) × 100; 0 if budget = 0
+- variances: object — YTD computed variance metrics:
+  - ytd_acv_gap: number — ytd_annual_contract_value - ytd_consumed_contract_value
+  - ytd_budget_gap: number — ytd_budget_contract_value - ytd_consumed_contract_value
+  - ytd_budget_attainment: number | null — (consumed / budget) * 100 as percentage; null if budget = 0
 
 ---
 
