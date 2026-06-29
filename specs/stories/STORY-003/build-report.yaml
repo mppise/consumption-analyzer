@@ -13,14 +13,17 @@ files_modified:
   - src/ai/step1-contract.md
   - src/ai/step2-solution-arch.md
   - src/ai/step3-enterprise-arch.md
+  - src/ai/step3-enterprise-arch-diagram.md
   - src/ai/step4-account.md
   - src/ai/step5-industry.md
   - src/ai/analyze.md (deleted — replaced by step-specific templates)
   - src/ai/analyze-sa.md (deleted — replaced by step-specific templates)
-gap_specs: []
+gap_specs:
+  - specs/stories/STORY-003/gap.md
 warnings:
   - "STORY-003 depends on STORY-004 for real new-schema portfolio.json input. When run against old-schema portfolio.json (customers[].solution_areas hierarchy), the pipeline runs 0 tasks and exits 0 — graceful no-op. Full pipeline validation requires STORY-004 to be built first."
   - "Step 2 writes solution_architecture_insights to ALL L3 products under a given L2 (same array reference per sibling). This matches spec: solutions_l3[].solution_architecture_insights is the write target, and the insights describe the L2 grouping, not individual L3 products."
   - "Steps 4-5 run customers/industries sequentially (not parallel) to respect opus model rate limits on large-context prompts."
   - "Spec criterion 7 (missing argument) is handled by commander before reaching the tool module — message is 'option --analyze <file> argument missing' not '--analyze requires a filename argument'. Approved by gap in story-spec.md change history (Release 1.2.0)."
+  - "Step 3 extended with a second AI call (Step 3b) to generate enterprise_architecture_diagram as raw Mermaid syntax. Diagram call failure is non-fatal — stores empty string. stripMermaidFences() strips any ```mermaid fences the model may add despite prompt instructions."
 overall_status: pass

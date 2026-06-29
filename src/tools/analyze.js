@@ -422,8 +422,46 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
   process.stderr.write(`info: Step 2 complete — ${tasks.length - failCount} succeeded${failCount ? `, ${failCount} failed` : ''}\n`)
 }
 
-// @entry runStep3 | Step 3 — enterprise_architecture_insights per customer (sonnet)
-// @contract input: portfolio with Steps 1+2 complete → output: every customer.enterprise_architecture_insights[] populated
+/**
+ * Build a plain-text representation of a customer's L1/L2/L3 SAP solution landscape
+ * for injection into the Mermaid diagram prompt.
+ * @param {object[]} l1List — customer.solutions_l1 array
+ * @returns {string}
+ */
+function buildSolutionLandscapeText(l1List) {
+  if (!l1List?.length) return '(No solution landscape available)'
+  const lines = []
+  for (const l1 of l1List) {
+    lines.push(`### ${l1.name}`)
+    for (const l2 of l1.solutions_l2 ?? []) {
+      lines.push(`  - ${l2.name}`)
+      for (const l3 of l2.solutions_l3 ?? []) {
+        lines.push(`    - ${l3.lpr_name}`)
+      }
+    }
+  }
+  return lines.join('\n')
+}
+
+/**
+ * Strip Mermaid code fences from AI response text.
+ * The diagram prompt instructs no fences, but LLMs sometimes add them anyway.
+ * Returns raw mermaid syntax starting with "graph" or "block" keyword.
+ */
+function stripMermaidFences(text) {
+  if (!text) return text
+  const trimmed = text.trim()
+  // Strip ```mermaid ... ``` or ``` ... ``` wrappers
+  const fenced = trimmed.match(/^```(?:mermaid)?\s*\n?([\s\S]*?)\n?```\s*$/i)
+  if (fenced) return fenced[1].trim()
+  // Strip any leading text before the first "graph" or "block" line
+  const graphStart = trimmed.match(/(graph\s+\w+[\s\S]*)$/i)
+  if (graphStart) return graphStart[1].trim()
+  return trimmed
+}
+
+// @entry runStep3 | Step 3 — enterprise_architecture_insights + enterprise_architecture_diagram per customer (sonnet)
+// @contract input: portfolio with Steps 1+2 complete → output: every customer.enterprise_architecture_insights[] and customer.enterprise_architecture_diagram (raw Mermaid string) populated
 async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
   process.stderr.write('info: Step 3 — enterprise_architecture_insights per customer (sonnet)\n')
   process.stderr.write(`info: Step 3 — ${portfolio.customers?.length ?? 0} customer(s)\n`)
@@ -465,7 +503,30 @@ async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
 
     const parsed = parseStringArray(rawText, `Step 3 / ${customer.customer ?? customer.customer_id}`)
     customer.enterprise_architecture_insights = parsed
-    process.stderr.write(`info:   Step 3 done — ${customer.customer ?? customer.customer_id} (${parsed.length} insight(s))\n`)
+    process.stderr.write(`info:   Step 3 insights done — ${customer.customer ?? customer.customer_id} (${parsed.length} insight(s))\n`)
+
+    // Step 3b — generate enterprise_architecture_diagram (Mermaid)
+    // @gap 2026-06-29 Step 3 extended with a second AI call to produce a Mermaid diagram of the customer's SAP solution landscape — spec only defined enterprise_architecture_insights; diagram field added per gap.md
+    const solutionLandscape = buildSolutionLandscapeText(l1List)
+    const insightsSummary = parsed.join(' ')
+
+    const diagramPrompt = renderPrompt('step3-enterprise-arch-diagram.md', {
+      customer_name:                    customer.customer ?? customer.customer_id ?? 'Unknown',
+      solution_landscape:               solutionLandscape,
+      enterprise_architecture_insights: insightsSummary,
+    })
+
+    let diagramRaw
+    try {
+      diagramRaw = await chatSonnet(diagramPrompt)
+    } catch (err) {
+      process.stderr.write(`warn: Step 3 diagram AI call failed for ${customer.customer ?? customer.customer_id}: ${err.message ?? String(err)} — storing empty diagram\n`)
+      diagramRaw = ''
+    }
+
+    const diagramText = diagramRaw ? stripMermaidFences(diagramRaw) : ''
+    customer.enterprise_architecture_diagram = diagramText
+    process.stderr.write(`info:   Step 3 diagram done — ${customer.customer ?? customer.customer_id} (${diagramText.length} chars)\n`)
   }))
 
   let failCount = 0
