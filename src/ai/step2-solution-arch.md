@@ -46,6 +46,7 @@ Identify between 3-4 most relevant distinct insights and 3-4 most relevant actio
 - Lead with architectural diagnosis for given LoB
 - Name specific products and their functional role
 - Sort in the order of most relevant to least
+- Draft one clearly articulating short statement for each insight and action item.
 
 Return ONLY top 2 insights and top 2 action iteams in a valid JSON array. No markdown, no code fences, no preamble.
 

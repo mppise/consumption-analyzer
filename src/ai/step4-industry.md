@@ -54,6 +54,7 @@ Identify between 3-4 most relevant distinct insights and 3-4 most relevant actio
 - Connect the observation to an industry-relevant capability or business priority
 - Use industry-oriented language, not technology-oriented
 - Sort in the order of most relevant to least
+- Draft one clearly articulating short statement for each insight and action item.
 
 Return all insights and all action iteams in a valid JSON array. No markdown, no code fences, no preamble.
 
