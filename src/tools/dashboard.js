@@ -2,13 +2,9 @@
 // @intent generates a self-contained single-file HTML dashboard with sticky top nav,
 //         two views (Industry, Accounts), an L1/L2/L3 drill drawer, and zero internet dependency;
 //         Bootstrap CSS/JS/Icons + Chart.js inlined from node_modules
-// @gap 2026-06-29 enterprise_architecture_diagram rendered as Mermaid block diagram per customer
-//      when field is a non-empty string; Mermaid loaded via CDN (not inlined) — dashboard is
-//      otherwise fully offline-capable; diagram block is skipped entirely when field is absent/empty
 // @gap 2026-06-29 Full-Year ACV/Budget/Consumed derived from L3 contract month records
-//      (projected_annual_* fields stamped on every month by --transform); customer.annual_contract_values
-//      rollup removed from portfolio.json schema; customerAnnualBudget() and l1AnnualBudget()
-//      replaced by l3 walk helpers; variance field names updated to ytd_* prefix
+//      (projected_annual_* fields stamped on every month by --transform);
+//      customerAnnualBudget() and l1AnnualBudget() replaced by l3 walk helpers; variance field names updated to ytd_* prefix
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import path from 'path'
@@ -25,12 +21,12 @@ export class ProcessingError extends Error {
   constructor(msg) { super(msg); this.name = 'ProcessingError'; this.exitCode = 2 }
 }
 
-// ── Semantic color constants ───────────────────────────────────────────────────
-const C_ACV      = '#9ca3af'
-const C_BUDGET   = '#16a34a'
-const C_CONSUMED = '#ea580c'
+// ── Semantic color constants — Option M: Deep Sea ─────────────────────────────
+const C_ACV      = '#8ecae6'  // pale sky
+const C_BUDGET   = '#2a9d8f'  // deep sea teal
+const C_CONSUMED = '#ff8c69'  // salmon
 const C_PCT      = '#1d4ed8'
-const C_PROJ_CONSUMED = '#7c3aed'
+const C_PROJ_CONSUMED = '#ff8c69'  // matches consumed
 
 // ── Asset paths (node_modules) ────────────────────────────────────────────────
 const NM = path.join(__dirname, '..', '..', 'node_modules')
@@ -39,7 +35,6 @@ const BOOTSTRAP_JS_PATH   = path.join(NM, 'bootstrap', 'dist', 'js', 'bootstrap.
 const BOOTSTRAP_ICONS_CSS = path.join(NM, 'bootstrap-icons', 'font', 'bootstrap-icons.min.css')
 const BOOTSTRAP_ICONS_WOFF2 = path.join(NM, 'bootstrap-icons', 'font', 'fonts', 'bootstrap-icons.woff2')
 const CHARTJS_PATH        = path.join(NM, 'chart.js', 'dist', 'chart.umd.js')
-const MERMAID_PATH        = path.join(NM, 'mermaid', 'dist', 'mermaid.min.js')
 const NUNITO_400 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-400-normal.woff2')
 const NUNITO_600 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-600-normal.woff2')
 const NUNITO_700 = path.join(NM, '@fontsource', 'nunito-sans', 'files', 'nunito-sans-latin-700-normal.woff2')
@@ -69,8 +64,10 @@ function usd(n) {
 // html: ready-to-embed span with icon badge + text
 const INSIGHT_ICON = 'bi-lightbulb'
 const ACTION_ICON  = 'bi-lightning-charge-fill'
-const INSIGHT_COLOR = '#3b82f6'
-const ACTION_COLOR  = '#f59e0b'
+const INSIGHT_COLOR = '#ff8c69'  // wheat
+const ACTION_COLOR  = '#2a9d8f'  // sage
+const INSIGHT_BG    = '#fff5f2'
+const ACTION_BG     = '#f0faf9'
 
 function parseInsight(raw) {
   if (!raw) return { type: 'unknown', text: '', html: '' }
@@ -254,7 +251,7 @@ function reportingMonthDisplay(rm) {
 // ── Health color ───────────────────────────────────────────────────────────────
 function healthColor(att) {
   if (att == null) return '#64748b'
-  return att >= 80 ? '#22c55e' : att >= 50 ? '#f59e0b' : '#ef4444'
+  return att >= 80 ? '#2a9d8f' : att >= 50 ? '#f0a500' : '#e76f51'
 }
 
 // ── Truncate string ───────────────────────────────────────────────────────────
@@ -301,7 +298,7 @@ function buildAccountsView(customers) {
       const saInsights = (l1.solution_architecture_insights ?? [])
       const saRows = saInsights.map(text => {
         const pi = parseInsight(text)
-        return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #e2e8f0">
+        return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;margin-bottom:4px;border-left:3px solid ${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};background:${pi.type === 'action' ? ACTION_BG : INSIGHT_BG}">
           <i class="bi ${pi.type === 'action' ? ACTION_ICON : INSIGHT_ICON}" style="font-size:11px;color:${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};flex-shrink:0;margin-top:2px"></i>
           <span style="font-size:13px;color:#0f172a;line-height:1.4" class="insight-text">${esc(pi.text)}</span>
         </div>`
@@ -313,22 +310,22 @@ function buildAccountsView(customers) {
   <div onclick="openL1(${custIdx},${l1Idx})" style="cursor:pointer;background:#f8fafc;padding:16px;border-bottom:1px solid #e2e8f0">
     <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Solution Area</div>
     <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px">${esc(l1.name)}</div>
-    <div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">${la != null ? pct(la) : '—'}</div>
+    <div style="font-size:22px;font-weight:400;color:#0f172a;line-height:1">${la != null ? pct(la) : '—'}</div>
     <div style="font-size:11px;color:#94a3b8;margin-bottom:14px">YTD Budget Attainment</div>
     <div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>YTD Consumed</span><span>${usd(lt.consumed)}</span></div>
-      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:${la != null ? Math.min(100, la).toFixed(1) : 0}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#ff8c69;margin-bottom:3px"><span>YTD Consumed</span><span>${usd(lt.consumed)}</span></div>
+      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#ff8c69;width:${la != null ? Math.min(100, la).toFixed(1) : 0}%"></div></div>
     </div>
     <div style="margin-bottom:4px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>YTD Budget</span><span>${usd(lt.budget)}</span></div>
-      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#2a9d8f;margin-bottom:3px"><span>YTD Budget</span><span>${usd(lt.budget)}</span></div>
+      <div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#2a9d8f;width:100%"></div></div>
     </div>
     <div style="font-size:12px;color:#94a3b8;margin-top:6px">YTD ACV: ${usd(lt.acv)}</div>
-    <div style="font-size:11px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0">Projected Consumed: <strong style="color:${C_PROJ_CONSUMED}">${usd(l1Annual.annualConsumed)}</strong> · Projected Budget: <strong style="color:#22c55e">${usd(l1Annual.annualBudget)}</strong> · Projected ACV: <strong style="color:#9ca3af">${usd(l1Annual.annualAcv)}</strong></div>
+    <div style="font-size:11px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0"><span style="color:#64748b">Projected Consumed: </span><strong style="color:${C_PROJ_CONSUMED}">${usd(l1Annual.annualConsumed)}</strong> · <span style="color:#64748b">Projected Budget: </span><strong style="color:#2a9d8f">${usd(l1Annual.annualBudget)}</strong> · <span style="color:#64748b">Projected ACV: </span><strong style="color:#8ecae6">${usd(l1Annual.annualAcv)}</strong></div>
   </div>
   <!-- Card body: Solution insights -->
   <div style="padding:12px 14px;background:white">
-    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:6px">Solution Insights</div>
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;color:#0f172a;margin-bottom:6px">Solution Insights and Actions</div>
     ${saRows}
   </div>
 </div>`
@@ -337,27 +334,12 @@ function buildAccountsView(customers) {
     // EA insight rows at customer level (Step 3)
     const eaInsightRows = (cust.enterprise_architecture_insights ?? []).map(text => {
       const pi = parseInsight(text)
-      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e2e8f0">
+      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;margin-bottom:4px;border-left:3px solid ${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};background:${pi.type === 'action' ? ACTION_BG : INSIGHT_BG}">
         <i class="bi ${pi.type === 'action' ? ACTION_ICON : INSIGHT_ICON}" style="font-size:13px;color:${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};flex-shrink:0;margin-top:2px"></i>
         <span style="font-size:14px;color:#0f172a;line-height:1.5" class="insight-text">${esc(pi.text)}</span>
       </div>`
     }).join('')
     const annual = customerAnnualTotals(cust)
-
-    // @contract enterprise_architecture_diagram: non-empty string → render Mermaid block; empty/absent → skip entirely
-    const eaDiagram = (cust.enterprise_architecture_diagram && typeof cust.enterprise_architecture_diagram === 'string' && cust.enterprise_architecture_diagram.trim().length > 0)
-      ? cust.enterprise_architecture_diagram.trim()
-      : null
-
-    const solutionLandscapeBlock = eaDiagram
-      ? `<!-- Solution Landscape diagram — rendered by Mermaid.js CDN -->
-  <div style="margin-bottom:32px;padding-bottom:32px;border-bottom:1px solid #cbd5e1">
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#6366f1;margin-bottom:12px">Solution Landscape</div>
-    <div style="border:1px solid #e2e8f0;background:#f8fafc;padding:20px 24px;overflow-x:auto">
-      <div class="mermaid" style="min-width:0">${esc(eaDiagram)}</div>
-    </div>
-  </div>`
-      : ''
 
     return `<div id="cust-panel-${custIdx}" style="display:${custIdx === 0 ? 'block' : 'none'};padding:40px 48px">
   <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
@@ -367,23 +349,23 @@ function buildAccountsView(customers) {
   <div style="display:flex;align-items:flex-start;gap:32px;margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid #cbd5e1">
     <!-- Donut: 30% width -->
     <div style="flex:0 0 30%;text-align:center">
-      <canvas id="acct-bar-${custIdx}" width="180" height="180" style="display:block;margin:0 auto"></canvas>
-      <div style="font-size:13px;color:#fb923c;margin-top:6px">YTD Consumed: ${usd(t.consumed)}</div>
-      <div style="font-size:13px;color:#22c55e">YTD Budget: ${usd(t.budget)}</div>
-      <div style="font-size:13px;color:#9ca3af">YTD ACV: ${usd(t.acv)}</div>
+      <canvas id="acct-bar-${custIdx}" width="225" height="225" style="display:block;margin:0 auto"></canvas>
+      <div style="font-size:13px;margin-top:6px"><span style="color:#64748b">YTD Consumed: </span><span style="color:#ff8c69;font-weight:700">${usd(t.consumed)}</span></div>
+      <div style="font-size:13px"><span style="color:#64748b">YTD Budget: </span><span style="color:#2a9d8f;font-weight:700">${usd(t.budget)}</span></div>
+      <div style="font-size:13px"><span style="color:#64748b">YTD ACV: </span><span style="color:#8ecae6;font-weight:700">${usd(t.acv)}</span></div>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
-        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Projected Consumed: <strong style="color:${C_PROJ_CONSUMED}">${usd(annual.annualConsumed)}</strong></div>
-        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Projected Budget: <strong style="color:#22c55e">${usd(annual.annualBudget)}</strong></div>
-        <div style="font-size:11px;color:#64748b">Projected ACV: <strong style="color:#9ca3af">${usd(annual.annualAcv)}</strong></div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px"><span style="color:#64748b">Projected Consumed: </span><strong style="color:${C_PROJ_CONSUMED}">${usd(annual.annualConsumed)}</strong></div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px"><span style="color:#64748b">Projected Budget: </span><strong style="color:#2a9d8f">${usd(annual.annualBudget)}</strong></div>
+        <div style="font-size:11px;color:#64748b"><span style="color:#64748b">Projected ACV: </span><strong style="color:#8ecae6">${usd(annual.annualAcv)}</strong></div>
       </div>
     </div>
     <!-- EA insights: 70% width -->
     <div style="flex:1;min-width:0">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#34d399;margin-bottom:12px">EA Insights</div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#0f172a;margin-bottom:12px">EA Insights and Actions</div>
       ${eaInsightRows || '<div style="font-size:13px;color:#94a3b8;font-style:italic">No insights available</div>'}
     </div>
   </div>
-  ${solutionLandscapeBlock}<!-- Solution area cards -->
+  <!-- Solution area cards -->
   <div style="margin-bottom:32px">
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:12px">Solution Areas</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">${l1Tiles}</div>
@@ -430,7 +412,7 @@ function buildIndustryView(indInsights, customers) {
 
     const insightRows = (ind.summary ?? []).map(text => {
       const pi = parseInsight(text)
-      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e2e8f0">
+      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;margin-bottom:4px;border-left:3px solid ${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};background:${pi.type === 'action' ? ACTION_BG : INSIGHT_BG}">
         <i class="bi ${pi.type === 'action' ? ACTION_ICON : INSIGHT_ICON}" style="font-size:13px;color:${pi.type === 'action' ? ACTION_COLOR : INSIGHT_COLOR};flex-shrink:0;margin-top:2px"></i>
         <span style="font-size:14px;color:#0f172a;line-height:1.5" class="insight-text">${esc(pi.text)}</span>
       </div>`
@@ -442,15 +424,15 @@ function buildIndustryView(indInsights, customers) {
   <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:32px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0">
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Consumed</div>
-      <div style="font-size:16px;font-weight:700;color:#fb923c">${usd(totalConsumed)}</div>
+      <div style="font-size:16px;font-weight:700;color:#ff8c69">${usd(totalConsumed)}</div>
     </div>
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Budget</div>
-      <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalBudget)}</div>
+      <div style="font-size:16px;font-weight:700;color:#2a9d8f">${usd(totalBudget)}</div>
     </div>
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD ACV</div>
-      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAcv)}</div>
+      <div style="font-size:16px;font-weight:700;color:#8ecae6">${usd(totalAcv)}</div>
     </div>
     <div style="border-left:1px solid #e2e8f0;padding-left:32px">
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected Consumed</div>
@@ -458,11 +440,11 @@ function buildIndustryView(indInsights, customers) {
     </div>
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected Budget</div>
-      <div style="font-size:16px;font-weight:700;color:#22c55e">${usd(totalAnnualBudget)}</div>
+      <div style="font-size:16px;font-weight:700;color:#2a9d8f">${usd(totalAnnualBudget)}</div>
     </div>
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected ACV</div>
-      <div style="font-size:16px;font-weight:700;color:#9ca3af">${usd(totalAnnualAcv)}</div>
+      <div style="font-size:16px;font-weight:700;color:#8ecae6">${usd(totalAnnualAcv)}</div>
     </div>
   </div>
   <div style="margin-bottom:32px">
@@ -473,14 +455,14 @@ function buildIndustryView(indInsights, customers) {
         const cann = customerAnnualTotals(c)
         const att = ct.budget > 0 ? (ct.consumed / ct.budget * 100) : null
         return `<div style="text-align:center;padding:0 12px">
-          <canvas id="ind-donut-${indIdx}-${i}" width="160" height="160" style="display:block;margin:0 auto"></canvas>
+          <canvas id="ind-donut-${indIdx}-${i}" width="225" height="225" style="display:block;margin:0 auto"></canvas>
           <div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:8px">${esc(c.customer)}</div>
-          <div style="font-size:12px;color:#fb923c">YTD Consumed: ${usd(ct.consumed)}</div>
-          <div style="font-size:12px;color:#22c55e">YTD Budget: ${usd(ct.budget)}</div>
-          <div style="font-size:12px;color:#9ca3af">YTD ACV: ${usd(ct.acv)}</div>
-          <div style="font-size:11px;color:${C_PROJ_CONSUMED};margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0">Projected Consumed: ${usd(cann.annualConsumed)}</div>
-          <div style="font-size:11px;color:#22c55e">Projected Budget: ${usd(cann.annualBudget)}</div>
-          <div style="font-size:11px;color:#9ca3af">Projected ACV: ${usd(cann.annualAcv)}</div>
+          <div style="font-size:12px"><span style="color:#64748b">YTD Consumed: </span><span style="color:#ff8c69;font-weight:700">${usd(ct.consumed)}</span></div>
+          <div style="font-size:12px"><span style="color:#64748b">YTD Budget: </span><span style="color:#2a9d8f;font-weight:700">${usd(ct.budget)}</span></div>
+          <div style="font-size:12px"><span style="color:#64748b">YTD ACV: </span><span style="color:#8ecae6;font-weight:700">${usd(ct.acv)}</span></div>
+          <div style="font-size:11px;margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0"><span style="color:#64748b">Projected Consumed: </span><span style="color:${C_PROJ_CONSUMED};font-weight:700">${usd(cann.annualConsumed)}</span></div>
+          <div style="font-size:11px"><span style="color:#64748b">Projected Budget: </span><span style="color:#2a9d8f;font-weight:700">${usd(cann.annualBudget)}</span></div>
+          <div style="font-size:11px"><span style="color:#64748b">Projected ACV: </span><span style="color:#8ecae6;font-weight:700">${usd(cann.annualAcv)}</span></div>
         </div>`
       }).join('')}
     </div>
@@ -595,15 +577,17 @@ function buildDrawerData(customers, reportingMonth) {
 function buildIndChartData(indInsights, customers) {
   return indInsights.map(ind => {
     const indCustomers = customers.filter(c => c.industry === ind.industry)
-    const labels = [], budget = [], consumed = [], acv = []
+    const labels = [], budget = [], consumed = [], acv = [], projAtt = []
     for (const c of indCustomers) {
       const t = customerTotals(c)
+      const ann = customerAnnualTotals(c)
       labels.push(c.customer)
       budget.push(t.budget)
       consumed.push(t.consumed)
       acv.push(t.acv)
+      projAtt.push(ann.annualBudget > 0 ? Math.round(ann.annualConsumed / ann.annualBudget * 100) : null)
     }
-    return { labels, budget, consumed, acv }
+    return { labels, budget, consumed, acv, projAtt }
   })
 }
 
@@ -611,8 +595,10 @@ function buildIndChartData(indInsights, customers) {
 function buildAcctBarData(customers) {
   return customers.map((cust, custIdx) => {
     const t = customerTotals(cust)
+    const ann = customerAnnualTotals(cust)
     const att = attPct(t.budget, t.consumed)
-    return { budget: t.budget, consumed: t.consumed, acv: t.acv, attainment: att }
+    const projAtt = ann.annualBudget > 0 ? Math.round(ann.annualConsumed / ann.annualBudget * 100) : null
+    return { budget: t.budget, consumed: t.consumed, acv: t.acv, attainment: att, projAtt }
   })
 }
 
@@ -648,7 +634,7 @@ function buildL2BarData(customers) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // @contract input: portfolio object + asset strings → output: complete HTML string
-function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss = '', mermaidJs = '') {
+function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss = '') {
   const customers      = portfolio.customers ?? []
   const indInsights    = portfolio.industry_insights ?? []
   const reportingMonth = portfolio.reporting_month ? parseInt(String(portfolio.reporting_month), 10) : null
@@ -657,13 +643,6 @@ function buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nuni
 
   // Set YTD filter so all aggregation helpers exclude future months
   _reportingMonth = reportingMonth
-
-  // Check if any customer has a non-empty enterprise_architecture_diagram — Mermaid CDN loaded only when needed
-  const hasMermaidDiagram = customers.some(c =>
-    c.enterprise_architecture_diagram &&
-    typeof c.enterprise_architecture_diagram === 'string' &&
-    c.enterprise_architecture_diagram.trim().length > 0
-  )
 
   // Portfolio totals
   let portAcv = 0, portBudget = 0, portConsumed = 0
@@ -729,13 +708,13 @@ ${nunitoCss ? `<style>${nunitoCss}</style>` : ''}
     <button id="tab-accounts" onclick="showView('accounts')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid transparent;color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">ACCOUNTS</button>
   </div>
   <div style="display:flex;gap:16px;font-size:11px">
-    <span style="color:#64748b">YTD Consumed <strong style="color:#fb923c">${esc(usd(portConsumed))}</strong></span>
-    <span style="color:#64748b">YTD Budget <strong style="color:#22c55e">${esc(usd(portBudget))}</strong></span>
-    <span style="color:#64748b">YTD ACV <strong style="color:#9ca3af">${esc(usd(portAcv))}</strong></span>
+    <span style="color:#64748b">YTD Consumed <strong style="color:#ff8c69">${esc(usd(portConsumed))}</strong></span>
+    <span style="color:#64748b">YTD Budget <strong style="color:#2a9d8f">${esc(usd(portBudget))}</strong></span>
+    <span style="color:#64748b">YTD ACV <strong style="color:#8ecae6">${esc(usd(portAcv))}</strong></span>
     <span style="color:#cbd5e1">|</span>
     <span style="color:#64748b">Proj Consumed <strong style="color:${C_PROJ_CONSUMED}">${esc(usd(portProjConsumed))}</strong></span>
-    <span style="color:#64748b">Proj Budget <strong style="color:#22c55e">${esc(usd(portProjBudget))}</strong></span>
-    <span style="color:#64748b">Proj ACV <strong style="color:#9ca3af">${esc(usd(portProjAcv))}</strong></span>
+    <span style="color:#64748b">Proj Budget <strong style="color:#2a9d8f">${esc(usd(portProjBudget))}</strong></span>
+    <span style="color:#64748b">Proj ACV <strong style="color:#8ecae6">${esc(usd(portProjAcv))}</strong></span>
   </div>
 </div>
 
@@ -754,8 +733,6 @@ ${industryHtml}
 
 <script>${chartJs}</script>
 <script>${bootstrapJs}</script>
-${mermaidJs ? `<script>${mermaidJs}</script>
-<script>mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'antiscript',fontFamily:"'Nunito Sans',sans-serif"});</script>` : ''}
 <script>
 // ── Embedded data ─────────────────────────────────────────────────────────────
 var DRAWER_DATA    = ${jsonEmbed(drawerData)};
@@ -789,7 +766,7 @@ function fmtPct(v) {
   return Number(v).toFixed(1) + '%';
 }
 function healthColor(att) {
-  return att >= 80 ? '#22c55e' : att >= 50 ? '#f59e0b' : '#ef4444';
+  return att >= 80 ? '#2a9d8f' : att >= 50 ? '#f0a500' : '#e76f51';
 }
 function escHtml(s) {
   if (s == null) return '';
@@ -805,7 +782,7 @@ function renderInsight(raw) {
   if (s.indexOf('[insight]') === 0) { type = 'insight'; text = s.slice(9).trimStart(); }
   else if (s.indexOf('[action]') === 0) { type = 'action'; text = s.slice(8).trimStart(); }
   var icon  = type === 'action'  ? 'bi-lightning-charge-fill' : type === 'insight' ? 'bi-lightbulb' : 'bi-info-circle';
-  var color = type === 'action'  ? '#f59e0b' : type === 'insight' ? '#3b82f6' : '#94a3b8';
+  var color = type === 'action'  ? '#2a9d8f' : type === 'insight' ? '#ff8c69' : '#8ecae6';
   var badge = type !== 'unknown'
     ? '<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + color + ';background:' + color + '18;padding:1px 5px;margin-right:6px;vertical-align:middle;flex-shrink:0"><i class="bi ' + icon + '" style="font-size:10px"></i>' + type + '</span>'
     : '';
@@ -875,13 +852,12 @@ function renderAcctBar(custIdx) {
   var canvas = document.getElementById('acct-bar-' + custIdx);
   var d = ACCT_BAR_DATA[custIdx];
   if (!d) return;
-  renderDonut(canvas, d.budget, d.consumed, d.acv, 180);
+  renderDonut(canvas, d.budget, d.consumed, d.acv, 225, d.projAtt ?? null);
 }
 
-// ── L1 bar charts (Change 5) ──────────────────────────────────────────────────
-// ── Shared donut renderer — matches the spec image exactly ───────────────────
-// size: canvas pixel size (square). budget/consumed/acv in dollars. showLabels: show Budget/Consumed/ACV lines below.
-function renderDonut(canvas, budget, consumed, acv, size) {
+// ── Shared donut renderer ─────────────────────────────────────────────────────
+// projAtt: projected budget attainment % (integer or null) — shown below YTD att in small grey text
+function renderDonut(canvas, budget, consumed, acv, size, projAtt) {
   if (!canvas) return;
   if (canvas._donutChart) { try { canvas._donutChart.destroy(); } catch(e){} canvas._donutChart = null; }
   size = size || 120;
@@ -890,9 +866,10 @@ function renderDonut(canvas, budget, consumed, acv, size) {
   var remaining = Math.max(0, budget - consumed);
   var att = budget > 0 ? Math.round(consumed / budget * 100) : null;
   var attLabel = att != null ? att + '%' : '—';
-  var attColor = '#60a5fa';
-  var pctFontSize = Math.floor(size * 0.19);
-  var pctOffsetY  = 0;
+  var projLabel = projAtt != null ? projAtt + '%' : null;
+  var pctFontSize  = Math.floor(size * 0.17);  // large   — attainment %
+  var labelFont    = Math.floor(size * 0.07);  // xxsmall — "YTD" / "Projected"
+  var projFontSize = Math.floor(size * 0.11);  // xsmall  — projected %
 
   // Inline plugin draws centre text on every render (including hover redraws)
   var centreTextPlugin = {
@@ -904,9 +881,45 @@ function renderDonut(canvas, budget, consumed, acv, size) {
       ctx2.save();
       ctx2.textAlign = 'center';
       ctx2.textBaseline = 'middle';
-      ctx2.fillStyle = attColor;
-      ctx2.font = 'bold ' + pctFontSize + 'px -apple-system,BlinkMacSystemFont,sans-serif';
-      ctx2.fillText(attLabel, cx, cy);
+
+      if (projLabel) {
+        // 4 lines: attLabel / YTD / projLabel / Projected
+        // Total block height = pctFontSize + labelFont + projFontSize + labelFont + gaps
+        var gap = Math.floor(size * 0.025);
+        var totalH = pctFontSize + gap + labelFont + gap * 1.5 + projFontSize + gap + labelFont;
+        var y = cy - totalH / 2;
+
+        // Line 1: attainment % — large black non-bold
+        y += pctFontSize / 2;
+        ctx2.fillStyle = '#0f172a';
+        ctx2.font = pctFontSize + 'px -apple-system,BlinkMacSystemFont,sans-serif';
+        ctx2.fillText(attLabel, cx, y);
+        y += pctFontSize / 2 + gap;
+
+        // Line 2: "YTD" — xsmall blue
+        y += labelFont / 2;
+        ctx2.fillStyle = '#93c5fd';
+        ctx2.font = labelFont + 'px -apple-system,BlinkMacSystemFont,sans-serif';
+        ctx2.fillText('YTD', cx, y);
+        y += labelFont / 2 + gap * 1.5;
+
+        // Line 3: projected % — small grey
+        y += projFontSize / 2;
+        ctx2.fillStyle = '#8ecae6';
+        ctx2.font = projFontSize + 'px -apple-system,BlinkMacSystemFont,sans-serif';
+        ctx2.fillText(projLabel, cx, y);
+        y += projFontSize / 2 + gap;
+
+        // Line 4: "Projected" — xsmall grey
+        y += labelFont / 2;
+        ctx2.fillStyle = '#cbd5e1';
+        ctx2.font = labelFont + 'px -apple-system,BlinkMacSystemFont,sans-serif';
+        ctx2.fillText('Projected', cx, y);
+      } else {
+        ctx2.fillStyle = '#0f172a';
+        ctx2.font = pctFontSize + 'px -apple-system,BlinkMacSystemFont,sans-serif';
+        ctx2.fillText(attLabel, cx, cy);
+      }
       ctx2.restore();
     }
   };
@@ -917,7 +930,7 @@ function renderDonut(canvas, budget, consumed, acv, size) {
       labels: ['Consumed', 'Remaining'],
       datasets: [{
         data: [consumed > 0 ? consumed : 0, remaining > 0 ? remaining : (budget > 0 ? budget : 1)],
-        backgroundColor: ['#fb923c', '#e8edf2'],
+        backgroundColor: ['#ff8c69', '#e8edf2'],
         borderWidth: 0,
         hoverOffset: 0
       }]
@@ -944,7 +957,7 @@ function renderL1Bars(custIdx) {
     var canvas = document.getElementById('l1-bar-' + custIdx + '-' + l1Idx);
     var d = L1_BAR_DATA[key];
     if (!d) return;
-    renderDonut(canvas, d.budget, d.consumed, d.acv || 0, 90);
+    renderDonut(canvas, d.budget, d.consumed, d.acv || 0, 113);
   });
 }
 
@@ -957,7 +970,7 @@ function renderIndChart(idx) {
   d.labels.forEach(function(label, i) {
     var canvas = document.getElementById('ind-donut-' + idx + '-' + i);
     if (!canvas) return;
-    renderDonut(canvas, d.budget[i] || 0, d.consumed[i] || 0, d.acv ? (d.acv[i] || 0) : 0, 160);
+    renderDonut(canvas, d.budget[i] || 0, d.consumed[i] || 0, d.acv ? (d.acv[i] || 0) : 0, 225, d.projAtt ? (d.projAtt[i] ?? null) : null);
   });
 }
 
@@ -983,8 +996,8 @@ function renderL3Chart(data) {
     data: {
       labels: data.labels,
       datasets: [
-        { type: 'line', label: 'Consumed',    data: data.consumed,   borderColor: '#ea580c', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#ea580c' },
-        { type: 'line', label: 'Budget',      data: data.budget,     borderColor: '#16a34a', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#16a34a' },
+        { type: 'line', label: 'Consumed',    data: data.consumed,   borderColor: '#ff8c69', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#ff8c69' },
+        { type: 'line', label: 'Budget',      data: data.budget,     borderColor: '#2a9d8f', backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 3, pointBackgroundColor: '#2a9d8f' },
         { type: 'bar',  label: 'Attainment%', data: data.attainment, backgroundColor: 'rgba(167,139,250,0.25)', yAxisID: 'y2' }
       ]
     },
@@ -1025,22 +1038,22 @@ function openL1(custIdx, l1Idx) {
       + '<div onclick="openL2(' + custIdx + ',' + l1Idx + ',' + tile.l2Idx + ')" style="cursor:pointer;background:#f8fafc;padding:14px 16px">'
       + '<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Sub-Solution Area</div>'
       + '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:8px">' + escHtml(tile.name) + '</div>'
-      + '<div style="font-size:22px;font-weight:800;color:#60a5fa;line-height:1">' + (attPctVal != null ? attPctVal.toFixed(1) + '%' : '—') + '</div>'
+      + '<div style="font-size:22px;font-weight:400;color:#0f172a;line-height:1">' + (attPctVal != null ? attPctVal.toFixed(1) + '%' : '—') + '</div>'
       + '<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Budget Attainment</div>'
       + '<div style="margin-bottom:8px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#fb923c;margin-bottom:3px"><span>Consumed</span><span>' + fmtUsd(tile.consumed) + '</span></div>'
-      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#fb923c;width:' + consumedBarW + '%"></div></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#ff8c69;margin-bottom:3px"><span>Consumed</span><span style="font-weight:700">' + fmtUsd(tile.consumed) + '</span></div>'
+      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#ff8c69;width:' + consumedBarW + '%"></div></div>'
       + '</div>'
       + '<div style="margin-bottom:4px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#22c55e;margin-bottom:3px"><span>Budget</span><span>' + fmtUsd(tile.budget) + '</span></div>'
-      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#22c55e;width:100%"></div></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#2a9d8f;margin-bottom:3px"><span>Budget</span><span style="font-weight:700">' + fmtUsd(tile.budget) + '</span></div>'
+      + '<div style="height:6px;background:#e2e8f0"><div style="height:6px;background:#2a9d8f;width:100%"></div></div>'
       + '</div>'
-      + '<div style="font-size:12px;color:#94a3b8;margin-top:6px;margin-bottom:8px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
+      + '<div style="font-size:12px;color:#8ecae6;font-weight:700;margin-top:6px;margin-bottom:8px">ACV: ' + fmtUsd(tile.acv || 0) + '</div>'
       + '<div style="padding-top:8px;border-top:1px solid #e2e8f0">'
       + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Projected</div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#7c3aed;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(tile.annualConsumed) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(tile.annualBudget) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af"><span>ACV</span><span>' + fmtUsd(tile.annualAcv) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#ff8c69;margin-bottom:2px"><span>Consumed</span><span style="font-weight:700">' + fmtUsd(tile.annualConsumed) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#2a9d8f;margin-bottom:2px"><span>Budget</span><span style="font-weight:700">' + fmtUsd(tile.annualBudget) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#8ecae6"><span>ACV</span><span style="font-weight:700">' + fmtUsd(tile.annualAcv) + '</span></div>'
       + '</div>'
       + '</div>'
       + '</div>';
@@ -1072,7 +1085,7 @@ function openL2(custIdx, l1Idx, l2Idx) {
     + '<span style="font-size:11px;color:#64748b">'
     + escHtml(data.custName) + ' <span style="color:#cbd5e1">›</span> '
     + '<span onclick="openL1(' + custIdx + ',' + l1Idx + ')" style="cursor:pointer;color:#34d399">' + escHtml(data.l1Name) + '</span>'
-    + ' <span style="color:#cbd5e1">›</span> <strong style="color:#fb923c">' + escHtml(data.l2Name) + '</strong>'
+    + ' <span style="color:#cbd5e1">›</span> <strong style="color:#ff8c69">' + escHtml(data.l2Name) + '</strong>'
     + '</span>'
     + '<button onclick="closeDrawer()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1">×</button>'
     + '</div>';
@@ -1084,25 +1097,25 @@ function openL2(custIdx, l1Idx, l2Idx) {
     var l3BarW = l3Att != null ? Math.min(100, l3Att).toFixed(1) : 0;
     return '<div class="l3-tab" data-l3idx="' + i + '" onclick="selectL3(' + i + ')"'
       + ' style="padding:12px;cursor:pointer;border-bottom:1px solid #e2e8f0;border-left:3px solid '
-      + (active ? '#fb923c' : 'transparent') + ';background:' + (active ? '#f1f5f9' : 'transparent') + '">'
+      + (active ? '#ff8c69' : 'transparent') + ';background:' + (active ? '#f1f5f9' : 'transparent') + '">'
       + '<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">Solution</div>'
       + '<div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px;line-height:1.3">' + escHtml(trunc(l3.lprName, 26)) + '</div>'
-      + '<div style="font-size:18px;font-weight:800;color:#60a5fa;line-height:1">' + (l3Att != null ? l3Att.toFixed(1) + '%' : '—') + '</div>'
+      + '<div style="font-size:18px;font-weight:400;color:#0f172a;line-height:1">' + (l3Att != null ? l3Att.toFixed(1) + '%' : '—') + '</div>'
       + '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Budget Attainment</div>'
       + '<div style="margin-bottom:5px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#fb923c;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.consumed) + '</span></div>'
-      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#fb923c;width:' + l3BarW + '%"></div></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#ff8c69;margin-bottom:2px"><span>Consumed</span><span style="font-weight:700">' + fmtUsd(l3.consumed) + '</span></div>'
+      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#ff8c69;width:' + l3BarW + '%"></div></div>'
       + '</div>'
       + '<div style="margin-bottom:4px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.budget) + '</span></div>'
-      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#22c55e;width:100%"></div></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#2a9d8f;margin-bottom:2px"><span>Budget</span><span style="font-weight:700">' + fmtUsd(l3.budget) + '</span></div>'
+      + '<div style="height:4px;background:#e2e8f0"><div style="height:4px;background:#2a9d8f;width:100%"></div></div>'
       + '</div>'
-      + '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px">ACV: ' + fmtUsd(l3.acv) + '</div>'
+      + '<div style="font-size:11px;color:#8ecae6;font-weight:700;margin-bottom:6px">ACV: ' + fmtUsd(l3.acv) + '</div>'
       + '<div style="padding-top:6px;border-top:1px solid #e2e8f0">'
       + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Projected</div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#7c3aed;margin-bottom:2px"><span>Consumed</span><span>' + fmtUsd(l3.annualConsumed) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#22c55e;margin-bottom:2px"><span>Budget</span><span>' + fmtUsd(l3.annualBudget) + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af"><span>ACV</span><span>' + fmtUsd(l3.annualAcv) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#ff8c69;margin-bottom:2px"><span>Consumed</span><span style="font-weight:700">' + fmtUsd(l3.annualConsumed) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#2a9d8f;margin-bottom:2px"><span>Budget</span><span style="font-weight:700">' + fmtUsd(l3.annualBudget) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#8ecae6"><span>ACV</span><span style="font-weight:700">' + fmtUsd(l3.annualAcv) + '</span></div>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1127,7 +1140,7 @@ function selectL3(l3Idx) {
     var active = i === l3Idx;
     el.style.background = active ? '#f1f5f9' : 'transparent';
     el.style.color = active ? '#0f172a' : '#64748b';
-    el.style.borderLeft = active ? '3px solid #fb923c' : '3px solid transparent';
+    el.style.borderLeft = active ? '3px solid #ff8c69' : '3px solid transparent';
   });
   renderL3PanelContent(l3Idx, data, drawerState.custIdx, drawerState.l1Idx, drawerState.l2Idx);
 }
@@ -1143,8 +1156,11 @@ function renderL3PanelContent(l3Idx, data, custIdx, l1Idx, l2Idx) {
 
   // Change 1: light theme contract insights
   var insightRows = l3.contractInsights.map(function(s) {
-    return '<div style="padding:10px 0;border-bottom:1px solid #e2e8f0;border-left:3px solid #94a3b8;padding-left:12px;line-height:1.4">' + renderInsight(s) + '</div>';
-  }).join('') || '<div style="font-size:13px;color:#94a3b8;font-style:italic;padding:8px 0">No contract insights</div>';
+    var t = s.indexOf('[action]') === 0 ? 'action' : 'insight';
+    var bg = t === 'action' ? '#f0faf9' : '#fff5f2';
+    var border = t === 'action' ? '#2a9d8f' : '#ff8c69';
+    return '<div style="padding:8px 10px;margin-bottom:4px;border-left:3px solid ' + border + ';background:' + bg + ';line-height:1.4">' + renderInsight(s) + '</div>';
+  }).join('') || '<div style="font-size:13px;color:#8ecae6;font-style:italic;padding:8px 0">No contract insights</div>';
 
   // Change 4: metric order Consumed first, then Budget, then ACV, then Attainment
   // Change 5: L2 bar canvas
@@ -1154,7 +1170,7 @@ function renderL3PanelContent(l3Idx, data, custIdx, l1Idx, l2Idx) {
     + '<div style="font-size:11px;color:#64748b">' + escHtml(l3.lprId) + '</div>'
     + '</div>'
     + '<div style="position:relative;height:180px;margin-bottom:16px"><canvas id="chart-l3" style="height:180px;width:100%"></canvas></div>'
-    + '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#64748b;margin-bottom:12px">Contract Insights</div>'
+    + '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#0f172a;margin-bottom:12px">Contract Insights and Actions</div>'
     + insightRows;
 
   var chartKey = 'c' + custIdx + '-l1' + l1Idx + '-l2' + l2Idx + '-l3' + l3Idx;
@@ -1229,14 +1245,6 @@ export async function run(args, options) {
     process.stderr.write(`warn: Chart.js not found\n`)
   }
 
-  let mermaidJs = ''
-  try {
-    mermaidJs = readFileSync(MERMAID_PATH, 'utf8')
-    process.stderr.write(`warn: Mermaid loaded (${Buffer.byteLength(mermaidJs, 'utf8')} bytes)\n`)
-  } catch (e) {
-    process.stderr.write(`warn: Mermaid not found — diagrams will not render\n`)
-  }
-
   let nunitoCss = ''
   try {
     nunitoCss = loadNunitoCss()
@@ -1246,7 +1254,7 @@ export async function run(args, options) {
   }
 
   process.stderr.write(`warn: generating HTML dashboard…\n`)
-  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss, mermaidJs)
+  const html = buildHtml(portfolio, bootstrapCss, bootstrapJs, iconsCss, chartJs, nunitoCss)
 
   try {
     writeFileSync(outputPath, html, 'utf8')

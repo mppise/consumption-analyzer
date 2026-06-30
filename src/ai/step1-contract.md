@@ -43,12 +43,13 @@ You are a fact stater first. Every insight must begin with a concrete, observabl
 
 ## Output instructions
 
-Draft clearly articulating executive summary with insights and action items and then split them into 3 to 4 most relevant distinct insights and action items each. Use following guidance to formulate these insights and action items:
+Produce 2 insights and 2 action items. Use the following guidance:
+- Each insight: state the observable contract fact first, then its adoption implication — one concise sentence
+- Each action item: direct and specific — name the product, the gap, and the intervention — one concise sentence, no time references or deadlines
 - Lead with the adoption signal
 - Reference a specific figure to substantiate the signal
-- Formulate short, easy to follow, and impactful statements
-- Sort in the order of most relevant to least
+- Sort in order of most relevant to least
 
-Return ONLY top 2 insights and top 2 action iteams in a valid JSON array. No markdown, no code fences, no preamble.
+Return ONLY a valid JSON array. No markdown, no code fences, no preamble, no time-bound language.
 
 ["[insight] insight", ..., "[action] action item", ...]

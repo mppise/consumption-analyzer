@@ -40,12 +40,12 @@ Every insight should follow this pattern: **state the architectural fact → fra
 
 ## Output instructions
 
-Draft clearly articulating executive summary with insights and action items and then split them into 3 to 4 most relevant distinct insights and action items each. Use following guidance to formulate these insights and action items:
-- Identify cross-L1 architecture patterns, integration dependencies, or strategic risk
-- Lead with the enterprise architecture insight or action
-- Formulate short, easy to follow, and impactful statements
-- Sort in the order of most relevant to least
+Produce 3 insights and 3 action items. Use the following guidance:
+- Each insight: state the cross-domain architectural fact first, then the business outcome it enables or blocks — one concise sentence
+- Each action item: direct and specific — name the domain, the gap, and the intervention — one concise sentence, no time references or deadlines
+- Lead with the most important cross-domain finding
+- Sort in order of most relevant to least
 
-Return ONLY top 3 insights and top 3 action iteams in a valid JSON array. No markdown, no code fences, no preamble.
+Return ONLY a valid JSON array. No markdown, no code fences, no preamble, no time-bound language.
 
 ["[insight] insight", ..., "[action] action item", ...]

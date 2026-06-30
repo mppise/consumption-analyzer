@@ -46,13 +46,12 @@ Use relative signals: "leading", "lagging", "strongest adoption", "most dormant"
 
 ## Output instructions
 
-Draft clearly articulating executive summary with insights and action items and then split them into 3 to 4 most relevant distinct insights and action items each. Use following guidance to formulate these insights and action items:
-- Compare customers within the peer group explicitly (name names) - who is leading or lagging and in what specific area
-- Connect the observation to an industry-relevant capability or business priority
-- Use industry-oriented language, not technology-oriented
-- Formulate short, easy to follow, and impactful statements
-- Sort in the order of most relevant to least
+Produce 3 insights and 3 action items. Use the following guidance:
+- Each insight: name the customer(s), state the peer-comparison fact, connect to an industry-relevant capability — one concise sentence
+- Each action item: direct and specific — name the customer or cohort, the gap, and the VAT intervention — one concise sentence, no time references or deadlines
+- Lead with the highest-impact cross-customer finding
+- Sort in order of most relevant to least
 
-Return all insights and all action iteams in a valid JSON array. No markdown, no code fences, no preamble.
+Return ONLY a valid JSON array. No markdown, no code fences, no preamble, no time-bound language.
 
 ["[insight] insight", ..., "[action] action item", ...]

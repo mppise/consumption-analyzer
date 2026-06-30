@@ -297,16 +297,22 @@ async function parseCsvFile(filePath, aiClient = null) {
  * @param {number} annual_contract_value
  * @param {number} budget_contract_value
  * @param {number} consumed_contract_value
- * @returns {{ acv_gap: number, budget_gap: number, budget_attainment: number|null }}
+ * @returns {{ ytd_acv_gap, ytd_budget_gap, ytd_budget_attainment, projected_annual_acv_gap, projected_annual_budget_gap, projected_annual_budget_attainment }}
  */
-// @contract input: annual_contract_value, budget_contract_value, consumed_contract_value → output: variances object
-function computeVariances(ytd_annual_contract_value, ytd_budget_contract_value, ytd_consumed_contract_value) {
-  const acv_gap = Math.round((ytd_annual_contract_value - ytd_consumed_contract_value) * 100) / 100
-  const budget_gap = Math.round((ytd_budget_contract_value - ytd_consumed_contract_value) * 100) / 100
-  const budget_attainment = ytd_budget_contract_value > 0
+// @contract input: ytd and projected values → output: variances object with ytd_* and projected_annual_* fields
+function computeVariances(ytd_annual_contract_value, ytd_budget_contract_value, ytd_consumed_contract_value,
+                          projected_annual_budget_contract_value, projected_annual_consumed_contract_value) {
+  const ytd_acv_gap    = Math.round((ytd_annual_contract_value - ytd_consumed_contract_value) * 100) / 100
+  const ytd_budget_gap = Math.round((ytd_budget_contract_value - ytd_consumed_contract_value) * 100) / 100
+  const ytd_budget_attainment = ytd_budget_contract_value > 0
     ? Math.round((ytd_consumed_contract_value / ytd_budget_contract_value) * 1000) / 10
     : null
-  return { acv_gap, budget_gap, budget_attainment }
+  const projected_annual_acv_gap    = Math.round((ytd_annual_contract_value - projected_annual_consumed_contract_value) * 100) / 100
+  const projected_annual_budget_gap = Math.round((projected_annual_budget_contract_value - projected_annual_consumed_contract_value) * 100) / 100
+  const projected_annual_budget_attainment = projected_annual_budget_contract_value > 0
+    ? Math.round((projected_annual_consumed_contract_value / projected_annual_budget_contract_value) * 1000) / 10
+    : null
+  return { ytd_acv_gap, ytd_budget_gap, ytd_budget_attainment, projected_annual_acv_gap, projected_annual_budget_gap, projected_annual_budget_attainment }
 }
 
 // ─── Hierarchy builder ────────────────────────────────────────────────────────
@@ -321,7 +327,7 @@ function computeVariances(ytd_annual_contract_value, ytd_budget_contract_value, 
  * @returns {object[]} solutions_l1[] conforming to contract:solutions-l1-shape
  */
 // @contract input: cacv-json-record[] for one customer → output: solutions_l1[] with nested hierarchy and contract blocks
-function buildL1Hierarchy(records) {
+function buildL1Hierarchy(records, reportingMonth) {
   // Group: l1Name → l2Name → productKey → { meta, monthMap }
   // productKey = `${product_id}|${sub_solution_area}` to handle same LPR in multiple L2s
   const l1Map = new Map()
@@ -381,14 +387,25 @@ function buildL1Hierarchy(records) {
         }
         for (const [year, monthEntries] of yearMap) {
           monthEntries.sort((a, b) => a.yyyymm.localeCompare(b.yyyymm))
+          // Projected annual budget = sum of ALL 12 months (future months carry real planned values)
+          const projected_annual_budget_contract_value = intSum(monthEntries.map(e => e.budget_contract_value))
+          // Projected annual consumed = extrapolate YTD: determine months elapsed from reporting month
+          const rmMonth = reportingMonth ? (parseInt(String(reportingMonth).slice(4, 6), 10) || 12) : 12
+          const ytdConsumed = intSum(monthEntries.filter(e => parseInt(e.yyyymm, 10) <= parseInt(reportingMonth ?? '999912', 10)).map(e => e.consumed_contract_value))
+          const projected_annual_consumed_contract_value = rmMonth > 0
+            ? Math.round(ytdConsumed / rmMonth * 12 * 100) / 100
+            : 0
           contractBlock[year] = monthEntries.map(entry => {
             const { yyyymm, budget_contract_value, consumed_contract_value, annual_contract_value } = entry
             return {
               month: yyyymmToMonthName(yyyymm),
-              ytd_annual_contract_value:   annual_contract_value,
-              ytd_budget_contract_value:   budget_contract_value,
-              ytd_consumed_contract_value: consumed_contract_value,
-              variances: computeVariances(annual_contract_value, budget_contract_value, consumed_contract_value),
+              ytd_annual_contract_value:                annual_contract_value,
+              ytd_budget_contract_value:                budget_contract_value,
+              ytd_consumed_contract_value:              consumed_contract_value,
+              projected_annual_budget_contract_value,
+              projected_annual_consumed_contract_value,
+              variances: computeVariances(annual_contract_value, budget_contract_value, consumed_contract_value,
+                                          projected_annual_budget_contract_value, projected_annual_consumed_contract_value),
             }
           })
         }
@@ -425,47 +442,6 @@ function buildL1Hierarchy(records) {
   return l1Array
 }
 
-// ─── Customer annual contract values ──────────────────────────────────────────
-
-/**
- * Roll up annual ACV and budget totals per year across all L3 contracts for a customer.
- * Uses intSum for integer-safe arithmetic.
- * @param {object[]} solutions_l1
- * @returns {object} year-keyed { annual_annual_contract_value, annual_budget_contract_value }
- */
-function buildCustomerAnnualContractValues(solutions_l1) {
-  const yearMap = new Map()
-  for (const l1 of solutions_l1 ?? []) {
-    for (const l2 of l1.solutions_l2 ?? []) {
-      for (const l3 of l2.solutions_l3 ?? []) {
-        const contract = l3.contract ?? {}
-        for (const key of Object.keys(contract)) {
-          if (key === 'contract_insights') continue
-          const months = contract[key]
-          if (!Array.isArray(months) || !months.length) continue
-          if (!yearMap.has(key)) yearMap.set(key, { acv: [], budget: [] })
-          const agg = yearMap.get(key)
-          // ytd_annual_contract_value is constant across months for this L3+year — take the max
-          // ytd_budget_contract_value accrues monthly — sum all months
-          const maxAcv = Math.max(...months.map(m => m.ytd_annual_contract_value ?? 0))
-          agg.acv.push(maxAcv)
-          for (const m of months) {
-            agg.budget.push(m.ytd_budget_contract_value ?? 0)
-          }
-        }
-      }
-    }
-  }
-  const result = {}
-  for (const [year, agg] of yearMap) {
-    result[year] = {
-      annual_annual_contract_value: intSum(agg.acv),
-      annual_budget_contract_value: intSum(agg.budget),
-    }
-  }
-  return result
-}
-
 // ─── Reporting month detection ────────────────────────────────────────────────
 
 /**
@@ -489,63 +465,17 @@ function detectReportingMonth(records) {
 
 /**
  * Build industry_insights[] stubs for all distinct industries in the customer list.
- * Computes aggregated_contracts from all contract months for customers in that industry.
- *
- * @param {object[]} customers - built customer objects (new schema)
- * @returns {object[]} industry_insights[] conforming to contract:industry-insight-shape
+ * @param {object[]} customers - built customer objects
+ * @returns {object[]} industry_insights[] with summary stubs
  */
-// @contract input: customers[], reportingMonth string YYYYMM → output: industry_insights[] with YTD aggregated_contracts
-function buildIndustryInsights(customers, reportingMonth) {
-  const rmInt = reportingMonth ? parseInt(reportingMonth, 10) : null
-  const industryMap = new Map()
-
+// @contract input: customers[] → output: industry_insights[] stubs (no aggregated_contracts — dashboard derives from L3 data)
+function buildIndustryInsights(customers) {
+  const seen = new Set()
   for (const customer of customers) {
     const industry = customer.industry || 'Unknown'
-    if (!industryMap.has(industry)) {
-      industryMap.set(industry, { acv: 0, budget: 0, consumed: 0 })
-    }
-    const agg = industryMap.get(industry)
-
-    for (const l1 of customer.solutions_l1 ?? []) {
-      for (const l2 of l1.solutions_l2 ?? []) {
-        for (const l3 of l2.solutions_l3 ?? []) {
-          const contract = l3.contract ?? {}
-          for (const key of Object.keys(contract)) {
-            if (key === 'contract_insights') continue
-            const months = contract[key]
-            if (!Array.isArray(months) || !months.length) continue
-            const ytdMonths = months.filter(m => {
-              if (!rmInt) return true
-              const moNum = MONTH_ABBR_TO_NUM[m.month]
-              if (!moNum) return true
-              return parseInt(`${key}${moNum}`, 10) <= rmInt
-            })
-            if (!ytdMonths.length) continue
-            // ACV is constant per L3+year — use max to avoid multiplying by month count
-            agg.acv      += Math.max(...ytdMonths.map(m => m.ytd_annual_contract_value   ?? 0))
-            agg.budget   += ytdMonths.reduce((s, m) => s + (m.ytd_budget_contract_value   ?? 0), 0)
-            agg.consumed += ytdMonths.reduce((s, m) => s + (m.ytd_consumed_contract_value ?? 0), 0)
-          }
-        }
-      }
-    }
+    seen.add(industry)
   }
-
-  const result = []
-  for (const [industry, agg] of industryMap) {
-    result.push({
-      industry,
-      summary: [],
-      aggregated_contracts: {
-        annual_contract_value:   Math.round(agg.acv      * 100) / 100,
-        budget_contract_value:   Math.round(agg.budget   * 100) / 100,
-        consumed_contract_value: Math.round(agg.consumed * 100) / 100,
-      },
-    })
-  }
-
-  // Sort by industry name for stable output
-  result.sort((a, b) => a.industry.localeCompare(b.industry))
+  const result = [...seen].sort().map(industry => ({ industry, summary: [] }))
   return result
 }
 
@@ -556,7 +486,6 @@ function buildIndustryInsights(customers, reportingMonth) {
  * Checks:
  *   1. No NaN/null/non-finite values in any contract_month
  *   2. No duplicate (lpr_id, month, year) entries within a customer
- *   3. annual_contract_values rollup matches sum of monthly ytd fields per year
  *
  * Non-fatal warnings emitted via stderr; fatal issues throw ProcessingError.
  *
@@ -571,7 +500,6 @@ function reconcilePortfolio(customers) {
     const customerName = customer.customer || customer.customer_id || '(unknown)'
     for (const l1 of customer.solutions_l1 ?? []) {
       for (const l2 of l1.solutions_l2 ?? []) {
-        // Track (l2_name|lpr_id|year|month) for duplicate detection within this L2 group
         const seen = new Set()
         for (const l3 of l2.solutions_l3 ?? []) {
           const contract = l3.contract ?? {}
@@ -595,24 +523,6 @@ function reconcilePortfolio(customers) {
             }
           }
         }
-      }
-    }
-    // Check 3: customer-level annual rollup integrity — recompute from all L3 months
-    const customerRollup = customer.annual_contract_values ?? {}
-    const recomputedRollup = buildCustomerAnnualContractValues(customer.solutions_l1)
-    for (const year of Object.keys(recomputedRollup)) {
-      const stored = customerRollup[year]
-      const expected = recomputedRollup[year]
-      const tol = 0.02
-      if (!stored) {
-        failures.push(`${customerName}: missing annual_contract_values entry for year ${year}`)
-        continue
-      }
-      if (Math.abs((stored.annual_annual_contract_value ?? 0) - expected.annual_annual_contract_value) > tol) {
-        failures.push(`${customerName} / ${year}: annual_annual_contract_value stored=${stored.annual_annual_contract_value} recomputed=${expected.annual_annual_contract_value}`)
-      }
-      if (Math.abs((stored.annual_budget_contract_value ?? 0) - expected.annual_budget_contract_value) > tol) {
-        failures.push(`${customerName} / ${year}: annual_budget_contract_value stored=${stored.annual_budget_contract_value} recomputed=${expected.annual_budget_contract_value}`)
       }
     }
   }
@@ -722,7 +632,7 @@ export async function run(args, options) {
     // Sort records by month ascending before building hierarchy
     cg.records.sort((a, b) => a.month.localeCompare(b.month))
 
-    const solutions_l1 = buildL1Hierarchy(cg.records)
+    const solutions_l1 = buildL1Hierarchy(cg.records, reportingMonth)
 
     customerBuilds.push({
       customer_id: cg.customer_id,
@@ -748,7 +658,7 @@ export async function run(args, options) {
     customer: cb.customer_name || cb.customer_id || 'Unknown',
     industry: industryMap.get(cb.customer_name) ?? 'Professional services',
     enterprise_architecture_insights: [],
-    annual_contract_values: buildCustomerAnnualContractValues(cb.solutions_l1),
+    enterprise_architecture_diagram: '',
     solutions_l1: cb.solutions_l1,
   }))
 
@@ -761,7 +671,7 @@ export async function run(args, options) {
   }
 
   // ── Build industry_insights stubs ──────────────────────────────────────────
-  const industry_insights = buildIndustryInsights(customers, reportingMonth)
+  const industry_insights = buildIndustryInsights(customers)
 
   // ── Assemble portfolio JSON ────────────────────────────────────────────────
   const portfolio = {

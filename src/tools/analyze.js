@@ -257,19 +257,19 @@ function savePortfolio(portfolio, resolvedPath) {
  * @returns {string}
  */
 function formatContractData(contractBlock) {
-  const years = Object.keys(contractBlock).filter(k => k !== 'contract_insights' && k !== 'annual_contract_values')
+  const years = Object.keys(contractBlock).filter(k => k !== 'contract_insights')
   if (!years.length) return '(No contract data available)'
 
   const lines = []
-  const annualRollup = contractBlock.annual_contract_values ?? {}
   for (const year of years.sort()) {
     const months = contractBlock[year]
     if (!Array.isArray(months) || !months.length) continue
-    const rollup = annualRollup[year]
-    if (rollup) {
-      const annBudget   = typeof rollup.annual_budget_contract_value   === 'number' ? rollup.annual_budget_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const annConsumed = typeof rollup.annual_consumed_contract_value === 'number' ? rollup.annual_consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      lines.push(`### FY${year} — Full-year budget: ${annBudget} | Full-year consumed: ${annConsumed}`)
+    // Use projected fields from the last populated month for full-year summary
+    const lastMonth = [...months].reverse().find(m => m.projected_annual_budget_contract_value > 0) ?? months[months.length - 1]
+    if (lastMonth?.projected_annual_budget_contract_value) {
+      const projBudget   = lastMonth.projected_annual_budget_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+      const projConsumed = lastMonth.projected_annual_consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+      lines.push(`### FY${year} — Projected annual budget: ${projBudget} | Projected annual consumed: ${projConsumed}`)
     } else {
       lines.push(`### FY${year}`)
     }
@@ -277,9 +277,9 @@ function formatContractData(contractBlock) {
       const acv      = typeof m.ytd_annual_contract_value   === 'number' ? m.ytd_annual_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       const budget   = typeof m.ytd_budget_contract_value   === 'number' ? m.ytd_budget_contract_value.toLocaleString('en-US',   { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       const consumed = typeof m.ytd_consumed_contract_value === 'number' ? m.ytd_consumed_contract_value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const attainment = m.variances?.budget_attainment != null ? `${m.variances.budget_attainment.toFixed(1)}%` : 'N/A'
-      const acvGap     = m.variances?.acv_gap  != null ? m.variances.acv_gap.toLocaleString('en-US',  { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
-      const budgetGap  = m.variances?.budget_gap != null ? m.variances.budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const attainment = m.variances?.ytd_budget_attainment != null ? `${m.variances.ytd_budget_attainment.toFixed(1)}%` : 'N/A'
+      const acvGap     = m.variances?.ytd_acv_gap    != null ? m.variances.ytd_acv_gap.toLocaleString('en-US',    { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
+      const budgetGap  = m.variances?.ytd_budget_gap != null ? m.variances.ytd_budget_gap.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'N/A'
       lines.push(`- **${m.month}**: ACV=${acv} | Budget=${budget} | Consumed=${consumed} | Attainment=${attainment} | ACV Gap=${acvGap} | Budget Gap=${budgetGap}`)
     }
   }
@@ -510,7 +510,25 @@ async function runStep4(portfolio, chatOpus, promptVars) {
     }).join('\n\n')
 
     const customerList = customers.map(c => c.customer ?? c.customer_id ?? 'Unknown').join(', ')
-    const agg = industryBlock.aggregated_contracts ?? { annual_contract_value: 0, budget_contract_value: 0, consumed_contract_value: 0 }
+
+    // Derive industry totals from L3 contract data (no aggregated_contracts rollup in schema)
+    let totalAcv = 0, totalBudget = 0, totalConsumed = 0
+    for (const c of customers) {
+      for (const l1 of c.solutions_l1 ?? []) {
+        for (const l2 of l1.solutions_l2 ?? []) {
+          for (const l3 of l2.solutions_l3 ?? []) {
+            for (const [yr, months] of Object.entries(l3.contract ?? {})) {
+              if (yr === 'contract_insights') continue
+              for (const m of months ?? []) {
+                totalAcv      += m.ytd_annual_contract_value   ?? 0
+                totalBudget   += m.ytd_budget_contract_value   ?? 0
+                totalConsumed += m.ytd_consumed_contract_value ?? 0
+              }
+            }
+          }
+        }
+      }
+    }
 
     const prompt = renderPrompt('step4-industry.md', {
       industry:                industryName,
@@ -518,9 +536,9 @@ async function runStep4(portfolio, chatOpus, promptVars) {
       current_date:            promptVars.current_date,
       fiscal_year:             promptVars.fiscal_year,
       reporting_month:         promptVars.reporting_month,
-      total_acv:               fmt(agg.annual_contract_value),
-      total_budget:            fmt(agg.budget_contract_value),
-      total_consumed:          fmt(agg.consumed_contract_value),
+      total_acv:               fmt(totalAcv),
+      total_budget:            fmt(totalBudget),
+      total_consumed:          fmt(totalConsumed),
       customer_ea_insights:    customerInsightsText,
     })
 
