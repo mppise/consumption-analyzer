@@ -66,8 +66,8 @@ const INSIGHT_ICON = 'bi-lightbulb'
 const ACTION_ICON  = 'bi-lightning-charge-fill'
 const INSIGHT_COLOR = '#ff8c69'  // wheat
 const ACTION_COLOR  = '#2a9d8f'  // sage
-const INSIGHT_BG    = '#fff5f2'
-const ACTION_BG     = '#f0faf9'
+const INSIGHT_BG    = '#ffffff'
+const ACTION_BG     = '#ffffff'
 
 function parseInsight(raw) {
   if (!raw) return { type: 'unknown', text: '', html: '' }
@@ -1172,7 +1172,7 @@ function renderL3PanelContent(l3Idx, data, custIdx, l1Idx, l2Idx) {
   // Change 1: light theme contract insights
   var insightRows = l3.contractInsights.map(function(s) {
     var t = s.indexOf('[action]') === 0 ? 'action' : 'insight';
-    var bg = t === 'action' ? '#f0faf9' : '#fff5f2';
+    var bg = t === 'action' ? '#ffffff' : '#ffffff';
     var border = t === 'action' ? '#2a9d8f' : '#ff8c69';
     return '<div style="padding:8px 10px;margin-bottom:4px;border-left:3px solid ' + border + ';background:' + bg + ';line-height:1.4">' + renderInsight(s) + '</div>';
   }).join('') || '<div style="font-size:13px;color:#8ecae6;font-style:italic;padding:8px 0">No contract insights</div>';
