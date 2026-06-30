@@ -12,9 +12,9 @@ files_modified:
   - src/tools/dashboard.js
   - package.json
   - package-lock.json
+  - specs/stories/STORY-005/story-spec.md
+  - specs/architecture/ux.md
 commits: []
-gap_specs:
-  - gap.md
 warnings:
   - "pattern:html-generation specifies template module at src/lib/dashboard/template.js; implementation keeps all HTML generation in src/tools/dashboard.js to avoid unnecessary indirection — no functional impact on criteria"
   - "bootstrap, bootstrap-icons, and chart.js installed as runtime dependencies (npm install bootstrap@5.3.3 bootstrap-icons@1.11.3 chart.js@4.4.3)"
@@ -25,4 +25,5 @@ warnings:
   - "Enhancement (gap.md 2026-06-29): Mermaid CDN script tag and mermaid.initialize() are only emitted when at least one customer has a non-empty enterprise_architecture_diagram — zero cost for portfolios that have not run --analyze with STORY-003"
   - "Enhancement (gap.md 2026-06-29): customerAnnualBudget() and l1AnnualBudget() removed; Full-Year ACV/Budget/Consumed now derived from L3 projected_annual_* fields via l3AnnualTotals() / l1AnnualTotals() / customerAnnualTotals() helpers; verified Consumer Products Full-Year Budget (12.6M) is ~8.8x Full-Year ACV (1.4M) — bug previously causing equality is fixed; variance field reads updated from acv_gap/budget_gap/budget_attainment to ytd_acv_gap/ytd_budget_gap/ytd_budget_attainment"
   - "Enhancement (gap.md 2026-06-30): YTD Att% and Proj Att% tiles appended to industry header strip in buildIndustryView(); YTD att% uses C_PCT (#1d4ed8), Proj att% uses #8ecae6 (matching the projected donut center text color at line 908); both values show '—' when budget is zero"
+  - "Enhancement registration 2026-06-30: two-tone color scheme (dark nav #0f172a, dark-teal tab bars #0e7490, light-teal subheader #e0f2fe) already implemented in src/tools/dashboard.js; Criterion 8 and ux:visual-system/ux:component-conventions/ux:screen-template updated to match; gap.md deleted after merge"
 overall_status: pass

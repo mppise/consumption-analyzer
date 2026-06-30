@@ -1,7 +1,7 @@
 project:
   name: "ConsumptionAnalyzer"
   created: 2026-06-25
-  release: "4.6.0"
+  release: "4.6.1"
   next_release_type: null
   active_story: null
   active_phase: null

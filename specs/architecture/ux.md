@@ -42,6 +42,14 @@ Color scheme constants (semantic):
 - C_PROJ_CONSUMED: #7c3aed — purple; projected_annual_consumed_contract_value
 - C_PCT:           #1d4ed8 — royal blue; all percentage and attainment values
 
+Chrome / structural colors (generated HTML — not data-semantic):
+- NAV_BG:          #0f172a — dark navy; top nav background and both Att% tile values
+- TAB_BAR_BG:      #0e7490 — dark teal; industry tab bar and customer tab bar background
+- TAB_ACTIVE_BG:   #e0f2fe — light teal; active tab background and subheader band background
+- TAB_ACTIVE_TEXT: #0e7490 — dark teal; active tab text and subheader band entity name
+- TAB_ACTIVE_ACCENT: #8ecae6 — ACV color; active tab underline in top nav; projected ACV sub-line on industry tabs
+- SUBHEADER_BORDER: #bae6fd — light blue; subheader band border-bottom
+
 Metric display order (enforced on ALL surfaces): Consumed → Budget → ACV (within each YTD group and each Projected group)
 
 Language standards (enforced throughout all dashboard output):
@@ -50,6 +58,7 @@ Language standards (enforced throughout all dashboard output):
 - "ACV" or "annual_contract_value" — not "Contracted ACV"
 - "budget_attainment" — not "attainment %", "ytd_attainment_pct"
 - Dollar+label pairs: value and label rendered in same semantic color
+- All metric value numbers: font-weight:700 bold throughout all surfaces
 
 ---
 
@@ -64,8 +73,22 @@ CLI conventions:
 
 Dashboard conventions (generated HTML — 3-pane layout):
 - Pane widths: left pane ~20%, middle pane ~35%, right pane ~45% (Bootstrap grid columns; adjust at story-spec time)
+- Top nav (sticky):
+  - Background: #0f172a (dark navy); height 52px; sticky top:0
+  - Title text: white (#ffffff); metric labels: #94a3b8
+  - Tab buttons (INDUSTRY / ACCOUNTS): active tab underline 2px solid #8ecae6; inactive tab text #64748b
+  - Separator pipes: #334155
+- Industry tab bar and customer tab bar:
+  - Background: dark teal (#0e7490)
+  - Active tab: #e0f2fe background · #0e7490 text · 3px solid #e0f2fe bottom accent
+  - Inactive tabs: rgba(255,255,255,0.8) text on transparent background; no border
+  - Industry tab buttons show a projected ACV sub-line below the industry name in #8ecae6 (font-size:10px, font-weight:400)
+- Industry panel and customer panel subheader band:
+  - Background: #e0f2fe; border-bottom: 1px solid #bae6fd; flush under the tab bar
+  - Entity name: #0e7490 bold 22px
+  - Customer count / label beneath entity name: #0e7490 12px
 - Left pane (industry list):
-  - Each industry row: 8 metrics — 6 dollar metrics in Consumed → Budget → ACV order for both YTD and Projected groups (YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV) plus YTD Att% (C_PCT, computed via attPct()) and Proj Att% (projected color constant, inline computation)
+  - Each industry row: 8 metrics — 6 dollar metrics in Consumed → Budget → ACV order for both YTD and Projected groups (YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV) plus YTD Att% and Proj Att% — both rendered in #0f172a (black); YTD Att% computed via attPct() rounded with Math.ceil (always rounds up to next integer)
   - Industry summary (industry_insights[].summary) shown inline beneath each row via Bootstrap collapse with a small toggle indicator
   - Selected industry highlighted with Bootstrap active class
   - Aggregated values formatted as abbreviated USD (e.g. $1.2M)
@@ -105,12 +128,17 @@ On error:
 
 Dashboard layout template (3-pane single merged view):
 ```
-[Navbar]       consumption-analyzer · <fiscal year> · Generated: <timestamp>
+[Navbar]       SAP Portfolio Briefing · <fiscal year> · Generated: <timestamp>   [background #0f172a]
+               INDUSTRY | ACCOUNTS (tabs; active underline #8ecae6)
                YTD Consumed $x · YTD Budget $x · YTD ACV $x | Proj Consumed $x · Proj Budget $x · Proj ACV $x
-               (labels in #64748b; metric values in semantic color: Consumed=C_CONSUMED, Budget=C_BUDGET, ACV=C_ACV, Proj Consumed=C_PROJ_CONSUMED)
+               (labels in #94a3b8; metric values bold in semantic color: Consumed=C_CONSUMED, Budget=C_BUDGET, ACV=C_ACV, Proj Consumed=C_PROJ_CONSUMED)
+[Tab bar]      industry tabs or customer tabs   [background #0e7490; active tab: #e0f2fe bg + #0e7490 text; inactive: rgba(255,255,255,0.8)]
+               industry tabs: name + projected ACV sub-line in #8ecae6 10px below name
+[Subheader]    entity name in #0e7490 bold 22px   [background #e0f2fe; border-bottom #bae6fd]
+               customer count / industry label in #0e7490 12px
 [Body]
   [Left pane]   Industry list
-                  Each entry: 8 metrics — YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV · YTD Att% (C_PCT) · Proj Att% (projected color) · summary (inline collapse)
+                  Each entry: 8 metrics — YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV · YTD Att% (#0f172a, Math.ceil) · Proj Att% (#0f172a) · summary (inline collapse)
   [Middle pane] Customer cards for selected industry
                   Empty state: "Select an industry"
                   Each card: customer name · account_insights (truncated) · aggregated values (Consumed → Budget → ACV order, YTD then Projected) · L1 breakdown (always expanded) · EA insights (always-visible card frame) · enterprise_architecture_diagram (Mermaid block, rendered before L1 solution areas; omitted when empty)

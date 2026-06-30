@@ -1,4 +1,4 @@
-# Deploy Artifact — Release 4.6.0
+# Deploy Artifact — Release 4.6.1
 **Date:** 2026-06-30  **Status:** ready
 **Platform:** local-npm (Node.js CLI, no cloud infrastructure)
 
@@ -8,9 +8,9 @@
 |-------|-------|----------|---------------|--------------|
 | STORY-001 | CLI scaffold and entry point | node | npm install && npm link | prior release |
 | STORY-002 | PDF to CSV conversion (--pdf2csv) | node | npm install | prior release |
-| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | node src/cli.js | minor |
+| STORY-003 | AI-powered analysis — 5-step bottom-up pipeline (--analyze) | node | node src/cli.js | prior release |
 | STORY-004 | CSV to JSON transformation with new portfolio schema (--transform) | node | npm install | prior release |
-| STORY-005 | 3-pane HTML dashboard generation (--dashboard) | node | npm install | minor |
+| STORY-005 | 3-pane HTML dashboard generation (--dashboard) | node | npm install | patch |
 | STORY-006 | Industry vertical inference | node | node src/cli.js --transform <file.csv> | prior release |
 
 ## Deployment order
@@ -43,7 +43,7 @@
 | deploy.sh permissions | pass (executable) |
 | .env.example written | pass |
 | project-state.yaml all deployed:true | pass |
-| project-state.yaml release | 4.6.0 |
+| project-state.yaml release | 4.6.1 |
 | project-state.yaml next_release_type | null |
 
 ## Deployment history
@@ -76,6 +76,7 @@
 | 4.4.0 | 2026-06-29 | local-npm |
 | 4.5.0 | 2026-06-29 | local-npm |
 | 4.6.0 | 2026-06-30 | local-npm |
+| 4.6.1 | 2026-06-30 | local-npm |
 
 ## Environment variables required
 
