@@ -278,7 +278,7 @@ function buildAccountsView(customers) {
     const att = attPct(t.budget, t.consumed)
     const isFirst = idx === 0
     return `<button onclick="showCustomer(${idx})" class="cust-tab" data-cust="${idx}"
-  style="padding:8px 20px;background:${isFirst ? '#f1f5f9' : 'transparent'};border:1px solid #cbd5e1;color:${isFirst ? '#0f172a' : '#64748b'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+  style="padding:10px 20px;background:${isFirst ? '#e0f2fe' : 'transparent'};border:none;border-bottom:${isFirst ? '3px solid #e0f2fe' : '3px solid transparent'};color:${isFirst ? '#0e7490' : 'rgba(255,255,255,0.8)'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
   ${esc(cust.customer)}
 </button>`
   }).join('')
@@ -341,11 +341,12 @@ function buildAccountsView(customers) {
     }).join('')
     const annual = customerAnnualTotals(cust)
 
-    return `<div id="cust-panel-${custIdx}" style="display:${custIdx === 0 ? 'block' : 'none'};padding:40px 48px">
-  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
-    <div style="font-size:24px;font-weight:800;color:#0f172a;line-height:1">${esc(cust.customer)}</div>
+    return `<div id="cust-panel-${custIdx}" style="display:${custIdx === 0 ? 'block' : 'none'};padding:0">
+  <div style="padding:16px 48px 12px;background:#e0f2fe;border-bottom:1px solid #bae6fd">
+    <div style="font-size:22px;font-weight:800;color:#0e7490;line-height:1">${esc(cust.customer)}</div>
+    <div style="font-size:12px;color:#0e7490;margin-top:4px">${esc(cust.industry ?? '')}</div>
   </div>
-  <div style="font-size:13px;color:#64748b;margin-bottom:32px">${esc(cust.industry ?? '')}</div>
+  <div style="padding:32px 48px 40px">
   <div style="display:flex;align-items:flex-start;gap:32px;margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid #cbd5e1">
     <!-- Donut: 30% width -->
     <div style="flex:0 0 30%;text-align:center">
@@ -370,11 +371,11 @@ function buildAccountsView(customers) {
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:12px">Solution Areas</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">${l1Tiles}</div>
   </div>
+  </div>
 </div>`
   }).join('\n')
 
-  // Change 1: light theme tab strip
-  return `<div style="padding:12px 32px;border-bottom:1px solid #cbd5e1;display:flex;gap:0;overflow-x:auto;background:#f8fafc">${tabs}</div>
+  return `<div style="padding:0 32px;border-bottom:2px solid #0e7490;display:flex;gap:0;overflow-x:auto;background:#0e7490">${tabs}</div>
 <div id="accounts-panels">${panels}</div>`
 }
 
@@ -393,7 +394,7 @@ function buildIndustryView(indInsights, customers) {
     const att = attPct(totalBudget, totalConsumed)
     const isFirst = idx === 0
     return `<button onclick="showIndustry(${idx})" class="ind-tab" data-ind="${idx}"
-  style="padding:8px 20px;background:${isFirst ? '#f1f5f9' : 'transparent'};border:1px solid #cbd5e1;color:${isFirst ? '#0f172a' : '#64748b'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+  style="padding:10px 20px;background:${isFirst ? '#e0f2fe' : 'transparent'};border:none;border-bottom:${isFirst ? '3px solid #e0f2fe' : '3px solid transparent'};color:${isFirst ? '#0e7490' : 'rgba(255,255,255,0.8)'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
   ${esc(ind.industry)}<span style="display:block;font-size:10px;font-weight:400;color:#8ecae6;margin-top:2px">${usd(totalAnnualAcv)} proj ACV</span>
 </button>`
   }).join('')
@@ -418,9 +419,12 @@ function buildIndustryView(indInsights, customers) {
       </div>`
     }).join('')
 
-    return `<div id="ind-panel-${indIdx}" style="display:${indIdx === 0 ? 'block' : 'none'};padding:40px 48px">
-  <div style="font-size:24px;font-weight:800;color:#0f172a">${esc(ind.industry)}</div>
-  <div style="font-size:13px;color:#64748b;margin-bottom:8px">${indCustomers.length} customer${indCustomers.length !== 1 ? 's' : ''}</div>
+    return `<div id="ind-panel-${indIdx}" style="display:${indIdx === 0 ? 'block' : 'none'};padding:0">
+  <div style="padding:16px 48px 12px;background:#e0f2fe;border-bottom:1px solid #bae6fd">
+    <div style="font-size:22px;font-weight:800;color:#0e7490">${esc(ind.industry)}</div>
+    <div style="font-size:12px;color:#0e7490;margin-top:2px"><strong>${indCustomers.length}</strong> customer${indCustomers.length !== 1 ? 's' : ''}</div>
+  </div>
+  <div style="padding:24px 48px 40px">
   <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:32px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0">
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Consumed</div>
@@ -479,11 +483,12 @@ function buildIndustryView(indInsights, customers) {
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#a78bfa;margin-bottom:16px">Industry Insights</div>
     ${insightRows || '<div style="font-size:13px;color:#94a3b8;font-style:italic">No insights available</div>'}
   </div>
+  </div>
 </div>`
   }).join('\n')
 
   // Change 1: light theme tab strip; Change 6: renderIndChart called directly (no setTimeout)
-  return `<div style="padding:12px 32px;border-bottom:1px solid #cbd5e1;display:flex;gap:0;overflow-x:auto;background:#f8fafc">${tabs}</div>
+  return `<div style="padding:0 32px;border-bottom:2px solid #0e7490;display:flex;gap:0;overflow-x:auto;background:#0e7490">${tabs}</div>
 <div id="industry-panels">${panels}</div>`
 }
 
@@ -704,25 +709,25 @@ ${nunitoCss ? `<style>${nunitoCss}</style>` : ''}
 <body>
 
 <!-- TOP NAV -->
-<div id="topnav" style="position:sticky;top:0;z-index:200;background:#f8fafc;border-bottom:1px solid #cbd5e1;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:52px">
+<div id="topnav" style="position:sticky;top:0;z-index:200;background:#0f172a;border-bottom:2px solid #1e293b;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:52px">
   <div style="display:flex;align-items:center;gap:24px">
-    <span style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f172a">SAP Portfolio Briefing</span>
-    <span style="color:#cbd5e1">|</span>
-    <span style="font-size:11px;color:#64748b">${esc(rmDisplay)} · ${esc(fy)}</span>
-    <span style="color:#cbd5e1">|</span>
+    <span style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#ffffff">SAP Portfolio Briefing</span>
+    <span style="color:#334155">|</span>
+    <span style="font-size:11px;color:#94a3b8">${esc(rmDisplay)} · ${esc(fy)}</span>
+    <span style="color:#334155">|</span>
   </div>
   <div style="display:flex;gap:0">
-    <button id="tab-industry" onclick="showView('industry')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid #0f172a;color:#0f172a;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">INDUSTRY</button>
-    <button id="tab-accounts" onclick="showView('accounts')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid transparent;color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">ACCOUNTS</button>
+    <button id="tab-industry" onclick="showView('industry')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid #8ecae6;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">INDUSTRY</button>
+    <button id="tab-accounts" onclick="showView('accounts')" style="padding:0 20px;height:52px;background:transparent;border:none;border-bottom:2px solid transparent;color:#64748b;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">ACCOUNTS</button>
   </div>
   <div style="display:flex;gap:16px;font-size:11px">
-    <span style="color:#64748b">YTD Consumed <strong style="color:#ff8c69">${esc(usd(portConsumed))}</strong></span>
-    <span style="color:#64748b">YTD Budget <strong style="color:#2a9d8f">${esc(usd(portBudget))}</strong></span>
-    <span style="color:#64748b">YTD ACV <strong style="color:#8ecae6">${esc(usd(portAcv))}</strong></span>
-    <span style="color:#cbd5e1">|</span>
-    <span style="color:#64748b">Proj Consumed <strong style="color:${C_PROJ_CONSUMED}">${esc(usd(portProjConsumed))}</strong></span>
-    <span style="color:#64748b">Proj Budget <strong style="color:#2a9d8f">${esc(usd(portProjBudget))}</strong></span>
-    <span style="color:#64748b">Proj ACV <strong style="color:#8ecae6">${esc(usd(portProjAcv))}</strong></span>
+    <span style="color:#94a3b8">YTD Consumed <strong style="color:#ff8c69">${esc(usd(portConsumed))}</strong></span>
+    <span style="color:#94a3b8">YTD Budget <strong style="color:#2a9d8f">${esc(usd(portBudget))}</strong></span>
+    <span style="color:#94a3b8">YTD ACV <strong style="color:#8ecae6">${esc(usd(portAcv))}</strong></span>
+    <span style="color:#334155">|</span>
+    <span style="color:#94a3b8">Proj Consumed <strong style="color:${C_PROJ_CONSUMED}">${esc(usd(portProjConsumed))}</strong></span>
+    <span style="color:#94a3b8">Proj Budget <strong style="color:#2a9d8f">${esc(usd(portProjBudget))}</strong></span>
+    <span style="color:#94a3b8">Proj ACV <strong style="color:#8ecae6">${esc(usd(portProjAcv))}</strong></span>
   </div>
 </div>
 
@@ -805,8 +810,8 @@ function showView(v) {
     if (el) el.style.display = name === v ? 'block' : 'none';
     var tab = document.getElementById('tab-' + name);
     if (tab) {
-      tab.style.borderBottom = name === v ? '2px solid #0f172a' : '2px solid transparent';
-      tab.style.color = name === v ? '#0f172a' : '#94a3b8';
+      tab.style.borderBottom = name === v ? '2px solid #8ecae6' : '2px solid transparent';
+      tab.style.color = name === v ? '#ffffff' : '#64748b';
     }
   });
   // Change 6: call renderIndChart directly — no setTimeout
@@ -822,8 +827,9 @@ function showCustomer(idx) {
   // Change 1: light theme active tab colours
   document.querySelectorAll('.cust-tab').forEach(function(btn) {
     var active = parseInt(btn.dataset.cust) === idx;
-    btn.style.background = active ? '#f1f5f9' : 'transparent';
-    btn.style.color = active ? '#0f172a' : '#64748b';
+    btn.style.background = active ? '#e0f2fe' : 'transparent';
+    btn.style.borderBottom = active ? '3px solid #e0f2fe' : '3px solid transparent';
+    btn.style.color = active ? '#0e7490' : 'rgba(255,255,255,0.8)';
   });
   document.querySelectorAll('[id^="cust-panel-"]').forEach(function(el) {
     el.style.display = 'none';
@@ -843,8 +849,9 @@ function showIndustry(idx) {
   // Change 1: light theme active tab colours
   document.querySelectorAll('.ind-tab').forEach(function(btn) {
     var active = parseInt(btn.dataset.ind) === idx;
-    btn.style.background = active ? '#f1f5f9' : 'transparent';
-    btn.style.color = active ? '#0f172a' : '#64748b';
+    btn.style.background = active ? '#e0f2fe' : 'transparent';
+    btn.style.borderBottom = active ? '3px solid #e0f2fe' : '3px solid transparent';
+    btn.style.color = active ? '#0e7490' : 'rgba(255,255,255,0.8)';
   });
   document.querySelectorAll('[id^="ind-panel-"]').forEach(function(el) {
     el.style.display = 'none';
