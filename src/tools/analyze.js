@@ -296,11 +296,48 @@ function fmt(n) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
-// ─── Step implementations ─────────────────────────────────────────────────────
+// ─── Concurrency limiter ──────────────────────────────────────────────────────
+
+/**
+ * Run an array of async task factories with a bounded concurrency cap.
+ * Returns a Promise.allSettled-compatible array of {status, value|reason} objects.
+ *
+ * Unlike Promise.allSettled(tasks.map(fn)), this never has more than `limit`
+ * in-flight calls at once, preventing thundering-herd 429 storms against the
+ * AI API when the task count is in the hundreds.
+ *
+ * @param {Array}    items  — array of input items to process
+ * @param {Function} fn     — async function receiving each item; may throw
+ * @param {number}   limit  — max concurrent calls (default: 15)
+ * @returns {Promise<Array<{status:'fulfilled'|'rejected', value?, reason?}>>}
+ */
+// @gap 2026-06-30 concurrency limiter added — spec does not define a concurrency cap but unbounded parallelism caused 429 storms at 500+ tasks; see gap.md
+async function runWithConcurrency(items, fn, limit = 15) {
+  const results = new Array(items.length)
+  let nextIndex = 0
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex++
+      try {
+        results[index] = { status: 'fulfilled', value: await fn(items[index]) }
+      } catch (err) {
+        results[index] = { status: 'rejected', reason: err }
+      }
+    }
+  }
+
+  const workers = []
+  for (let i = 0; i < Math.min(limit, items.length); i++) {
+    workers.push(worker())
+  }
+  await Promise.all(workers)
+  return results
+}
 
 // @entry runStep1 | Step 1 — contract_insights per L3 product (sonnet)
 // @contract input: portfolio with new schema → output: every contract.contract_insights[] populated | errors: warn on individual API failure, continue
-async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
+async function runStep1(portfolio, chatSonnet, catalog, promptVars, concurrency) {
   process.stderr.write('info: Step 1 — contract_insights per L3 product (sonnet)\n')
   let taskCount = 0
   let doneCount = 0
@@ -317,10 +354,10 @@ async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
       }
     }
   }
-  process.stderr.write(`info: Step 1 — ${taskCount} L3 product(s) across ${portfolio.customers?.length ?? 0} customer(s)\n`)
+  process.stderr.write(`info: Step 1 — ${taskCount} L3 product(s) across ${portfolio.customers?.length ?? 0} customer(s) (concurrency cap: ${concurrency})\n`)
 
-  // Run all tasks in parallel
-  const results = await Promise.allSettled(tasks.map(async ({ customer, l3 }) => {
+  // Run tasks with bounded concurrency to avoid thundering-herd 429 storms
+  const results = await runWithConcurrency(tasks, async ({ customer, l3 }) => {
     const contractBlock = l3.contract ?? {}
     const contractDataText = formatContractData(contractBlock)
 
@@ -347,7 +384,7 @@ async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
     l3.contract.contract_insights = parsed
     doneCount++
     process.stderr.write(`info:   Step 1 done — ${customer.customer ?? customer.customer_id} / ${l3.lpr_name} (${parsed.length} insight(s))\n`)
-  }))
+  }, concurrency)
 
   let failCount = 0
   for (const r of results) {
@@ -361,7 +398,7 @@ async function runStep1(portfolio, chatSonnet, catalog, promptVars) {
 
 // @entry runStep2 | Step 2 — solution_architecture_insights per L1 solution area (sonnet)
 // @contract input: portfolio with Step 1 complete → output: every solutions_l1[].solution_architecture_insights[] populated | errors: warn on individual API failure
-async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
+async function runStep2(portfolio, chatSonnet, catalog, promptVars, concurrency) {
   process.stderr.write('info: Step 2 — solution_architecture_insights per L1 solution area (sonnet)\n')
 
   const tasks = []
@@ -370,9 +407,9 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
       tasks.push({ customer, l1 })
     }
   }
-  process.stderr.write(`info: Step 2 — ${tasks.length} L1 solution area(s)\n`)
+  process.stderr.write(`info: Step 2 — ${tasks.length} L1 solution area(s) (concurrency cap: ${concurrency})\n`)
 
-  const results = await Promise.allSettled(tasks.map(async ({ customer, l1 }) => {
+  const results = await runWithConcurrency(tasks, async ({ customer, l1 }) => {
     const l2List = l1.solutions_l2 ?? []
     if (!l2List.length) return
 
@@ -410,7 +447,7 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
     const parsed = parseStringArray(rawText, `Step 2 / ${customer.customer ?? customer.customer_id} / ${l1.name}`)
     l1.solution_architecture_insights = parsed
     process.stderr.write(`info:   Step 2 done — ${customer.customer ?? customer.customer_id} / ${l1.name} (${parsed.length} insight(s))\n`)
-  }))
+  }, concurrency)
 
   let failCount = 0
   for (const r of results) {
@@ -424,11 +461,11 @@ async function runStep2(portfolio, chatSonnet, catalog, promptVars) {
 
 // @entry runStep3 | Step 3 — enterprise_architecture_insights per customer (sonnet)
 // @contract input: portfolio with Steps 1+2 complete → output: every customer.enterprise_architecture_insights[] populated
-async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
+async function runStep3(portfolio, chatSonnet, catalog, promptVars, concurrency) {
   process.stderr.write('info: Step 3 — enterprise_architecture_insights per customer (sonnet)\n')
-  process.stderr.write(`info: Step 3 — ${portfolio.customers?.length ?? 0} customer(s)\n`)
+  process.stderr.write(`info: Step 3 — ${portfolio.customers?.length ?? 0} customer(s) (concurrency cap: ${concurrency})\n`)
 
-  const results = await Promise.allSettled((portfolio.customers ?? []).map(async (customer) => {
+  const results = await runWithConcurrency(portfolio.customers ?? [], async (customer) => {
     const l1List = customer.solutions_l1 ?? []
     if (!l1List.length) return
 
@@ -466,7 +503,7 @@ async function runStep3(portfolio, chatSonnet, catalog, promptVars) {
     const parsed = parseStringArray(rawText, `Step 3 / ${customer.customer ?? customer.customer_id}`)
     customer.enterprise_architecture_insights = parsed
     process.stderr.write(`info:   Step 3 done — ${customer.customer ?? customer.customer_id} (${parsed.length} insight(s))\n`)
-  }))
+  }, concurrency)
 
   let failCount = 0
   for (const r of results) {
@@ -630,16 +667,19 @@ export async function run(args, _options) {
 
   process.stderr.write(`info: models — sonnet (Steps 1–3): ${config.aiModel} | opus (Step 4): ${config.aiModelSenior}\n`)
 
+  const concurrency = config.aiPipelineConcurrency
+  process.stderr.write(`info: pipeline concurrency cap (Steps 1–3): ${concurrency}\n`)
+
   // ── Step 1: contract_insights per L3 ──────────────────────────────────
-  await runStep1(portfolio, chatSonnet, catalog, promptVars)
+  await runStep1(portfolio, chatSonnet, catalog, promptVars, concurrency)
   savePortfolio(portfolio, resolvedPath)
 
   // ── Step 2: solution_architecture_insights per L1 ────────────────────────
-  await runStep2(portfolio, chatSonnet, catalog, promptVars)
+  await runStep2(portfolio, chatSonnet, catalog, promptVars, concurrency)
   savePortfolio(portfolio, resolvedPath)
 
   // ── Step 3: enterprise_architecture_insights per customer ─────────────────
-  await runStep3(portfolio, chatSonnet, catalog, promptVars)
+  await runStep3(portfolio, chatSonnet, catalog, promptVars, concurrency)
   savePortfolio(portfolio, resolvedPath)
 
   // ── Step 4: industry_insights summary per industry ────────────────────────

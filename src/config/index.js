@@ -22,4 +22,6 @@ export const config = Object.freeze({
   aiApiKey: process.env.AI_API_KEY ?? '',
   // AI_BASE_URL — custom AI API base URL (empty = Anthropic default)
   aiBaseUrl: process.env.AI_BASE_URL ?? '',
+  // AI_PIPELINE_CONCURRENCY — max parallel AI calls in Steps 1–3 (default: 15)
+  aiPipelineConcurrency: parseInt(process.env.AI_PIPELINE_CONCURRENCY ?? '15', 10),
 })
