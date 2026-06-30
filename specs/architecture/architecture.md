@@ -68,6 +68,7 @@ Users are developers and data analysts who receive PDF reports or documents cont
 | AI_MAX_TOKENS   | Max tokens per AI response                           | 8192                      |
 | AI_API_KEY      | Anthropic API key                                    | sk-ant-...                |
 | AI_BASE_URL     | Custom AI API base URL (empty = Anthropic default)   | http://localhost:6655     |
+| AI_PIPELINE_CONCURRENCY | Max parallel AI API calls in Steps 1–3 of --analyze (default 15) | 15          |
 
 ## UX Model
 Navigation: flag-driven single command (CLI) — no browser navigation model for the CLI itself.
@@ -179,6 +180,16 @@ AI_MODEL_SENIOR added for Steps 4–5 (opus model). AI_BASE_URL retained. All ot
 - Old metric names ytd_target, ytd_actuals, ytd_acv_act superseded by budget_contract_value, consumed_contract_value, annual_contract_value throughout all artifacts
 - entities portfolio-json, customer-portfolio, solution-area, sub-solution-area, product-metrics, risk-classification, recommendation superseded by new entity names
 - actor:executive, actor:mu-lead, actor:csm, actor:ea superseded by actor:stakeholder
+
+---
+
+## Amendment — 2026-06-30: AI pipeline concurrency guard
+
+### Changes to Guardrails
+Unbounded parallel dispatch of AI API calls is prohibited. Steps 1–3 of the --analyze pipeline (pattern:bottom-up-ai-pipeline) must use a semaphore-style concurrency limiter (e.g. `runWithConcurrency()`) capped at `AI_PIPELINE_CONCURRENCY` (default 15). Dispatching all calls simultaneously via bare `Promise.allSettled()` or `Promise.all()` over the full task list is not permitted — sustained 429 rate-limit failures result at portfolio scale (500+ concurrent calls).
+
+### Changes to Configuration
+`AI_PIPELINE_CONCURRENCY` added. Controls the maximum number of simultaneous AI API calls during Steps 1–3 of --analyze. Sourced from `AI_PIPELINE_CONCURRENCY` env var; default 15.
 
 ---
 

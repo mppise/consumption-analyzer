@@ -46,9 +46,9 @@ Use relative signals: "leading", "lagging", "strongest adoption", "most dormant"
 
 ## Output instructions
 
-Produce 3 insights and 3 action items. Use the following guidance:
-- Each insight: name the customer(s), state the peer-comparison fact, connect to an industry-relevant capability — one concise sentence
-- Each action item: direct and specific — name the customer or cohort, the gap, and the VAT intervention — one concise sentence, no time references or deadlines
+Produce 3-5 insights and 3-5 action items. Use the following guidance:
+- Each insight: state in one __concise__ sentence; include customer(s), and/or peer-comparison fact, and/or industry-relevant capability
+- Each action item: state in one __concise__ sentence; be direct and specific about the customer and/or cohort, the gap, and/or the VAT intervention without timelines or deadlines
 - Lead with the highest-impact cross-customer finding
 - Sort in order of most relevant to least
 

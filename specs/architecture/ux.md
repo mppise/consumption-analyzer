@@ -65,7 +65,7 @@ CLI conventions:
 Dashboard conventions (generated HTML — 3-pane layout):
 - Pane widths: left pane ~20%, middle pane ~35%, right pane ~45% (Bootstrap grid columns; adjust at story-spec time)
 - Left pane (industry list):
-  - Each industry row: 6 metrics in Consumed → Budget → ACV order for both YTD and Projected groups: YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV
+  - Each industry row: 8 metrics — 6 dollar metrics in Consumed → Budget → ACV order for both YTD and Projected groups (YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV) plus YTD Att% (C_PCT, computed via attPct()) and Proj Att% (projected color constant, inline computation)
   - Industry summary (industry_insights[].summary) shown inline beneath each row via Bootstrap collapse with a small toggle indicator
   - Selected industry highlighted with Bootstrap active class
   - Aggregated values formatted as abbreviated USD (e.g. $1.2M)
@@ -110,7 +110,7 @@ Dashboard layout template (3-pane single merged view):
                (labels in #64748b; metric values in semantic color: Consumed=C_CONSUMED, Budget=C_BUDGET, ACV=C_ACV, Proj Consumed=C_PROJ_CONSUMED)
 [Body]
   [Left pane]   Industry list
-                  Each entry: 6 metrics in order — YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV · summary (inline collapse)
+                  Each entry: 8 metrics — YTD Consumed · YTD Budget · YTD ACV · Proj Consumed · Proj Budget · Proj ACV · YTD Att% (C_PCT) · Proj Att% (projected color) · summary (inline collapse)
   [Middle pane] Customer cards for selected industry
                   Empty state: "Select an industry"
                   Each card: customer name · account_insights (truncated) · aggregated values (Consumed → Budget → ACV order, YTD then Projected) · L1 breakdown (always expanded) · EA insights (always-visible card frame) · enterprise_architecture_diagram (Mermaid block, rendered before L1 solution areas; omitted when empty)

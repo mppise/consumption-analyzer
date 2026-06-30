@@ -40,9 +40,9 @@ Every insight should follow this pattern: **state the architectural fact → fra
 
 ## Output instructions
 
-Produce 3 insights and 3 action items. Use the following guidance:
-- Each insight: state the cross-domain architectural fact first, then the business outcome it enables or blocks — one concise sentence
-- Each action item: direct and specific — name the domain, the gap, and the intervention — one concise sentence, no time references or deadlines
+Produce 2-4 insights and 2-4 action items. Use the following guidance:
+- Each insight: state in one __concise__ sentence; include - cross-domain architectural fact and business outcome it enables or blocks
+- Each action item: state in one __concise__ sentence; direct and specific about domain, the gap, and/or the intervention without timelines or deadlines
 - Lead with the most important cross-domain finding
 - Sort in order of most relevant to least
 

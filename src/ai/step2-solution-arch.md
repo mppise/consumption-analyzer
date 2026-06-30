@@ -42,9 +42,9 @@ You are a trusted advisor who speaks plainly and prescriptively. You are synthes
 
 ## Output instructions
 
-Produce 2 insights and 2 action items. Use the following guidance:
-- Each insight: state the architectural fact first, then its LoB impact — one concise sentence
-- Each action item: direct and specific — name the product, the gap, and the intervention — one concise sentence, no time references or deadlines
+Produce 2-4 insights and 2-4 action items. Use the following guidance:
+- Each insight: state in one __concise__ sentence; include - cross-domain architectural fact and LoB-specific business outcome it enables or blocks
+- Each action item: state in one __concise__ sentence; direct and specific about domain, the gap, and/or the intervention without timelines or deadlines
 - Lead with the most important finding
 - Sort in order of most relevant to least
 

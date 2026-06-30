@@ -388,13 +388,13 @@ function buildIndustryView(indInsights, customers) {
   // Change 1: light theme tabs
   const tabs = indInsights.map((ind, idx) => {
     const indCustomers = customers.filter(c => c.industry === ind.industry)
-    let totalBudget = 0, totalConsumed = 0
-    for (const c of indCustomers) { const t = customerTotals(c); totalBudget += t.budget; totalConsumed += t.consumed }
+    let totalBudget = 0, totalConsumed = 0, totalAnnualAcv = 0
+    for (const c of indCustomers) { const t = customerTotals(c); totalBudget += t.budget; totalConsumed += t.consumed; totalAnnualAcv += customerAnnualTotals(c).annualAcv }
     const att = attPct(totalBudget, totalConsumed)
     const isFirst = idx === 0
     return `<button onclick="showIndustry(${idx})" class="ind-tab" data-ind="${idx}"
   style="padding:8px 20px;background:${isFirst ? '#f1f5f9' : 'transparent'};border:1px solid #cbd5e1;color:${isFirst ? '#0f172a' : '#64748b'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
-  ${esc(ind.industry)}
+  ${esc(ind.industry)}<span style="display:block;font-size:10px;font-weight:400;color:#8ecae6;margin-top:2px">${usd(totalAnnualAcv)} proj ACV</span>
 </button>`
   }).join('')
 
@@ -445,6 +445,14 @@ function buildIndustryView(indInsights, customers) {
     <div>
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Projected ACV</div>
       <div style="font-size:16px;font-weight:700;color:#8ecae6">${usd(totalAnnualAcv)}</div>
+    </div>
+    <div style="border-left:1px solid #e2e8f0;padding-left:32px">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">YTD Att%</div>
+      <div style="font-size:16px;font-weight:700;color:#0f172a">${att != null ? Math.ceil(att) + '%' : '—'}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px">Proj Att%</div>
+      <div style="font-size:16px;font-weight:700;color:#0f172a">${totalAnnualBudget > 0 ? Math.round(totalAnnualConsumed / totalAnnualBudget * 100) + '%' : '—'}</div>
     </div>
   </div>
   <div style="margin-bottom:32px">
